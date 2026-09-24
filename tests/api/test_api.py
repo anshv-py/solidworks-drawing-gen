@@ -134,5 +134,10 @@ def test_drawing_defaults(client):
     body = client.get("/api/drawings/defaults").json()
     s = body["settings"]
     assert s["primary_view"] == "ISOMETRIC" and s["projection_method"] == "FIRST_ANGLE"
-    assert s["drawing_standard"] == "ISO" and s["sheet"] == {"size": "A3", "orientation": "LANDSCAPE"}
+    assert s["drawing_standard"] == "ISO" and s["sheet"] == {
+        "size": "A3", "orientation": "LANDSCAPE", "scale": "AUTO", "pictorial_scale": "AUTO",
+        "scale_system": "INTERMEDIATE"}
     assert "Y_UP" in body["options"]["view_frame"]
+    o = body["options"]
+    assert o["scale"][0] == "AUTO" and "1:1.5" in o["scale"] and "1:1.5" not in o["iso_scale"]
+    assert o["scale_system"] == ["ISO_5455", "INTERMEDIATE"]

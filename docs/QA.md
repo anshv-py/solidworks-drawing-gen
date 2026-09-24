@@ -1,7 +1,7 @@
 # Drawing QA (implemented - deterministic)
 
 Loop: GENERATE → VALIDATE → REPAIR → VALIDATE. Up to `CADAI_QA_MAX_RETRIES` (default 3) extra
-iterations. Repairs are compiler options: `REDUCE_SCALE` (next ISO 5455 step) and
+iterations. Repairs are compiler options: `REDUCE_SCALE` (next `DRAWING_SCALES` step) and
 `INCREASE_TIER_GAP`. If any **CRITICAL** issue remains, no PDF/DXF/SVG is exported. The job
 ends `FAILED` with `QA_FAILED`, and only a diagnostic preview is kept.
 
@@ -15,7 +15,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-VIEW-001 | CRITICAL | views do not overlap |
 | QA-VIEW-002 | CRITICAL | OCCT-drawn view extent == GeometryIR extent (catches wrong orientation or geometry) |
 | QA-VIEW-003 | CRITICAL | placement matches first/third-angle projection |
-| QA-VIEW-004 | MAJOR | ISO 5455 scale |
+| QA-VIEW-004 | MAJOR / MINOR | supported drawing scale (MAJOR); intermediate, non-ISO 5455 scale (MINOR) |
 | QA-VIEW-005 | MINOR | sheet fill ratio |
 | QA-VIEW-006 | CRITICAL | a view produced no geometry |
 | QA-DIM-001 | CRITICAL | label == GeometryIR value; sheet distance ÷ scale == value; overall dims == OCCT extents; leader tips touch drawn geometry |

@@ -13,7 +13,10 @@ from geometry_schema import FeatureType, SurfaceType
 
 
 def plan(analyzed, name, **settings):
+    """The FULL notes checklist without the default GD&T (both have their own tests)."""
     ir, _ = analyzed[name]
+    settings.setdefault("default_gdt", False)
+    settings["general_notes"] = {"style": "FULL", **settings.get("general_notes", {})}
     return ir, plan_baseline(ir, DrawingSettings.model_validate(settings), filename=f"{name}.step")
 
 
@@ -72,7 +75,7 @@ def test_notes_can_be_turned_off(analyzed):
 def test_notes_block_is_legible_and_clear_of_views(analyzed):
     ir, r = plan(analyzed, "mounting_plate")
     cd = compile_drawing(r.plan, r.candidates, ir)
-    assert cd.scale == "1:2"  # the two-column band keeps the plate at 1:2
+    assert cd.scale == "1:2"  # the isometric keeps the top-right corner (it wins over a larger scale)
     assert cd.notes_split is not None
     for v in cd.views:
         assert not v.outline.intersects(cd.notes_rect)

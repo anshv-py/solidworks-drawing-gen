@@ -39,7 +39,7 @@ export type DrawingStandard = "ISO" | "ASME";
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "InfoSource".
  */
-export type InfoSource = "USER" | "CAD_MODEL";
+export type InfoSource = "USER" | "CAD_MODEL" | "DEFAULT";
 export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
 /**
@@ -57,6 +57,7 @@ export type ManufacturingProcess =
  * machining vs heat treatment / coating order
  */
 export type ProcessSequence = string | null;
+export type NotesStyle = "CONCISE" | "FULL";
 /**
  * print "WHAT THE SUPPLIER MUST NOT ASSUME"
  */
@@ -64,6 +65,10 @@ export type SupplierBullets = boolean;
 export type ThreadClass = string | null;
 export type GeometrySchemaVersion = string;
 export type SourceSha256 = string;
+/**
+ * candidate ids drawn as theoretically exact (boxed) dimensions
+ */
+export type BasicDimensions = string[];
 export type Letter = string;
 export type FaceId = string | null;
 export type FeatureId1 = string | null;
@@ -185,6 +190,18 @@ export type ThroughFeatureId = string | null;
 export type Scale2 = string;
 export type Sections = SectionView[];
 export type SheetOrientation = "LANDSCAPE" | "PORTRAIT";
+/**
+ * scale of the isometric view; AUTO = the smallest scale that draws it larger than the orthographic views
+ */
+export type PictorialScale = string;
+/**
+ * scale of the orthographic views; AUTO = the largest scale of scale_system at which the layout fits
+ */
+export type Scale3 = string;
+/**
+ * scales AUTO chooses from (a chosen scale may be any supported one)
+ */
+export type ScaleSystem = "ISO_5455" | "INTERMEDIATE";
 export type SheetSize = "A0" | "A1" | "A2" | "A3" | "A4";
 export type ApprovedBy1 = string | null;
 export type ApprovedDate = string | null;
@@ -240,9 +257,21 @@ export type ManufacturingProcess1 =
   "UNSPECIFIED" | "CNC_MACHINED" | "SHEET_METAL" | "CASTING" | "FORGING" | "WELDMENT" | "MOULDED" | "ADDITIVE";
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "NotesStyle".
+ */
+export type NotesStyle1 = "CONCISE" | "FULL";
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ProjectionMethod".
  */
 export type ProjectionMethod1 = "FIRST_ANGLE" | "THIRD_ANGLE";
+/**
+ * Scales the layout may choose from when the scale is AUTO.
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "ScaleSystem".
+ */
+export type ScaleSystem1 = "ISO_5455" | "INTERMEDIATE";
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "SheetOrientation".
@@ -366,6 +395,7 @@ export interface GeneralNotes {
   model_revision: ModelRevision;
   process: ManufacturingProcess;
   process_sequence: ProcessSequence;
+  style: NotesStyle;
   supplier_bullets: SupplierBullets;
   thread_class: ThreadClass;
 }
@@ -378,6 +408,7 @@ export interface GeometryReference {
   source_sha256: SourceSha256;
 }
 export interface ManufacturingAnnotations {
+  basic_dimensions: BasicDimensions;
   datums: Datums;
   deburr_break_sharp_edges: DeburrBreakSharpEdges;
   feature_notes: FeatureNotes;
@@ -502,6 +533,9 @@ export interface SectionPlane {
 }
 export interface Sheet {
   orientation: SheetOrientation;
+  pictorial_scale: PictorialScale;
+  scale: Scale3;
+  scale_system: ScaleSystem;
   size: SheetSize;
 }
 /**
@@ -594,6 +628,7 @@ export interface GeneralNotes1 {
   model_revision: ModelRevision;
   process: ManufacturingProcess;
   process_sequence: ProcessSequence;
+  style: NotesStyle;
   supplier_bullets: SupplierBullets;
   thread_class: ThreadClass;
 }
@@ -602,6 +637,7 @@ export interface GeneralNotes1 {
  * via the `definition` "ManufacturingAnnotations".
  */
 export interface ManufacturingAnnotations1 {
+  basic_dimensions: BasicDimensions;
   datums: Datums;
   deburr_break_sharp_edges: DeburrBreakSharpEdges;
   feature_notes: FeatureNotes;
@@ -619,6 +655,9 @@ export interface ManufacturingAnnotations1 {
  */
 export interface Sheet1 {
   orientation: SheetOrientation;
+  pictorial_scale: PictorialScale;
+  scale: Scale3;
+  scale_system: ScaleSystem;
   size: SheetSize;
 }
 /**

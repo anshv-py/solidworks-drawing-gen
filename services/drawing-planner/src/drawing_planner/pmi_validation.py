@@ -71,6 +71,9 @@ def validate_pmi(ir: GeometryIR, m: ManufacturingAnnotations,
         for cid in m.inspection_dimensions:
             if cid not in placed:
                 errors.append(f"inspection mark: dimension {cid} is not on the drawing")
+        for cid in m.basic_dimensions:
+            if cid not in placed:
+                errors.append(f"basic (TED) mark: dimension {cid} is not on the drawing")
 
     for th in m.threads:
         h = features.get(th.feature_id)

@@ -111,7 +111,7 @@ def test_y_up_frame_puts_front_on_xy_plane(analyzed):
 
 
 def test_engineering_information_stays_unspecified(analyzed):
-    r = plan_baseline(analyzed["flange"][0], DrawingSettings())
+    r = plan_baseline(analyzed["flange"][0], DrawingSettings(default_gdt=False))
     assert all(f.status == "UNSPECIFIED" for _, f in r.plan.engineering_information)
     assert r.plan.drawing_kind == "GEOMETRY"
     assert "no LLM" in r.plan.rationale

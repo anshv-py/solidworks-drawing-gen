@@ -477,6 +477,10 @@
           "description": "machining vs heat treatment / coating order",
           "title": "Process Sequence"
         },
+        "style": {
+          "$ref": "#/$defs/NotesStyle",
+          "default": "CONCISE"
+        },
         "supplier_bullets": {
           "default": true,
           "description": "print \"WHAT THE SUPPLIER MUST NOT ASSUME\"",
@@ -499,6 +503,7 @@
       },
       "required": [
         "enabled",
+        "style",
         "process",
         "general_geometric_tolerance",
         "edge_break",
@@ -516,7 +521,8 @@
       "description": "Where a piece of engineering information came from.",
       "enum": [
         "USER",
-        "CAD_MODEL"
+        "CAD_MODEL",
+        "DEFAULT"
       ],
       "title": "InfoSource",
       "type": "string"
@@ -524,6 +530,14 @@
     "ManufacturingAnnotations": {
       "additionalProperties": false,
       "properties": {
+        "basic_dimensions": {
+          "description": "candidate ids drawn as theoretically exact (boxed) dimensions",
+          "items": {
+            "type": "string"
+          },
+          "title": "Basic Dimensions",
+          "type": "array"
+        },
         "datums": {
           "items": {
             "$ref": "#/$defs/Datum"
@@ -603,6 +617,7 @@
         "tolerances",
         "threads",
         "inspection_dimensions",
+        "basic_dimensions",
         "surface_finish_marks",
         "feature_notes",
         "notes",
@@ -632,6 +647,14 @@
         "LMC"
       ],
       "title": "MaterialCondition",
+      "type": "string"
+    },
+    "NotesStyle": {
+      "enum": [
+        "CONCISE",
+        "FULL"
+      ],
+      "title": "NotesStyle",
       "type": "string"
     },
     "ProjectionMethod": {
@@ -679,12 +702,38 @@
       "title": "RevisionEntry",
       "type": "object"
     },
+    "ScaleSystem": {
+      "description": "Scales the layout may choose from when the scale is AUTO.",
+      "enum": [
+        "ISO_5455",
+        "INTERMEDIATE"
+      ],
+      "title": "ScaleSystem",
+      "type": "string"
+    },
     "Sheet": {
       "additionalProperties": false,
       "properties": {
         "orientation": {
           "$ref": "#/$defs/SheetOrientation",
           "default": "LANDSCAPE"
+        },
+        "pictorial_scale": {
+          "default": "AUTO",
+          "description": "scale of the isometric view; AUTO = the smallest scale that draws it larger than the orthographic views",
+          "title": "Pictorial Scale",
+          "type": "string"
+        },
+        "scale": {
+          "default": "AUTO",
+          "description": "scale of the orthographic views; AUTO = the largest scale of scale_system at which the layout fits",
+          "title": "Scale",
+          "type": "string"
+        },
+        "scale_system": {
+          "$ref": "#/$defs/ScaleSystem",
+          "default": "INTERMEDIATE",
+          "description": "scales AUTO chooses from (a chosen scale may be any supported one)"
         },
         "size": {
           "$ref": "#/$defs/SheetSize",
@@ -693,7 +742,10 @@
       },
       "required": [
         "size",
-        "orientation"
+        "orientation",
+        "scale",
+        "pictorial_scale",
+        "scale_system"
       ],
       "title": "Sheet",
       "type": "object"
@@ -1103,6 +1155,12 @@
         "hole_callouts": true
       }
     },
+    "default_gdt": {
+      "default": true,
+      "description": "when no datums / GD&T are supplied, apply the default datum reference frame and ISO 2768-mK derived GD&T (drawing_planner.gdt_defaults)",
+      "title": "Default Gdt",
+      "type": "boolean"
+    },
     "dimensions": {
       "$ref": "#/$defs/DimensionPreferences",
       "default": {
@@ -1196,6 +1254,7 @@
         "model_revision": null,
         "process": "UNSPECIFIED",
         "process_sequence": null,
+        "style": "CONCISE",
         "supplier_bullets": true,
         "thread_class": null
       }
@@ -1203,6 +1262,7 @@
     "manufacturing": {
       "$ref": "#/$defs/ManufacturingAnnotations",
       "default": {
+        "basic_dimensions": [],
         "datums": [],
         "deburr_break_sharp_edges": false,
         "feature_notes": [],
@@ -1242,6 +1302,9 @@
       "$ref": "#/$defs/Sheet",
       "default": {
         "orientation": "LANDSCAPE",
+        "pictorial_scale": "AUTO",
+        "scale": "AUTO",
+        "scale_system": "INTERMEDIATE",
         "size": "A3"
       }
     },
@@ -1287,7 +1350,8 @@
     "engineering_information",
     "manufacturing",
     "general_notes",
-    "pictorial_style"
+    "pictorial_style",
+    "default_gdt"
   ],
   "title": "DrawingSettings",
   "type": "object"

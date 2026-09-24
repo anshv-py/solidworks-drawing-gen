@@ -14,8 +14,10 @@ Views
   the x projection, views in a row the y projection.
 * Envelope = part outline + dimension tiers (variable height: a tier grows when a dimension
   carries a feature control frame / datum) + a leader-note column + space for face annotations.
-* Scale: the largest ISO 5455 scale for which the grid fits the sheet without touching an
-  obstacle (several anchor positions are tried).
+* Scale: the user's ``sheet.scale``, or (AUTO) the largest scale of the chosen series
+  (``sheet.scale_system``: ISO 5455 only, or with intermediate steps) for which the grid fits the sheet without touching an obstacle (several anchor positions are tried). The
+  undimensioned pictorial view goes top-right at ``sheet.pictorial_scale``, or (AUTO) the smallest
+  scale that draws it larger than every orthographic view (one step up at most).
 
 Manufacturing annotations (user-supplied only) are attached deterministically:
 hole / pattern → under its callout; boss → at its Ø dimension; face → leader from the view in
@@ -29,7 +31,7 @@ from dataclasses import dataclass, field
 from datetime import date
 
 from drawing_schema import (
-    ISO_5455_SCALES,
+    scale_series,
     PICTORIAL,
     DisplayStyle,
     DrawingPlan,
@@ -301,7 +303,7 @@ class Compiler:
                                       x1=self.frame_rect.x1, y1=self.frame_rect.y1)
         self.area = Rect(x0=self.frame_rect.x0 + 4, y0=self.frame_rect.y0 + 4,
                          x1=self.frame_rect.x1 - 4, y1=self.frame_rect.y1 - 4)
-        self.notes_variants = ["column", "band"] if self._sheet_note_texts() else ["column"]
+        self.notes_variants = ["column", "band", "beside"] if self._sheet_note_texts() else ["column"]
         if not self._set_notes(self.notes_variants[0]):
             self._set_notes("band")
         self.pict_scale: tuple[str, float] | None = None
@@ -348,7 +350,8 @@ class Compiler:
                 w = max(len(tol.upper), len(tol.lower)) * CHAR_W * TEXT_H
             else:
                 w += 1.0 + max(len(tol.upper), len(tol.lower)) * CHAR_W * (TOL_H if tol.lower else TEXT_H)
-        return w + (3.0 if cand.id in self.m.inspection_dimensions else 0.0)
+        framed = cand.id in self.m.inspection_dimensions or cand.id in self.m.basic_dimensions
+        return w + (3.0 if framed else 0.0)
 
     def _label_height(self, cand: DimensionCandidate) -> float:
         tol = self._tolerance(cand)
@@ -375,12 +378,16 @@ class Compiler:
     def _set_notes(self, variant: str) -> bool:
         """Place the notes block. 'column' (as in the references): one 180 mm column directly above
         the title block. 'band': two columns side by side, about half as tall, for parts whose views
-        need the width. -> False if the notes do not fit on the sheet."""
+        need the width. 'beside': along the bottom edge left of the title block, for parts whose views
+        need the height on the right. -> False if the notes do not fit on the sheet."""
         self.notes_variant = variant
         self.notes_split = None
         top_free = (self.revision_rect.y0 - 3 if self.revision_rect else self.frame_rect.y1)
-        blocks = self._note_blocks(self.title_rect.w if variant == "column" else
-                                   min(2 * TITLE_W, self.frame_rect.w) / 2)
+        beside_w = self.title_rect.x0 - self.frame_rect.x0 - 6.0
+        if variant == "beside" and beside_w < 120.0:
+            return False  # too narrow (e.g. A4): the notes would wrap into a tall column
+        blocks = self._note_blocks(self.title_rect.w if variant == "column" else beside_w if variant == "beside"
+                                   else min(2 * TITLE_W, self.frame_rect.w) / 2)
         lines = [ln for b in blocks for ln in b]
         self.sheet_notes = lines
         self.notes_rect = None
@@ -392,6 +399,11 @@ class Compiler:
             self.notes_rect = Rect(x0=tr.x0, y0=tr.y1 + 1.0, x1=tr.x1,
                                    y1=tr.y1 + 3.0 + (len(lines) + 1) * NOTE_LINE)
             self.obstacles.append(Rect(x0=tr.x0 - 3, y0=fr.y0, x1=fr.x1, y1=self.notes_rect.y1 + 3))
+        elif variant == "beside":
+            self.notes_rect = Rect(x0=fr.x0 + 3.0, y0=fr.y0 + 1.0, x1=tr.x0 - 3.0,
+                                   y1=fr.y0 + 3.0 + (len(lines) + 1) * NOTE_LINE)
+            self.obstacles.append(Rect(x0=tr.x0 - 3, y0=fr.y0, x1=fr.x1, y1=tr.y1 + 3))
+            self.obstacles.append(Rect(x0=fr.x0, y0=fr.y0, x1=tr.x0, y1=self.notes_rect.y1 + 3))
         else:
             sizes = [len(b) for b in blocks]
             total = sum(sizes)
@@ -676,7 +688,7 @@ class Compiler:
             v.margins = {"top": 2.0, "bottom": 2.0, "left": 2.0, "right": 2.0}
 
     def _vs(self, v: _ViewCtx, s: float) -> float:
-        """Scale factor of a view: pictorial views may use their own (smaller) ISO scale."""
+        """Scale factor of a view: the pictorial view may use its own scale."""
         return self.pict_scale[1] if v.pictorial and self.pict_scale else s
 
     def _extent(self, v: _ViewCtx, s: float) -> tuple[float, float, float, float]:
@@ -687,22 +699,38 @@ class Compiler:
         label = PICT_LABEL_SPACE if v.pictorial and self.pict_scale and vs != s else 0.0
         return -u0 + m["left"], u1 + m["right"], -w0 + m["bottom"] + label, w1 + m["top"]
 
-    def _layout(self, s: float) -> dict[str, tuple[float, float]] | None:
-        """Views on the projection grid. The pictorial view first takes a free grid cell (as in the
-        references); if that does not fit, it floats to any free area (it needs no alignment)."""
+    def _layout(self, s: float, corner_only: bool = False) -> dict[str, tuple[float, float]] | None:
+        """The pictorial view (it needs no projection alignment) takes the sheet's top-right corner
+        and the orthographic grid is laid out around it, anchored top-left. With ``corner_only``
+        False, fallbacks: the pictorial view beside the grid / in any free area, then a free grid cell."""
         for v in self.views:
             self._plan_view(v, s)
         pict = [v for v in self.views if v.pictorial]
-        for pos, _ in self._grid_positions(s, self.views, limit=1):
-            return pos
         if not pict:
+            for pos, _ in self._grid_positions(s, self.views, limit=1):
+                return pos
             return None
         ortho = [v for v in self.views if not v.pictorial]
-        for pos, envs in self._grid_positions(s, ortho, limit=40):
+        corner = self._corner_spot(self._extent(pict[0], s)) if len(pict) == 1 else None
+        if corner is not None:
+            (cx, cy), env = corner
+            saved = self.obstacles
+            self.obstacles = saved + [Rect(x0=env.x0 - VIEW_GAP, y0=env.y0 - VIEW_GAP, x1=env.x1 + VIEW_GAP,
+                                           y1=env.y1 + VIEW_GAP)]
+            try:
+                for pos, _ in self._grid_positions(s, ortho, limit=12, left_first=True):
+                    pos[pict[0].id] = (cx, cy)
+                    return pos
+            finally:
+                self.obstacles = saved
+        if corner_only:
+            return None
+        for pos, envs in self._grid_positions(s, ortho, limit=12, left_first=True):
             placed = list(envs)
             ok = True
             for v in pict:
-                spot = self._free_spot(self._extent(v, s), placed)
+                spot = (self._top_right_spot(self._extent(v, s), placed)
+                        or self._free_spot(self._extent(v, s), placed, top_right=True))
                 if spot is None:
                     ok = False
                     break
@@ -710,10 +738,44 @@ class Compiler:
                 placed.append(env)
             if ok:
                 return pos
+        for pos, _ in self._grid_positions(s, self.views, limit=1):
+            return pos
         return None
 
-    def _free_spot(self, ext, placed: list[Rect], step: float = 4.0):
-        """Most clear position for a free-floating view envelope -> ((cx, cy), envelope) or None."""
+    def _corner_spot(self, ext):
+        """Envelope in the sheet's top-right corner (below a revision table, if any)."""
+        le, ri, do, up = ext
+        a = self.area
+        cx = a.x1 - ri
+        for k in range(int(max(0.0, a.h - up - do) / 2.0) + 1):
+            cy = a.y1 - up - k * 2.0
+            env = Rect(x0=cx - le, y0=cy - do, x1=cx + ri, y1=cy + up)
+            if env.x0 < a.x0 or not env.inside(a):
+                return None
+            if not any(env.intersects(o) for o in self.obstacles):
+                return (cx, cy), env
+        return None
+
+    def _top_right_spot(self, ext, placed: list[Rect]):
+        """Pictorial view in the free column right of the orthographic views, top-aligned."""
+        le, ri, do, up = ext
+        a = self.area
+        if not placed:
+            return None
+        x_free = max(p.x1 for p in placed) + VIEW_GAP
+        if a.x1 - x_free < le + ri:
+            return None
+        cx = x_free + (a.x1 - x_free - le - ri) / 2 + le
+        blockers = self.obstacles + placed
+        for cy in (a.y1 - up - k * 2.0 for k in range(int(max(0.0, a.h - up - do) / 2.0) + 1)):
+            env = Rect(x0=cx - le, y0=cy - do, x1=cx + ri, y1=cy + up)
+            if env.inside(a) and not any(env.intersects(o) for o in blockers):
+                return (cx, cy), env
+        return None
+
+    def _free_spot(self, ext, placed: list[Rect], step: float = 4.0, top_right: bool = False):
+        """Most clear position for a free-floating view envelope -> ((cx, cy), envelope) or None.
+        ``top_right``: the free position closest to the sheet's top-right corner instead."""
         le, ri, do, up = ext
         a = self.area
         best = None
@@ -729,12 +791,13 @@ class Compiler:
                     continue
                 gaps = [env.x0 - a.x0, a.x1 - env.x1, env.y0 - a.y0, a.y1 - env.y1]
                 gaps += [max(o.x0 - env.x1, env.x0 - o.x1, o.y0 - env.y1, env.y0 - o.y1) for o in blockers]
-                score = (round(min(gaps), 3), -j, -i)
+                score = (-round(a.x1 - env.x1 + a.y1 - env.y1, 3), 0, 0) if top_right else (
+                    round(min(gaps), 3), -j, -i)
                 if best is None or score > best[0]:
                     best = (score, (cx, cy), env)
         return (best[1], best[2]) if best else None
 
-    def _grid_positions(self, s: float, views: list[_ViewCtx], limit: int):
+    def _grid_positions(self, s: float, views: list[_ViewCtx], limit: int, left_first: bool = False):
         """Valid placements of the view grid, preferred first: -> [(positions, envelopes)]."""
         grid = _FIRST if self.plan.projection_method == ProjectionMethod.FIRST_ANGLE else _THIRD
         ortho = [v for v in views if not v.pictorial]
@@ -789,6 +852,8 @@ class Compiler:
         out = []
         anchors = [  # centred, top-left, top-right, centred above the title block
             (a.x0 + (a.w - total_w) / 2, a.y1 - (a.h - total_h) / 2), (a.x0, a.y1), (a.x1 - total_w, a.y1)]
+        if left_first:  # leave the right-hand side free for the pictorial view
+            anchors = [(a.x0, a.y1), (a.x0, a.y1 - (a.h - total_h) / 2)]
         above_h = a.y1 - self.obstacles[0].y1
         if total_h <= above_h:
             anchors.append((a.x0 + (a.w - total_w) / 2, a.y1 - (above_h - total_h) / 2))
@@ -814,48 +879,107 @@ class Compiler:
                 gaps += [max(o.x0 - box.x1, box.x0 - o.x1, o.y0 - box.y1, box.y0 - o.y1, 0.0)
                          for o in self.obstacles]
                 scored.append(((round(min(gaps), 3), -i, -j), ax, ay, envs))
+        if left_first:
+            scored = [((neg_i, neg_j), ax, ay, envs) for (_, neg_i, neg_j), ax, ay, envs in scored]  # top-left first
         scored.sort(key=lambda t: t[0], reverse=True)
         out += [result(ax, ay, envs) for _, ax, ay, envs in scored[: max(0, limit - len(out))]]
         return out
 
     # ------------------------------------------------------------------ compile
     def compile(self) -> CompiledDrawing:
-        scales = list(ISO_5455_SCALES)  # large -> small
-        if self.opt.max_scale:
-            scales = scales[scales.index(self.opt.max_scale):]
-        found = []  # (scale index, variant, scale, s, positions, pictorial scale)
+        sheet = self.plan.sheet
+        self.series = list(scale_series(sheet.scale_system))  # large -> small
+        if sheet.scale != "AUTO":  # the user's scale is used as chosen, never changed by repairs
+            scales = [sheet.scale]
+        else:
+            scales = self.series
+            if self.opt.max_scale:
+                limit = scale_factor(self.opt.max_scale) + 1e-9
+                scales = [x for x in scales if scale_factor(x) <= limit]
+        found = self._search_variants(scales)
+        if found:
+            _, _, _, variant, sc, s, pos, pict = min(found, key=lambda t: t[:3])
+            self._set_notes(variant)
+            self.pict_scale = pict
+            self._layout(s)  # restore per-view margins for this scale
+            return self._emit(sc, s, pos)
+        if sheet.scale != "AUTO" or sheet.pictorial_scale != "AUTO":
+            fixed = []
+            if sheet.scale != "AUTO":
+                fixed.append(f"scale {sheet.scale}")
+            if sheet.pictorial_scale != "AUTO":
+                fixed.append(f"isometric scale {sheet.pictorial_scale}")
+            best = None
+            if sheet.scale != "AUTO":
+                hits = self._search_variants([x for x in self.series if scale_factor(x) < scale_factor(sheet.scale)])
+                best = min(hits, key=lambda t: t[:3])[4] if hits else None
+            raise LayoutError(f"the views do not fit on the selected {sheet.size.value} sheet at the chosen "
+                              + " and ".join(fixed)
+                              + (f" - the largest scale that fits is {best}" if best else "")
+                              + " (choose a smaller scale, AUTO or a larger sheet)")
+        hint = ""
+        if self.sheet_notes and self.plan.general_notes.enabled:
+            hint = (f" (with the {len(self.sheet_notes)}-line notes block above the title block - use a larger "
+                    "sheet or turn off the default notes)")
+        raise LayoutError("the views do not fit on the selected sheet at any drawing scale" + hint)
+
+    def _search_variants(self, scales: list[str]) -> list:
+        """-> [(pictorial view not in the corner, scale index, variant index, variant, scale, s, positions,
+        pictorial scale)] - sorted by the first three, the corner placement wins over scale and notes."""
+        found = []
         for variant in self.notes_variants:
             if not self._set_notes(variant):
                 continue
             hit = self._search(scales)
             if hit is not None:
-                found.append((ISO_5455_SCALES.index(hit[0]), self.notes_variants.index(variant), variant, *hit))
-        if found:
-            _, _, variant, sc, s, pos, pict = min(found, key=lambda t: (t[0], t[1]))
-            self._set_notes(variant)
-            self.pict_scale = pict
-            self._layout(s)  # restore per-view margins for this scale
-            return self._emit(sc, s, pos)
-        hint = ""
-        if self.sheet_notes and self.plan.general_notes.enabled:
-            hint = (f" (with the {len(self.sheet_notes)}-line notes block above the title block - use a larger "
-                    "sheet or turn off the default notes)")
-        raise LayoutError("the views do not fit on the selected sheet at any ISO 5455 scale" + hint)
+                sc, s, pos, pict, corner = hit
+                found.append((not corner, self.series.index(sc) if sc in self.series else 0,
+                              self.notes_variants.index(variant), variant, sc, s, pos, pict))
+        return found
+
+    def _pict_steps(self, i: int) -> tuple[int, ...]:
+        """Scale-step offsets for the undimensioned pictorial view (negative = larger): the smallest
+        scale at which it is drawn larger than every orthographic view comes first."""
+        pict = [v for v in self.views if v.pictorial]
+        if not pict:
+            return (0,)
+        size = lambda v: max(v.half[1] - v.half[0], v.half[3] - v.half[2])  # noqa: E731
+        ortho = max((size(v) for v in self.views if not v.pictorial), default=0.0)
+        larger_at_same = min(size(v) for v in pict) > ortho * (1 + 1e-6)
+        steps = (0, -1) if larger_at_same else (-1, 0)
+        return tuple(k for k in steps if 0 <= i + k < len(self.series))
+
+    def _pict_options(self, sc: str, allowed: tuple[int, ...]) -> list[str]:
+        """Pictorial-view scales to try with sheet scale ``sc``."""
+        fixed = self.plan.sheet.pictorial_scale
+        if fixed != "AUTO":
+            return [fixed] if allowed == (-1, 0) else []
+        i = self.series.index(sc) if sc in self.series else min(
+            range(len(self.series)), key=lambda k: abs(scale_factor(self.series[k]) - scale_factor(sc)))
+        steps = self._pict_steps(i) if allowed == (-1, 0) else tuple(
+            k for k in allowed if i + k < len(self.series))
+        return [self.series[i + k] if self.series[i + k] != sc else sc for k in steps]
 
     def _search(self, scales: list[str]):
-        has_pict = any(v.pictorial for v in self.views)
-        for sc in scales:
-            s = scale_factor(sc)
-            i = ISO_5455_SCALES.index(sc)
-            # the undimensioned pictorial view may drop one ISO step (labelled) before the whole sheet does
-            for k in ((0, 1) if has_pict else (0,)):
-                if i + k >= len(ISO_5455_SCALES):
-                    break
-                p_sc = ISO_5455_SCALES[i + k]
-                self.pict_scale = (p_sc, scale_factor(p_sc)) if k else None
-                pos = self._layout(s)
+        if not any(v.pictorial for v in self.views):
+            self.pict_scale = None
+            for sc in scales:
+                pos = self._layout(scale_factor(sc))
                 if pos is not None:
-                    return sc, s, pos, self.pict_scale
+                    return sc, scale_factor(sc), pos, None, True
+            return None
+        # the pictorial view's place (top-right corner) comes first, then its size: larger than (or as
+        # large as) the orthographic views, else up to two steps smaller (labelled). Only if no
+        # scale allows the corner does it move elsewhere.
+        for corner_only in (True, False):
+            for allowed in ((-1, 0), (1, 2)):
+                for sc in scales:
+                    s = scale_factor(sc)
+                    for p_sc in self._pict_options(sc, allowed):
+                        self.pict_scale = (p_sc, scale_factor(p_sc)) if p_sc != sc else None
+                        pos = self._layout(s, corner_only=corner_only)
+                        if pos is not None:
+                            return sc, s, pos, self.pict_scale, corner_only
         return None
 
     def _sheet(self, v: _ViewCtx, s: float, c: tuple[float, float], p) -> tuple[float, float]:
@@ -927,6 +1051,7 @@ class Compiler:
                     cand.role, [True, True]),
                 feature_ids=cand.feature_ids, tolerance=self._tolerance(cand),
                 inspection=cand.id in self.m.inspection_dimensions,
+                basic=cand.id in self.m.basic_dimensions,
             )
             a = self.dim_attach.get(cand.id)
             if a and not a.empty:
@@ -943,7 +1068,7 @@ class Compiler:
             bx = min(q1[0], q2[0]) + max(min(5.0, length / 2), 0.15 * length)
             if a.datum and a.frames:  # keep the datum line clear of the frames
                 fx = max(fx, bx + DATUM_BOX / 2 + 2.0)
-            top = (bbox.y1 + 1.0 + FRAME_H * len(a.frames)) if sign > 0 else (line_at - 1.0)
+            top = (bbox.y1 + 1.5 + FRAME_H * len(a.frames)) if sign > 0 else (line_at - 1.0)
             if a.frames:
                 res["frames_origin"] = _r((fx, top))
             extent = Rect(x0=fx, y0=top - FRAME_H * len(a.frames), x1=fx + max([f.width for f in a.frames] + [0]),
@@ -1043,6 +1168,7 @@ class Compiler:
                 feature_ids=n.feature_ids,
                 tolerance=self._tolerance(n.cand) if n.cand else None,
                 inspection=n.id in self.m.inspection_dimensions,
+                basic=n.id in self.m.basic_dimensions,
             )
             bottom = bbox.y0
             extent = None

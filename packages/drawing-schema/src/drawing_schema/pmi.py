@@ -157,6 +157,8 @@ class ManufacturingAnnotations(StrictModel):
     tolerances: list[DimensionTolerance] = Field(default_factory=list)
     threads: list[ThreadCallout] = Field(default_factory=list)
     inspection_dimensions: list[str] = Field(default_factory=list, description="candidate ids marked for inspection")
+    basic_dimensions: list[str] = Field(default_factory=list,
+                                        description="candidate ids drawn as theoretically exact (boxed) dimensions")
     surface_finish_marks: list[SurfaceFinishMark] = Field(default_factory=list)
     feature_notes: list[FeatureNote] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list, max_length=12)
@@ -183,6 +185,7 @@ class ManufacturingAnnotations(StrictModel):
     @property
     def is_empty(self) -> bool:
         return not (self.datums or self.frames or self.tolerances or self.threads or self.inspection_dimensions
+                    or self.basic_dimensions
                     or self.surface_finish_marks or self.feature_notes or self.notes or self.revisions
                     or self.deburr_break_sharp_edges)
 
@@ -198,6 +201,11 @@ class ManufacturingProcess(StrEnum):
     ADDITIVE = "ADDITIVE"
 
 
+class NotesStyle(StrEnum):
+    CONCISE = "CONCISE"  # standard, units/projection, general tolerance, datum frame, TEDs, user notes
+    FULL = "FULL"  # the full 15-note manufacturing checklist (unsupplied values print as [PLACEHOLDER])
+
+
 class GeneralNotes(StrictModel):
     """The default numbered drawing notes (on by default).
 
@@ -207,6 +215,7 @@ class GeneralNotes(StrictModel):
     """
 
     enabled: bool = True
+    style: NotesStyle = NotesStyle.CONCISE
     process: ManufacturingProcess = ManufacturingProcess.UNSPECIFIED
     general_geometric_tolerance: str | None = Field(default=None, max_length=80)
     edge_break: str | None = Field(default=None, max_length=40, description="sharp-edge break value, e.g. as specified")

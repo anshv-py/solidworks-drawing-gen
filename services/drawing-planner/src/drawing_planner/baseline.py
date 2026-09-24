@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 
 from drawing_schema import (
     DimensionSelection,
+    EngineeringField,
     DrawingPlan,
     GeometryReference,
     PlanUncertainty,
@@ -29,8 +30,10 @@ from drawing_schema.candidates import CandidateKind, CandidateRole, DimensionCan
 from drawing_schema.frames import Frame, dot, view_frame
 from drawing_schema.settings import DrawingSettings
 from geometry_schema import FeatureType, GeometryIR
+from shared_types import InfoSource
 
 from drawing_planner.candidates import generate_candidates
+from drawing_planner.gdt_defaults import DEFAULT_GENERAL_TOLERANCE, default_gdt
 from drawing_planner.pmi_validation import validate_pmi
 
 VIEW_PREFERENCE = [
@@ -207,6 +210,24 @@ def plan_baseline(
     else:
         primary = ViewSpec(id="V-PRIMARY", orientation=settings.primary_view, dimensioned=False)
         projected = list(settings.projected_views)
+    manufacturing, engineering = settings.manufacturing, settings.engineering_information
+    rationale = ("deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy "
+                 "removal, true-size view assignment")
+    user_gdt = bool(manufacturing.datums or manufacturing.frames)
+    if settings.default_gdt and not user_gdt:
+        placed_ids = {s.candidate_id for s in selections}
+        gdt = default_gdt(ir, [c for c in candidates if c.id in placed_ids], list(frames.values()))
+        if not gdt.empty:
+            manufacturing = manufacturing.model_copy(update={
+                "datums": gdt.datums, "frames": gdt.frames,
+                "basic_dimensions": list(dict.fromkeys(manufacturing.basic_dimensions + gdt.basic_dimensions)),
+            })
+            if (engineering.general_tolerance.status != "SPECIFIED"
+                    and engineering.linear_tolerance.status != "SPECIFIED"):
+                engineering = engineering.model_copy(update={"general_tolerance": EngineeringField(
+                    status="SPECIFIED", value=DEFAULT_GENERAL_TOLERANCE, source=InfoSource.DEFAULT)})
+            rationale += ("; default datums and GD&T (" + DEFAULT_GENERAL_TOLERANCE + "): "
+                          + "; ".join(gdt.rationale))
     tb = settings.title_block
     if tb.title is None and filename:
         tb = TitleBlock(**{**tb.model_dump(), "title": filename.rsplit(".", 1)[0]})
@@ -223,16 +244,15 @@ def plan_baseline(
         dimensions=settings.dimensions,
         dimension_selections=selections,
         annotations=settings.annotations,
-        engineering_information=settings.engineering_information,
+        engineering_information=engineering,
         title_block=tb,
-        manufacturing=settings.manufacturing,
+        manufacturing=manufacturing,
         general_notes=settings.general_notes,
         pictorial_style=settings.pictorial_style,
         uncertainties=uncertainties,
-        rationale="deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy "
-        "removal, true-size view assignment",
+        rationale=rationale[:2000],
     )
     result = PlanResult(plan=plan, candidates=candidates)
     placed = {s.candidate_id for s in plan.dimension_selections}
-    result.errors = validate_pmi(ir, settings.manufacturing, [c for c in candidates if c.id in placed])
+    result.errors = validate_pmi(ir, manufacturing, [c for c in candidates if c.id in placed])
     return result

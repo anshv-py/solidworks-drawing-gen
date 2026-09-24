@@ -31,10 +31,13 @@ from cad_api.schemas import (
 from cad_api.services.jobs import JobRunner
 from cad_api.services.storage import Storage
 from drawing_schema import (
+    DRAWING_SCALES,
+    ISO_5455_SCALES,
     DisplayStyle,
     DrawingKind,
     DrawingStandard,
     ProjectionMethod,
+    ScaleSystem,
     SheetOrientation,
     SheetSize,
     ViewFrame,
@@ -62,6 +65,9 @@ def drawing_defaults() -> DrawingDefaults:
             "projection_method": [p.value for p in ProjectionMethod],
             "sheet_size": [s.value for s in SheetSize],
             "sheet_orientation": [o.value for o in SheetOrientation],
+            "scale": ["AUTO", *DRAWING_SCALES],
+            "iso_scale": ["AUTO", *ISO_5455_SCALES],
+            "scale_system": [x.value for x in ScaleSystem],
             "view_orientation": [v.value for v in ViewOrientation],
             "orthographic_view": [v.value for v in ViewOrientation
                                   if v not in (ViewOrientation.ISOMETRIC, ViewOrientation.DIMETRIC, ViewOrientation.TRIMETRIC)],

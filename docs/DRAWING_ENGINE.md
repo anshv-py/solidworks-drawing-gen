@@ -65,7 +65,22 @@ Each candidate copies its value from a named GeometryIR field (`source`):
 - Views are placed on a grid by projection method. First angle: TOP below FRONT, RIGHT to its
   left. Third angle is mirrored. Aligned views share projection lines.
 - Each view envelope = outline + dimension tiers (shorter dimensions inside, greedy interval
-  packing) + a leader-note column. The chosen scale is the largest ISO 5455 scale whose layout fits.
+  packing) + a leader-note column.
+- Scale is the user's choice (`DrawingSettings.sheet`):
+  - `scale`: the orthographic views' scale. `AUTO` (default) = the largest scale of `scale_system`
+    whose layout fits. A chosen scale is used exactly: QA repairs never change it, and if the views
+    do not fit, generation fails with the largest scale that does fit.
+  - `scale_system`: what AUTO chooses from. `INTERMEDIATE` (default) = ISO 5455 plus the common
+    intermediate steps (`DRAWING_SCALES`: … 2:1, 1.5:1, 1:1, 1:1.5, 1:2, 1:2.5, 1:3, 1:4, 1:5 …), so
+    views fill the sheet; `ISO_5455` = preferred scales only. QA reports an intermediate scale as MINOR
+    (QA-VIEW-004).
+  - `pictorial_scale`: the isometric view's scale; `AUTO` = the rule below.
+- The undimensioned pictorial (isometric) view is fixed in the sheet's **top-right corner** (below a
+  revision table, if any); the orthographic grid, anchored top-left, is laid out around it. The
+  corner placement wins over the view scale: AUTO picks the largest scale at which the corner is
+  kept. The isometric's own scale (AUTO) is the smallest that draws it larger than every orthographic
+  view (same, or one step up), else up to two steps smaller; a scale differing from the sheet is
+  labelled `SCALE n:m`. Only if no scale allows the corner does it move beside the grid / to free space.
 - Center marks for circles seen along their axis, centerlines for cylinders seen from the side,
   and pitch circles.
 - Title block template: UNLESS OTHERWISE SPECIFIED (surface finish, linear/angular tolerance),
@@ -77,8 +92,16 @@ Each candidate copies its value from a named GeometryIR field (`source`):
   `8X Ø8.00 THRU EQ SP`, `0.80 X 25°`), matching the references. `trailing_zeros=false` turns this off.
 
 ### Default drawing notes (on by default)
-`DrawingSettings.general_notes` (`enabled=true`). `drawing_compiler/notes.py` assembles the notes
-deterministically, in this fixed order:
+`DrawingSettings.general_notes` (`enabled=true`, `style=CONCISE`). `drawing_compiler/notes.py`
+assembles the notes deterministically.
+
+**CONCISE (default)**, modelled on an external reference drawing generator (not part of this repository): standard,
+units, projection, "DO NOT SCALE DRAWING"; the general tolerance; the datum reference frame (when
+datums exist); the TED statement (when boxed dimensions exist); then only the optional items the user
+supplied (surface finish, edge break, own notes). Nothing is printed as a placeholder unless the
+general tolerance itself is missing (default GD&T off and none supplied).
+
+**FULL** (`style=FULL`), the complete manufacturing checklist, in this fixed order:
 1. Standard, units, projection and "DO NOT SCALE DRAWING".
 2. General linear (and angular) tolerance.
 3. General geometric tolerance.
@@ -104,9 +127,10 @@ Rules for the notes:
 - Every value comes from the user's settings or from GeometryIR. Anything missing prints as a
   `[PLACEHOLDER]`, and QA-NOTE-001 lists the placeholders.
 - User values print exactly as entered.
-- Text is 2.5 mm. The block is either one 180 mm column above the title block (as in the
-  references) or a two-column band above it. The compiler picks the arrangement that allows the
-  larger view scale; ties go to the single column.
+- Text is 2.5 mm. The block is one 180 mm column above the title block (as in the references), a
+  two-column band above it, or one wide column along the bottom edge left of the title block (frees
+  the height on the right for the views). The compiler picks the arrangement that keeps the
+  isometric in its corner at the larger view scale; ties go to the single column.
 - If the notes cannot fit (e.g. a crowded A4), layout fails with a message that says so. The
   notes are never shrunk below 2.5 mm or dropped.
 - A pictorial view that does not fit in the projection grid floats to free space. It may drop one
@@ -121,7 +145,10 @@ Rules for the notes:
   - R8: one datum per feature, and no self-referencing frames.
   - R9: every datum on the drawing is referenced.
   - A tolerance zone below 0.01 mm is flagged as not verifiable with standard shop equipment.
-- **Suggested, applied only when the user clicks "Apply suggested datums":** rules 1, 2, 4, 5 and 7.
+- R3 accepts an orientation tolerance to other datums (e.g. B ⊥ A) as the datum feature's own
+  control, since an orientation zone also limits form (ISO 1101 / ASME Y14.5).
+- **Default scheme, applied directly** (`drawing_planner/gdt_defaults.py`, see below).
+- **Suggestion API (no longer shown in the UI):** `suggest_datums`, rules 1, 2, 4, 5 and 7.
   - Primary: a continuous planar face perpendicular to the part's axes, with area only as a
     tie-breaker. A long turned part uses its journal axis instead.
   - Secondary: the pilot boss on the main axis before a bore, and a bore before the outer diameter.
@@ -131,11 +158,39 @@ Rules for the notes:
     features), because geometry cannot reveal them.
 - In ASME mode the UI labels datum modifiers RMB/MMB/LMB (ASME Y14.5-2018 terms).
 
-### Manufacturing annotations (user-supplied only)
+### Default datums and GD&T (`drawing_planner/gdt_defaults.py`, on by default)
+Applied by the planner when the user supplied **no** datums or feature control frames
+(`DrawingSettings.default_gdt=true`; entering any datum/frame, or setting it false, disables it).
+Conventions follow an external reference drawing generator (datum corner = bounding-box minimum faces,
+from which the hole locations are dimensioned). Every value is derived from the declared general
+tolerance **ISO 2768-mK**, which is written to `engineering_information.general_tolerance` with
+`source=DEFAULT` (never `USER`) unless the user supplied a tolerance.
+
+| Part family | Datums | Frames |
+|---|---|---|
+| Prismatic, with holes | A/B/C = the three bounding-box minimum faces, largest area first | A flatness; B ⊥ A; C ⊥ A\|B; each hole callout ⌖ Ø t \|A\|B\|C\| |
+| Prismatic, no holes | A = largest bounding-box minimum face | A flatness; opposite face ∥ A |
+| Disc / flange (length < 1.5 D) | A = largest face ⟂ axis; B = main-diameter axis (only if there are holes to locate) | A flatness; main Ø ⊥ A (Ø zone); hole callouts ⌖ Ø t \|A\|B\| |
+| Shaft (length ≥ 1.5 D) | A = axis of the longest journal | A straightness (Ø zone); other journals and the largest shoulder ↗ 0.2 \|A\| |
+
+Values: flatness/straightness and perpendicularity from the ISO 2768-2 class K tables (nominal
+length = the feature's largest in-plane extent), circular run-out 0.2 (class K). Position: the Ø zone
+circumscribing the ±t square of ISO 2768-1 class m for the largest locating distance
+(Ø 2·√2·t, rounded down to 0.05). The hole-locating dimensions (and PCD) become boxed TEDs
+(`manufacturing.basic_dimensions`). Rule R3 is met by construction: a datum feature's own control is
+capped one preferred step below every tolerance that references it.
+
+Only targets the drawing can show are used (placed callouts / diameter dimensions, faces edge-on in a
+selected view). With scale AUTO, if the annotations do not fit the selected sheet at any scale, the
+pipeline re-plans without them and records a plan uncertainty. With a scale the user chose they are
+never dropped: the drawing fits, or generation fails naming the largest scale that fits.
+
+### Manufacturing annotations (user-supplied)
 `DrawingSettings.manufacturing` (schema: `drawing_schema/pmi.py`) carries datums, GD&T feature
 control frames, dimension tolerances (±, deviation, limits), thread callouts, inspection
-dimensions, ISO 1302 surface finish marks, feature notes, sheet notes and revisions. **None of
-it is ever generated.** Every item references a GeometryIR face/feature or a placed dimension.
+dimensions, basic (TED) dimensions, ISO 1302 surface finish marks, feature notes, sheet notes and
+revisions. Apart from the default datum/GD&T scheme above (labelled, switchable), **none of it is
+generated.** Every item references a GeometryIR face/feature or a placed dimension.
 The checks run in this order:
 1. Schema grammar. Form tolerances take no datum. Orientation/runout tolerances need one. A
    Ø zone and MMC/LMC only apply to characteristics that allow them. Frames may only

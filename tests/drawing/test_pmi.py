@@ -100,7 +100,7 @@ def test_every_annotation_is_placed_once(analyzed):
     z = next(d for d in cd.dimensions if d.id == "DIM-OVERALL-Z")
     assert z.tolerance.upper == "±0.10" and z.inspection
     assert cd.sheet_notes[0].startswith("1) DIMENSIONING AND TOLERANCING PER ISO GPS")
-    assert any(line.startswith("16) Break all edges") for line in cd.sheet_notes)  # user notes follow note 15
+    assert any(line.endswith(") Break all edges") for line in cd.sheet_notes)  # user notes follow the defaults
     assert cd.revision_rows == [["A", "Initial release", "", ""]]
     # nothing overlaps the notes block / revision table / title block
     for p in cd.pmi:

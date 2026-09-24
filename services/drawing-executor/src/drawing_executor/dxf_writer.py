@@ -162,6 +162,13 @@ def _stadium(msp, x0, y0, x1, y1, layer="DIM", rotation=0.0, origin=(0.0, 0.0)) 
     msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": layer})
 
 
+def _boxed(msp, x0, y0, x1, y1, layer="DIM", rotation=0.0, origin=(0.0, 0.0)) -> None:
+    """Theoretically exact (basic) dimension frame around a label box given in label coordinates."""
+    c, s = math.cos(math.radians(rotation)), math.sin(math.radians(rotation))
+    pts = [(origin[0] + x * c - y * s, origin[1] + x * s + y * c) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+    msp.add_lwpolyline(pts, close=True, dxfattribs={"layer": layer})
+
+
 # ---------------------------------------------------------------------------- dimension labels
 
 Piece = tuple[str, float, float, float]  # text, u, v (baseline), height
@@ -204,9 +211,10 @@ def _linear(msp, d: DimensionOp, p1, p2) -> None:
         base, angle = ((p1[0] + p2[0]) / 2, d.line_at), 0
     else:
         base, angle = (d.line_at, (p1[1] + p2[1]) / 2), 90
-    custom = d.tolerance is not None or d.inspection
-    # a DIMENSION entity keeps the drawing editable in CAD; a toleranced / inspection label is drawn
-    # explicitly (text " " suppresses the entity's own text)
+    custom = d.tolerance is not None or d.inspection or d.basic or bool(d.frames) or d.datum is not None
+    # a DIMENSION entity keeps the drawing editable in CAD; a toleranced / inspection / basic label, or
+    # one with frames stacked on it, is drawn explicitly in its text box (text " " suppresses the
+    # entity's own text, whose position ezdxf chooses)
     dim = msp.add_linear_dim(base=base, p1=p1, p2=p2, angle=angle, text=" " if custom else d.text,
                              dimstyle="EZDXF", dxfattribs={"layer": "DIM"})
     dim.render()
@@ -223,6 +231,8 @@ def _linear(msp, d: DimensionOp, p1, p2) -> None:
     _place(msp, pieces, origin, rot)
     if d.inspection:
         _stadium(msp, -1.5, -1.0, w + 1.5, h + 1.0, rotation=rot, origin=origin)
+    elif d.basic:
+        _boxed(msp, -1.0, -0.6, w + 1.0, h + 0.8, rotation=rot, origin=origin)
 
 
 _VALUE = [re.compile(r"Ø\d+(?:\.\d+)?"), re.compile(r"R\d+(?:\.\d+)?")]
@@ -251,6 +261,8 @@ def _leader(msp, d: DimensionOp) -> None:
     if d.inspection:
         h = (2 * TOL_H + 0.5) if d.tolerance is not None and d.tolerance.kind != "SYMMETRIC" else TEXT_H
         _stadium(msp, -1.5, -1.0, first_w + 1.5, h + 1.0, origin=(x, y_mid - TEXT_H / 2))
+    elif d.basic:
+        _boxed(msp, -1.0, -1.0, first_w + 1.0, TEXT_H + 1.0, origin=(x, y_mid - TEXT_H / 2))
 
 
 # ---------------------------------------------------------------------------- GD&T

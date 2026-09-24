@@ -1,6 +1,9 @@
 """Default drawing notes, assembled deterministically.
 
-Order (fixed): 1 standard/units/projection/do-not-scale · 2 general linear tolerance ·
+CONCISE (default): standard/units/projection · general tolerance · datum reference frame · TED note ·
+then only the optional notes the user supplied (finish, edge break, own notes).
+
+FULL order (fixed): 1 standard/units/projection/do-not-scale · 2 general linear tolerance ·
 3 general geometric tolerance · 4 datum reference frame · 5 envelope (ASME) / independency (ISO) ·
 6 datum feature form refinement · 7 surface finish · 8 deburr / edge break · 9 material ·
 10 heat treatment / coating / masking · 11 thread class · 12 process sequence · 13 drawing governs
@@ -16,7 +19,7 @@ from __future__ import annotations
 import re
 
 from drawing_schema import DrawingPlan, DrawingStandard
-from drawing_schema.pmi import FORM, GdtCharacteristic, ManufacturingProcess, Target
+from drawing_schema.pmi import FORM, GdtCharacteristic, ManufacturingProcess, NotesStyle, Target
 from geometry_schema import FeatureType, GeometryIR, SurfaceType
 
 PLACEHOLDER = re.compile(r"\[[A-Z0-9][A-Z0-9 /.,&()'-]*\]")
@@ -46,7 +49,7 @@ def _eng(plan: DrawingPlan, name: str) -> str | None:
 
 
 def _num(v: float) -> str:
-    return f"{v:.2f}"
+    return f"{0.0 if abs(v) < 0.005 else v:.2f}"  # no "-0.00"
 
 
 def describe_target(ir: GeometryIR, t: Target) -> str:
@@ -96,9 +99,44 @@ def _form_note(plan: DrawingPlan) -> str:
     return ("DATUM FEATURE FORM (REFINES ALL TOLERANCES REFERENCING THE DATUM): " + "; ".join(parts) + ".")
 
 
+def _concise_notes(plan: DrawingPlan, ir: GeometryIR) -> list[str]:
+    """Short default notes (as the reference generator prints): only what applies to this drawing."""
+    g = plan.general_notes
+    m = plan.manufacturing
+    asme = plan.drawing_standard == DrawingStandard.ASME
+    projection = plan.projection_method.value.replace("_", " ")
+    standard = "ASME Y14.5-2018" if asme else "ISO GPS (ISO 8015, ISO 1101, ISO 5459)"
+    general = _eng(plan, "general_tolerance")
+    linear = _eng(plan, "linear_tolerance") or general
+    angular = _eng(plan, "angular_tolerance") or general
+    tol = (f"GENERAL TOLERANCES UNLESS OTHERWISE SPECIFIED: {general}." if general and linear == general
+           and angular == general else
+           f"GENERAL TOLERANCES UNLESS OTHERWISE SPECIFIED - LINEAR: {_v(linear, 'GENERAL LINEAR TOLERANCE')}; "
+           f"ANGULAR: {_v(angular, 'GENERAL ANGULAR TOLERANCE')}.")
+    notes = [f"DIMENSIONING AND TOLERANCING PER {standard}. ALL DIMENSIONS IN MM. {projection} PROJECTION. "
+             "DO NOT SCALE DRAWING.", tol]
+    if g.general_geometric_tolerance:
+        notes.append(f"GENERAL GEOMETRIC TOLERANCE UNLESS OTHERWISE SPECIFIED: {g.general_geometric_tolerance}.")
+    datums = sorted(m.datums, key=lambda d: d.letter)
+    if datums:
+        notes.append("DATUM REFERENCE FRAME: "
+                     + "; ".join(f"{d.letter} = {describe_target(ir, d.target)}" for d in datums) + ".")
+    if m.basic_dimensions:
+        notes.append("FRAMED DIMENSIONS ARE THEORETICALLY EXACT (TED); THEIR FEATURES ARE CONTROLLED BY THE "
+                     "FEATURE CONTROL FRAMES.")
+    finish = _eng(plan, "surface_finish")
+    if finish:
+        notes.append(f"SURFACE FINISH UNLESS OTHERWISE SPECIFIED: {finish}.")
+    if m.deburr_break_sharp_edges or g.edge_break:
+        notes.append(f"REMOVE ALL BURRS. BREAK SHARP EDGES {_v(g.edge_break, 'EDGE BREAK VALUE')}.")
+    return notes + [n.strip() for n in m.notes if n.strip()]
+
+
 def build_notes(plan: DrawingPlan, ir: GeometryIR) -> tuple[list[str], list[str], str]:
     """-> (numbered notes, supplier bullets, summary line)."""
     g = plan.general_notes
+    if g.style == NotesStyle.CONCISE:
+        return _concise_notes(plan, ir), [], ""
     m = plan.manufacturing
     asme = plan.drawing_standard == DrawingStandard.ASME
     projection = plan.projection_method.value.replace("_", " ")

@@ -31,7 +31,7 @@ const PROCESSES: GeneralNotes["process"][] = ["UNSPECIFIED", "CNC_MACHINED", "SH
   "WELDMENT", "MOULDED", "ADDITIVE"];
 const EMPTY: ManufacturingAnnotations = {
   datums: [], frames: [], tolerances: [], threads: [], inspection_dimensions: [], surface_finish_marks: [],
-  feature_notes: [], notes: [], revisions: [], deburr_break_sharp_edges: false,
+  feature_notes: [], notes: [], revisions: [], deburr_break_sharp_edges: false, basic_dimensions: [],
 };
 const input = "w-full rounded border border-slate-300 px-1.5 py-0.5 text-sm";
 const small = "rounded border border-slate-300 px-1 py-0.5 text-sm";
@@ -203,21 +203,16 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
       </Section>
 
       <Section title="Datums" count={m.datums.length}>
-        {targets && targets.datum_suggestion.length > 0 && (
-          <div className="space-y-1 rounded border border-blue-200 bg-blue-50 p-1.5 text-xs" data-testid="datum-suggestion">
-            <p className="font-medium">Suggested scheme (datum rules 1, 2, 4, 5, 7) - not applied until you confirm</p>
-            {targets.datum_suggestion.map((d) => (
-              <p key={d.letter}><b>{d.letter}</b> = {d.feature}<span className="text-slate-600"> - {d.reasons.join("; ")}</span></p>
-            ))}
-            <ul className="list-disc pl-4 text-amber-800">
-              {targets.datum_cautions.map((c) => <li key={c}>{c}</li>)}
-            </ul>
-            <button type="button" className="rounded bg-blue-600 px-2 py-0.5 text-white" data-testid="apply-datums"
-              onClick={() => setM({ datums: targets.datum_suggestion.map((d) => ({ letter: d.letter, target: d.target })) })}>
-              Apply suggested datums
-            </button>
-          </div>
-        )}
+        <label className="flex items-start gap-1.5 rounded border border-blue-200 bg-blue-50 p-1.5 text-xs">
+          <input type="checkbox" data-testid="default-gdt" checked={settings.default_gdt}
+            onChange={(e) => onChange({ ...settings, default_gdt: e.target.checked })} />
+          <span>
+            <b>Default datums &amp; GD&amp;T</b> - applied automatically when none are entered below: datum
+            reference frame on the part's reference faces / axis, flatness, perpendicularity or run-out,
+            and hole positions with boxed (TED) locations, all from ISO 2768-mK. Entering your own datums
+            or frames replaces them.
+          </span>
+        </label>
         {m.datums.map((d, i) => (
           <div key={i} className="flex items-center gap-1">
             <select className={small} value={d.letter}
