@@ -6,7 +6,7 @@ import sys
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,21 @@ class Settings(BaseSettings):
     llm_trust_remote_code: bool = False  # executes code from the model repo: only with a pinned revision
     hf_token: SecretStr | None = None
     solidworks_mode: str = Field(default="mock", pattern="^(mock|worker)$")
+
+    # hosted single-service deployments (e.g. Render): the API also serves the built UI, and an
+    # optional shared password puts HTTP Basic auth in front of everything except /api/health
+    frontend_dir: Path | None = None
+    access_user: str = "cadai"
+    access_password: SecretStr | None = None
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        """Hosted Postgres hands out ``postgres://`` / ``postgresql://`` URLs; use psycopg 3."""
+        for scheme in ("postgres://", "postgresql://"):
+            if v.startswith(scheme):
+                return "postgresql+psycopg://" + v.removeprefix(scheme)
+        return v
 
     @property
     def max_upload_bytes(self) -> int:

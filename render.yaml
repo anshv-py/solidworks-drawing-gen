@@ -1,0 +1,34 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec): Dashboard > New > Blueprint > this repo.
+# One web service serves the UI and the API; uploads, drawings and the SQLite database live on
+# the persistent disk. See docs/DEPLOYMENT.md ("Render").
+services:
+  - type: web
+    name: cad-drawing-ai
+    runtime: docker
+    dockerfilePath: ./infrastructure/docker/app.Dockerfile
+    dockerContext: .
+    # 1 CPU / 2 GB RAM. A drawing job peaks at ~0.5 GB on typical parts; 512 MB plans (incl. free)
+    # run out of memory. A persistent disk also requires a paid plan.
+    plan: 1c-2g
+    region: singapore  # oregon | ohio | virginia | frankfurt | singapore - pick the one nearest your users
+    healthCheckPath: /api/health
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 10
+    envVars:
+      - key: CADAI_ENVIRONMENT
+        value: production
+      # shared login for the whole site (user "cadai"); the dashboard asks for it on first deploy
+      - key: CADAI_ACCESS_PASSWORD
+        sync: false
+      # one job at a time on 2 GB (each job runs in its own subprocess)
+      - key: CADAI_JOB_WORKERS
+        value: "1"
+      - key: CADAI_MAX_UPLOAD_MB
+        value: "100"
+      - key: CADAI_SOLIDWORKS_MODE
+        value: mock
+      - key: CADAI_LLM_BACKEND
+        value: none
