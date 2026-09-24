@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.1.0",
+  "geometry": {
+    "source_sha256": "d816a0380eb9f89cdacafe03b28162f09afef8e9cf5141ca4db0d479777c14b1",
+    "geometry_schema_version": "0.1.0"
+  },
+  "drawing_kind": "GEOMETRY",
+  "drawing_standard": "ISO",
+  "projection_method": "FIRST_ANGLE",
+  "sheet": {
+    "size": "A3",
+    "orientation": "LANDSCAPE"
+  },
+  "units": "mm",
+  "view_frame": "Z_UP",
+  "orthographic_display_style": "HIDDEN_LINES_VISIBLE",
+  "primary_view": {
+    "id": "V-PRIMARY",
+    "orientation": "ISOMETRIC",
+    "scale": "AUTO",
+    "display_style": "HIDDEN_LINES_REMOVED",
+    "dimensioned": false
+  },
+  "projected_views": [
+    "FRONT",
+    "TOP",
+    "RIGHT"
+  ],
+  "sections": [],
+  "detail_views": [],
+  "dimensions": {
+    "overall": true,
+    "feature": true,
+    "holes": true,
+    "radii": true,
+    "diameters": true,
+    "angles": true,
+    "depths": true,
+    "decimal_places": 2
+  },
+  "dimension_selections": [
+    {
+      "candidate_id": "DIM-CALLOUT-HOLE-20cb75ac",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-R-FILLET-4e5a8425",
+      "view_id": "V-RIGHT"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-X",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-Y",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-Z",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-L-SLOT-74d4f5b0",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-W-SLOT-74d4f5b0",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-20cb75ac-X",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-20cb75ac-Y",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-f97847bf-X",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-SLOT-74d4f5b0-X",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-LOC-SLOT-74d4f5b0-Z",
+      "view_id": "V-FRONT"
+    }
+  ],
+  "annotations": {
+    "center_marks": true,
+    "centerlines": true,
+    "hole_callouts": true
+  },
+  "engineering_information": {
+    "material": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "general_tolerance": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "gdt": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "datum_scheme": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "surface_finish": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "heat_treatment": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "coating": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "inspection_requirements": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "manufacturing_process": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    }
+  },
+  "title_block": {
+    "title": "bracket",
+    "part_number": null,
+    "revision": null,
+    "drawn_by": null,
+    "organization": null
+  },
+  "uncertainties": [
+    {
+      "message": "DIM-LOC-HOLE-f97847bf-Y (32.5) omitted: redundant with a higher-priority dimension",
+      "related_ids": [
+        "HOLE-f97847bf"
+      ]
+    }
+  ],
+  "rationale": "deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy removal, true-size view assignment"
+}

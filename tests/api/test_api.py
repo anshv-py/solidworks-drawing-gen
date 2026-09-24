@@ -121,10 +121,7 @@ def test_not_found(client):
     assert client.get("/api/jobs/nope").status_code == 404
 
 
-def test_drawing_endpoints_do_not_fake_results(client, models_dir):
-    assert client.post("/api/drawings/generate").status_code == 501
-    assert client.post("/api/drawings/x/validate").status_code == 501
-    assert client.post("/api/drawings/x/regenerate").status_code == 501
+def test_analysis_job_has_no_drawing_artifacts(client, models_dir):
     model = upload(client, models_dir / "shaft.step").json()
     job_id = client.post(f"/api/models/{model['id']}/analyze").json()["job_id"]
     wait(client, job_id)
@@ -135,6 +132,7 @@ def test_drawing_endpoints_do_not_fake_results(client, models_dir):
 
 def test_drawing_defaults(client):
     body = client.get("/api/drawings/defaults").json()
-    assert body["plan"]["primary_view"]["orientation"] == "ISOMETRIC"
-    assert body["plan"]["projection_method"] == "FIRST_ANGLE"
-    assert "1:3" not in body["options"]["scale"]
+    s = body["settings"]
+    assert s["primary_view"] == "ISOMETRIC" and s["projection_method"] == "FIRST_ANGLE"
+    assert s["drawing_standard"] == "ISO" and s["sheet"] == {"size": "A3", "orientation": "LANDSCAPE"}
+    assert "Y_UP" in body["options"]["view_frame"]

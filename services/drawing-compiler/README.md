@@ -1,3 +1,4 @@
-# drawing-compiler
+# drawing_compiler
 
-Not implemented yet - see the module docstring and docs/ROADMAP.md.
+DrawingPlan + candidates + GeometryIR -> CompiledDrawing (sheet layout, ISO 5455 scale, dimension placement).
+See docs/DRAWING_ENGINE.md.

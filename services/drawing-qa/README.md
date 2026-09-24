@@ -1,3 +1,3 @@
-# drawing-qa
+# drawing_qa
 
-Not implemented yet - see the module docstring and docs/ROADMAP.md.
+Deterministic drawing QA and repair actions. See docs/QA.md.

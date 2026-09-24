@@ -1,18 +1,17 @@
 # CAD Drawing AI
 
-Turns STEP/STP and STL models into professional engineering drawings
-(SLDDRW, DWG, PDF, DXF). Geometry comes from a deterministic engine (OCCT),
-drawings from SolidWorks, and the LLM (OpenAI `gpt-5.6-sol`) only *plans*.
-It never measures, and it never invents dimensions, tolerances or
-manufacturing data.
+Turns STEP/STP models into professional engineering drawings (PDF, DXF, SVG; SLDDRW/DWG
+planned through a SolidWorks worker). Geometry comes from a deterministic engine (OCCT). The
+drawing is planned by deterministic drafting rules and projected by OCCT's exact hidden-line
+removal, then checked by deterministic QA. **No LLM is used and no paid service is required.**
+Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 
-> **Status: milestone 1 of 10.** Working today: STEP/STL upload → OCCT
-> analysis in an isolated subprocess → GeometryIR → feature recognition → REST
-> API → 3D preview with feature highlighting. Drawing planning, compilation,
-> SolidWorks generation, export and QA are **not implemented yet**. Their
-> endpoints return `501` instead of fake results. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status: milestones 1-2 done.** Upload → OCCT analysis → GeometryIR → features → 3D preview →
+> **drawing generation** (views, dimensions, hole callouts, center marks, title block) → QA →
+> PDF/DXF/SVG download. Sections/detail views and the SolidWorks worker (SLDDRW/DWG) are next.
+> See [docs/ROADMAP.md](docs/ROADMAP.md).
 
-![Milestone 1 UI: flange analyzed, circular hole pattern highlighted](docs/images/milestone1-flange.png)
+![Generated drawing of the flange test part](docs/images/drawing-flange.png)
 
 ## What works (tested)
 
@@ -25,7 +24,10 @@ manufacturing data.
 | Features (STEP) | holes (through/blind, counterbore, countersink), bosses/external Ø, slots, pockets, fillets/rounds, planar & conical chamfers, circular/rectangular/linear hole patterns |
 | Stable IDs | content-hash IDs for faces/edges/features, identical across re-analysis |
 | API | upload (validated, size-limited, sniffed), async analysis jobs with progress, GeometryIR, preview mesh |
-| UI | upload, progress, geometry summary, feature table, Three.js preview (isometric default), drawing-settings panel (defaults: ISO, first angle, A3 landscape, mm) |
+| Drawing generation | deterministic plan (views, dimension candidates from GeometryIR, redundancy removal), ISO/ASME, first/third angle, A0-A4, ISO 5455 scale, OCCT hidden-line removal, hole callouts / PCD / radii / chamfers, center marks & centerlines, title block with UNSPECIFIED engineering data |
+| QA | 18 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3); critical issues block export |
+| Exports | PDF, DXF (real DIMENSION entities), SVG, PNG preview - labelled "not produced by SolidWorks"; DWG/SLDDRW → 501 until the SolidWorks worker exists |
+| UI | upload, progress, geometry summary, feature table, Three.js preview, drawing settings, generate, drawing preview, QA report, downloads, regenerate |
 
 ## Quick start
 
@@ -45,7 +47,9 @@ The UI is on :8080.
 ```
 apps/api                 FastAPI (cad_api)            apps/frontend   React+TS+Vite+Tailwind+Three.js
 apps/solidworks-worker   Windows worker (contract only, milestone 6)
-services/geometry        OCCT pipeline (geometry_service)  services/drawing-{planner,compiler,qa}  stubs
+services/geometry        OCCT pipeline (geometry_service)
+services/drawing-planner candidates + deterministic plan   services/drawing-compiler  sheet layout
+services/drawing-executor OCCT HLR + ezdxf + matplotlib     services/drawing-qa        QA + repairs
 packages/geometry-schema GeometryIR   packages/drawing-schema DrawingPlan   packages/shared-types
 infrastructure/          Dockerfiles, compose support      tests/  geometry, schemas, api, integration, meta
 examples/                models, reference drawings, GeometryIR, plans   references/  official-source index

@@ -6,7 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from drawing_schema import DrawingPlan
+from drawing_schema.qa import QaReport
+from drawing_schema.settings import DrawingSettings
 
 
 class ModelOut(BaseModel):
@@ -61,7 +62,40 @@ class AnalyzeAccepted(BaseModel):
 
 
 class DrawingDefaults(BaseModel):
-    """Product defaults for the drawing-settings UI (from the DrawingPlan schema)."""
+    """Product defaults for the drawing-settings UI (from the DrawingSettings schema)."""
 
-    plan: DrawingPlan
+    settings: DrawingSettings
     options: dict[str, list[str]]
+
+
+class GenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model_id: str
+    settings: DrawingSettings = DrawingSettings()
+
+
+class RegenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    settings: DrawingSettings | None = None
+
+
+class DrawingAccepted(BaseModel):
+    drawing_id: str
+    job_id: str
+    job: JobOut
+
+
+class DrawingOut(BaseModel):
+    id: str
+    model_id: str
+    job: JobOut
+    settings: DrawingSettings
+    passed: bool | None
+    scale: str | None
+    generator: str | None
+    solidworks: bool = False
+    downloads: list[str]
+    unavailable_formats: dict[str, str]
+    qa: QaReport | None

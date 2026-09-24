@@ -44,6 +44,11 @@ class Storage:
         d.mkdir(parents=True, exist_ok=True, mode=0o700)
         return d
 
+    def drawing_dir(self, job_id: str) -> Path:
+        d = self.path("drawings", job_id)
+        d.mkdir(parents=True, exist_ok=True, mode=0o700)
+        return d
+
     def receive(self, src: BinaryIO, limit: int) -> Path:
         """Stream an upload into a private temp file under the root, enforcing the size limit."""
         tmp_dir = self.path("tmp")

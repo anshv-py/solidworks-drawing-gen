@@ -75,6 +75,11 @@ unless configured.
 message, entity_refs, bbox, suggested_repair}], summary counts }`. Store every
 iteration's report for traceability.
 
+## Implementation status
+The deterministic checks are implemented in `services/drawing-qa/src/drawing_qa/checks.py`;
+`docs/QA.md` lists the implemented IDs and severities, which take precedence over the catalogue
+below where they differ. Visual QA is not implemented.
+
 ## References
 - `references/check-catalog.md` - check definitions, inputs, thresholds
 - `references/repair-strategies.md` - issue → plan patch mapping

@@ -1,0 +1,32 @@
+[project]
+name = "drawing-executor"
+version = "0.1.0"
+description = "Open-source drawing executor: OCCT hidden-line removal + ezdxf DXF + matplotlib PDF/SVG/PNG"
+requires-python = ">=3.12"
+dependencies = [
+    "cadquery-ocp>=8.0.1,<9",
+    "ezdxf>=1.4,<2",
+    "matplotlib>=3.9",
+    "numpy>=1.26",
+    "geometry-schema",
+    "drawing-schema",
+    "geometry-service",
+    "drawing-planner",
+    "drawing-compiler",
+    "drawing-qa",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/drawing_executor"]
+
+[tool.uv.sources]
+geometry-schema = { workspace = true }
+drawing-schema = { workspace = true }
+geometry-service = { workspace = true }
+drawing-planner = { workspace = true }
+drawing-compiler = { workspace = true }
+drawing-qa = { workspace = true }

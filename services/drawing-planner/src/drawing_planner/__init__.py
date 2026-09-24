@@ -1,15 +1,11 @@
-"""Drawing planner - NOT IMPLEMENTED (milestone 2).
+"""Drawing planner: GeometryIR + DrawingSettings -> DrawingPlan.
 
-Contract: ``plan(geometry: GeometryIR, settings: UserDrawingSettings) -> DrawingPlan``.
-
-Planned design:
-1. Deterministic baseline plan from user settings (``drawing_schema.default_plan``).
-2. Deterministic dimension-candidate engine over GeometryIR (candidate ids, values
-   looked up from GeometryIR - never produced by the LLM).
-3. Optional LLM refinement (OpenAI Responses API, model configurable, default
-   ``gpt-5.6-sol``) constrained by a JSON-schema structured output of DrawingPlan.
-   The LLM sees GeometryIR summaries and candidate ids only.
-4. Deterministic validation of the returned plan (schema + referential checks).
+The baseline planner is fully deterministic (no LLM). Every dimension value comes from
+GeometryIR via the candidate engine; the plan only selects candidate ids and views.
+An LLM refinement step is optional future work and is not required for a complete plan.
 """
 
-STATUS = "NOT_IMPLEMENTED"
+from drawing_planner.baseline import PlanResult, plan_baseline, remove_redundant
+from drawing_planner.candidates import generate_candidates
+
+__all__ = ["PlanResult", "plan_baseline", "remove_redundant", "generate_candidates"]

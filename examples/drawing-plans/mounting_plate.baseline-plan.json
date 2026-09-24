@@ -12,6 +12,8 @@
     "orientation": "LANDSCAPE"
   },
   "units": "mm",
+  "view_frame": "Z_UP",
+  "orthographic_display_style": "HIDDEN_LINES_VISIBLE",
   "primary_view": {
     "id": "V-PRIMARY",
     "orientation": "ISOMETRIC",
@@ -36,7 +38,52 @@
     "depths": true,
     "decimal_places": 2
   },
-  "dimension_selections": [],
+  "dimension_selections": [
+    {
+      "candidate_id": "DIM-CALLOUT-HOLE-1c034093",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-CALLOUT-PAT-749d1e6a",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-R-FILLET-74cc0287",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-X",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-Y",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-Z",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-PITCH-PAT-749d1e6a-0",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-1c034093-X",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-1c034093-Y",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-HOLE-46195077-X",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-LOC-PAT-749d1e6a-Y",
+      "view_id": "V-TOP"
+    }
+  ],
   "annotations": {
     "center_marks": true,
     "centerlines": true,
@@ -90,12 +137,28 @@
     }
   },
   "title_block": {
-    "title": null,
+    "title": "mounting_plate",
     "part_number": null,
     "revision": null,
     "drawn_by": null,
     "organization": null
   },
-  "uncertainties": [],
-  "rationale": null
+  "uncertainties": [
+    {
+      "message": "DIM-LOC-HOLE-46195077-Y (75) omitted: redundant with a higher-priority dimension",
+      "related_ids": [
+        "HOLE-46195077"
+      ]
+    },
+    {
+      "message": "DIM-LOC-PAT-749d1e6a-X (35) omitted: redundant with a higher-priority dimension",
+      "related_ids": [
+        "PAT-749d1e6a",
+        "HOLE-2a8f1b05",
+        "HOLE-441e37a1",
+        "HOLE-adae1547"
+      ]
+    }
+  ],
+  "rationale": "deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy removal, true-size view assignment"
 }

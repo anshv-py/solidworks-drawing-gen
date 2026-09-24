@@ -31,6 +31,7 @@ __all__ = [
     "SHEET_SIZES_MM",
     "ViewOrientation",
     "DisplayStyle",
+    "ViewFrame",
     "ViewSpec",
     "SectionView",
     "SectionPlane",
@@ -126,6 +127,17 @@ def _check_scale(value: str) -> str:
 
 
 Scale = Annotated[str, AfterValidator(_check_scale)]
+
+
+class ViewFrame(StrEnum):
+    """Which model axis points up in the drawing views.
+
+    Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
+    Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
+    """
+
+    Z_UP = "Z_UP"
+    Y_UP = "Y_UP"
 
 
 class DisplayStyle(StrEnum):
@@ -265,6 +277,8 @@ class DrawingPlan(StrictModel):
     projection_method: ProjectionMethod = ProjectionMethod.FIRST_ANGLE
     sheet: Sheet = Sheet()
     units: Literal["mm"] = "mm"
+    view_frame: ViewFrame = ViewFrame.Z_UP
+    orthographic_display_style: DisplayStyle = DisplayStyle.HIDDEN_LINES_VISIBLE
     primary_view: ViewSpec = ViewSpec(
         id="V-PRIMARY", orientation=ViewOrientation.ISOMETRIC, dimensioned=False
     )

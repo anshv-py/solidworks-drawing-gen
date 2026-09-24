@@ -6,13 +6,15 @@
 |---|---|---|
 | OCCT (`services/geometry`) | geometric truth: import, measurement, topology, features | **implemented (M1)** |
 | Deterministic algorithms | dimension candidates, view layout, plan validation, QA | planned |
-| GPT-5.6 Sol (OpenAI, structured outputs) | reasoning/planning → `DrawingPlan` only | planned |
-| Drawing compiler | `DrawingPlan` → ordered `DrawingOps` | planned |
-| SolidWorks worker (Windows, C#) | authoritative drawing generation + export | planned (contract drafted) |
-| QA | deterministic + visual checks, repair loop (max 3) | planned |
+| Deterministic planner (`services/drawing-planner`) | dimension candidates, view choice, redundancy → `DrawingPlan` | **implemented (M2)** |
+| Drawing compiler (`services/drawing-compiler`) | `DrawingPlan` → `CompiledDrawing` (layout, scale, placement) | **implemented (M2)** |
+| Open-source executor (`services/drawing-executor`) | OCCT HLR + ezdxf → DXF/PDF/SVG | **implemented (M2)** |
+| QA (`services/drawing-qa`) | deterministic checks + repair loop (max 3) | **implemented (M2)** |
+| SolidWorks worker (Windows, C#) | SLDDRW + DWG (authoritative native drawings) | planned (contract drafted) |
+| LLM | optional hook only; **not used** (`CADAI_LLM_BACKEND=none`) | not needed |
 
-The LLM never issues CAD API calls and never supplies numbers. Every value on a
-drawing is traceable to a GeometryIR entity id.
+No LLM is involved in producing a drawing. Every value on a drawing is traceable to a
+GeometryIR field (`candidates.json` records the source of each one).
 
 ## Data flow
 
@@ -27,10 +29,11 @@ drawing is traceable to a GeometryIR entity id.
                  │ OCCT: STEP/STL → topology → properties → convexity → features → IDs
                  ├─ geometry_ir.json   (GeometryIR, Pydantic-validated)
                  └─ preview_mesh.json  (per-face triangle groups + edge polylines)
+ JobRunner ──► subprocess: python -m drawing_executor generate            (same sandboxing)
+                 GeometryIR + DrawingSettings → planner → DrawingPlan → compiler → CompiledDrawing
+                 → OCCT HLR per view → DXF (ezdxf) → QA (+ repair ≤ 3) → PDF/SVG/PNG (if no CRITICAL)
  ───────────────────────────── later milestones ─────────────────────────────
- GeometryIR + user settings → planner (rules + LLM) → DrawingPlan → validator → compiler
-   → DrawingOps → job lease → Windows worker (SolidWorks COM, STA) → SLDDRW/PDF/DWG/DXF
-   → QA (deterministic + visual) → repair via plan patch → final artifacts
+ CompiledDrawing → job lease → Windows worker (SolidWorks COM, STA) → SLDDRW / DWG
 ```
 
 ## Contracts (packages/)

@@ -1,0 +1,26 @@
+{
+  "iteration": 1,
+  "passed": true,
+  "critical": 0,
+  "major": 0,
+  "minor": 0,
+  "checks_run": [
+    "QA-ANN-001",
+    "QA-DIM-001",
+    "QA-DIM-002",
+    "QA-DIM-003",
+    "QA-DIM-004",
+    "QA-DIM-005",
+    "QA-SHEET-001",
+    "QA-SHEET-002",
+    "QA-SHEET-003",
+    "QA-TB-001",
+    "QA-TXT-001",
+    "QA-VIEW-001",
+    "QA-VIEW-002",
+    "QA-VIEW-003",
+    "QA-VIEW-004",
+    "QA-VIEW-005"
+  ],
+  "issues": []
+}

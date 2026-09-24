@@ -10,7 +10,8 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "gen:types": "node scripts/gen-types.mjs",
-    "e2e": "node e2e/milestone1.mjs"
+    "e2e": "node e2e/milestone1.mjs",
+    "e2e:drawing": "node e2e/drawing.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

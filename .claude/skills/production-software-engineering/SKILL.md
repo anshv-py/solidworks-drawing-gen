@@ -14,7 +14,10 @@ apps/api                FastAPI app (package cad_api) - HTTP, persistence, jobs
 apps/frontend           React + TS + Vite + Tailwind + Three.js
 apps/solidworks-worker  C#/.NET Windows worker (pull-based job leasing)
 services/geometry       OCCT pipeline (package geometry_service) - runs in a subprocess
-services/drawing-*      planner / compiler / qa packages
+services/drawing-planner  deterministic planner (candidates, view choice, redundancy)
+services/drawing-compiler sheet layout -> CompiledDrawing (executor-neutral)
+services/drawing-executor OCCT HLR + ezdxf + matplotlib executor and pipeline CLI
+services/drawing-qa       deterministic QA + repair actions
 packages/*-schema       Pydantic models = contracts (+ exported JSON Schema for TS/C#)
 packages/shared-types   shared enums/value types
 ```

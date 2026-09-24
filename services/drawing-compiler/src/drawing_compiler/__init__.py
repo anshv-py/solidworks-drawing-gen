@@ -1,12 +1,9 @@
-"""Drawing compiler - NOT IMPLEMENTED (milestone 3).
+"""Drawing compiler: DrawingPlan + dimension candidates + GeometryIR -> CompiledDrawing.
 
-Contract: ``compile(plan: DrawingPlan, geometry: GeometryIR) -> DrawingOps``.
-
-Deterministically lowers a validated DrawingPlan into an ordered list of
-worker operations (see .claude/skills/solidworks-api-automation/examples/
-drawing-ops.json). Performs view layout on the sheet (projection method,
-ISO 5455 scale selection) and resolves every dimension candidate id to
-GeometryIR entities. Contains no LLM calls.
+Deterministic sheet layout (projection method, ISO 5455 scale), dimension/leader placement,
+center marks and centerlines. Contains no LLM calls and no CAD-kernel calls.
 """
 
-STATUS = "NOT_IMPLEMENTED"
+from drawing_compiler.compiler import CompileOptions, LayoutError, compile_drawing, scale_factor
+
+__all__ = ["CompileOptions", "LayoutError", "compile_drawing", "scale_factor"]

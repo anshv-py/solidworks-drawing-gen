@@ -1,0 +1,2309 @@
+{
+  "schema_version": "0.1.0",
+  "source": {
+    "filename": "bracket.step",
+    "format": "STEP",
+    "sha256": "d816a0380eb9f89cdacafe03b28162f09afef8e9cf5141ca4db0d479777c14b1",
+    "size_bytes": 47537,
+    "file_length_units": [
+      "millimetre"
+    ],
+    "kernel": "OCCT",
+    "kernel_version": "OCP 8.0.1.0.0"
+  },
+  "representation": "EXACT_BREP",
+  "units": {
+    "length": "mm",
+    "angle": "deg"
+  },
+  "bounding_box": {
+    "min": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max": [
+      80.0,
+      50.0,
+      60.0
+    ],
+    "size": [
+      80.0,
+      50.0,
+      60.0
+    ]
+  },
+  "mass_properties": {
+    "volume": 75371.46048510338,
+    "surface_area": 19907.145927933063,
+    "centroid": [
+      39.99999999999999,
+      15.184702232720328,
+      19.198165027702643
+    ]
+  },
+  "principal_axes": [
+    {
+      "direction": [
+        1.0,
+        -6.688597275560825e-15,
+        6.4309081707735315e-15
+      ],
+      "moment": 40676267.68318279
+    },
+    {
+      "direction": [
+        9.065782356699635e-15,
+        0.5566988565069062,
+        -0.8307143812189018
+      ],
+      "moment": 50495027.336769015
+    },
+    {
+      "direction": [
+        1.976234722019398e-15,
+        0.8307143812189018,
+        0.5566988565069062
+      ],
+      "moment": 74028385.76745594
+    }
+  ],
+  "symmetry_candidates": [
+    {
+      "plane_point": [
+        40.0,
+        25.0,
+        30.0
+      ],
+      "plane_normal": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "score": 1.0,
+      "method": "face_centroid_reflection"
+    }
+  ],
+  "topology": {
+    "solids": 1,
+    "shells": 1,
+    "faces": 15,
+    "edges": 39,
+    "vertices": 26,
+    "triangles": null
+  },
+  "bodies": [
+    {
+      "id": "BODY-1",
+      "kind": "SOLID",
+      "is_closed": true,
+      "is_valid": true,
+      "mass_properties": {
+        "volume": 75371.46048510338,
+        "surface_area": 19907.145927933063,
+        "centroid": [
+          39.99999999999999,
+          15.184702232720328,
+          19.198165027702643
+        ]
+      },
+      "bounding_box": {
+        "min": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max": [
+          80.0,
+          50.0,
+          60.0
+        ],
+        "size": [
+          80.0,
+          50.0,
+          60.0
+        ]
+      },
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-1767984be8",
+        "FACE-17b3f57bee",
+        "FACE-1ea2431bbe",
+        "FACE-23bdf595aa",
+        "FACE-2ad042e203",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-6a75847b02",
+        "FACE-8f89899104",
+        "FACE-955ea09ed3",
+        "FACE-cf6d9cd077",
+        "FACE-dde8309f89",
+        "FACE-fb9348ed42",
+        "FACE-fc39720d99"
+      ]
+    }
+  ],
+  "faces": [
+    {
+      "id": "FACE-cf6d9cd077",
+      "index": 1,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ]
+      },
+      "area": 1005.3650459150638,
+      "centroid": [
+        0.0,
+        14.979277841995819,
+        19.952595762999426
+      ],
+      "edge_ids": [
+        "EDGE-28d78b705b",
+        "EDGE-350cce8e79",
+        "EDGE-8ccda03870",
+        "EDGE-9abcbf906b",
+        "EDGE-aaac1aab3e",
+        "EDGE-c7b45cab54",
+        "EDGE-d7de7beefb"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1767984be8",
+        "FACE-17b3f57bee",
+        "FACE-1ea2431bbe",
+        "FACE-2ad042e203",
+        "FACE-6a75847b02",
+        "FACE-955ea09ed3",
+        "FACE-dde8309f89"
+      ]
+    },
+    {
+      "id": "FACE-2ad042e203",
+      "index": 2,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          0.0,
+          10.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "area": 2672.765497529613,
+      "centroid": [
+        40.0,
+        32.5,
+        10.0
+      ],
+      "edge_ids": [
+        "EDGE-0a22cc2c89",
+        "EDGE-28d78b705b",
+        "EDGE-48d2382032",
+        "EDGE-57157fc352",
+        "EDGE-c261dd3bc1",
+        "EDGE-e35cc7f395"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1767984be8",
+        "FACE-23bdf595aa",
+        "FACE-cf6d9cd077",
+        "FACE-dde8309f89",
+        "FACE-fb9348ed42",
+        "FACE-fc39720d99"
+      ]
+    },
+    {
+      "id": "FACE-dde8309f89",
+      "index": 3,
+      "body_id": "BODY-1",
+      "surface_type": "CYLINDER",
+      "surface": {
+        "kind": "CYLINDER",
+        "axis": {
+          "origin": [
+            0.0,
+            15.0,
+            15.0
+          ],
+          "direction": [
+            1.0,
+            0.0,
+            -0.0
+          ]
+        },
+        "radius": 5.0,
+        "concave": true,
+        "angular_extent_deg": 90.00000000001185
+      },
+      "area": 628.318530718,
+      "centroid": [
+        40.00000000000001,
+        11.816901138162303,
+        11.816901138161974
+      ],
+      "edge_ids": [
+        "EDGE-6be7011b5a",
+        "EDGE-81690e5a85",
+        "EDGE-8ccda03870",
+        "EDGE-e35cc7f395"
+      ],
+      "adjacent_face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-2ad042e203",
+        "FACE-955ea09ed3",
+        "FACE-cf6d9cd077"
+      ]
+    },
+    {
+      "id": "FACE-1767984be8",
+      "index": 4,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          50.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "area": 799.9999999999999,
+      "centroid": [
+        40.0,
+        50.0,
+        5.0
+      ],
+      "edge_ids": [
+        "EDGE-27f3ccd1e0",
+        "EDGE-48d2382032",
+        "EDGE-b684873318",
+        "EDGE-d7de7beefb"
+      ],
+      "adjacent_face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-2ad042e203",
+        "FACE-6a75847b02",
+        "FACE-cf6d9cd077"
+      ]
+    },
+    {
+      "id": "FACE-955ea09ed3",
+      "index": 5,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          10.0,
+          10.0
+        ],
+        "normal": [
+          -0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "area": 3221.460183660255,
+      "centroid": [
+        40.0,
+        10.0,
+        37.206235841234545
+      ],
+      "edge_ids": [
+        "EDGE-18edacc2f8",
+        "EDGE-1f715e6cb4",
+        "EDGE-464c2b9a6e",
+        "EDGE-6be7011b5a",
+        "EDGE-94d9d171f7",
+        "EDGE-a80d01cbe4",
+        "EDGE-aaac1aab3e",
+        "EDGE-b0fb5fbda7"
+      ],
+      "adjacent_face_ids": [
+        "FACE-0992d434ce",
+        "FACE-17b3f57bee",
+        "FACE-23bdf595aa",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-8f89899104",
+        "FACE-cf6d9cd077",
+        "FACE-dde8309f89"
+      ]
+    },
+    {
+      "id": "FACE-6a75847b02",
+      "index": 6,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ]
+      },
+      "area": 3872.7654975296127,
+      "centroid": [
+        40.0,
+        24.75359758572095,
+        0.0
+      ],
+      "edge_ids": [
+        "EDGE-68a54588f1",
+        "EDGE-6a266e3be6",
+        "EDGE-7969f551e7",
+        "EDGE-9abcbf906b",
+        "EDGE-b684873318",
+        "EDGE-cad74b99e2"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1767984be8",
+        "FACE-1ea2431bbe",
+        "FACE-23bdf595aa",
+        "FACE-cf6d9cd077",
+        "FACE-fb9348ed42",
+        "FACE-fc39720d99"
+      ]
+    },
+    {
+      "id": "FACE-17b3f57bee",
+      "index": 7,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          0.0,
+          60.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "area": 799.9999999999999,
+      "centroid": [
+        40.0,
+        5.0,
+        60.0
+      ],
+      "edge_ids": [
+        "EDGE-1f715e6cb4",
+        "EDGE-407c8c57d7",
+        "EDGE-c7b45cab54",
+        "EDGE-d0decde2a1"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-23bdf595aa",
+        "FACE-955ea09ed3",
+        "FACE-cf6d9cd077"
+      ]
+    },
+    {
+      "id": "FACE-1ea2431bbe",
+      "index": 8,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          0.0,
+          -1.0,
+          -0.0
+        ]
+      },
+      "area": 4421.460183660256,
+      "centroid": [
+        40.0,
+        0.0,
+        29.143857909794917
+      ],
+      "edge_ids": [
+        "EDGE-350cce8e79",
+        "EDGE-3715512f39",
+        "EDGE-407c8c57d7",
+        "EDGE-4b63877f6b",
+        "EDGE-8b01d9c5e8",
+        "EDGE-8df0d2953e",
+        "EDGE-924ab2489e",
+        "EDGE-cad74b99e2"
+      ],
+      "adjacent_face_ids": [
+        "FACE-0992d434ce",
+        "FACE-17b3f57bee",
+        "FACE-23bdf595aa",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-6a75847b02",
+        "FACE-8f89899104",
+        "FACE-cf6d9cd077"
+      ]
+    },
+    {
+      "id": "FACE-23bdf595aa",
+      "index": 9,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          80.0,
+          0.0,
+          0.0
+        ],
+        "normal": [
+          1.0,
+          0.0,
+          -0.0
+        ]
+      },
+      "area": 1005.3650459150638,
+      "centroid": [
+        80.0,
+        14.979277841995819,
+        19.952595762999426
+      ],
+      "edge_ids": [
+        "EDGE-27f3ccd1e0",
+        "EDGE-3715512f39",
+        "EDGE-7969f551e7",
+        "EDGE-81690e5a85",
+        "EDGE-a80d01cbe4",
+        "EDGE-c261dd3bc1",
+        "EDGE-d0decde2a1"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1767984be8",
+        "FACE-17b3f57bee",
+        "FACE-1ea2431bbe",
+        "FACE-2ad042e203",
+        "FACE-6a75847b02",
+        "FACE-955ea09ed3",
+        "FACE-dde8309f89"
+      ]
+    },
+    {
+      "id": "FACE-fb9348ed42",
+      "index": 10,
+      "body_id": "BODY-1",
+      "surface_type": "CYLINDER",
+      "surface": {
+        "kind": "CYLINDER",
+        "axis": {
+          "origin": [
+            20.0,
+            32.5,
+            -1.0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "radius": 4.5,
+        "concave": true,
+        "angular_extent_deg": 360.0000000000237
+      },
+      "area": 282.7433388231001,
+      "centroid": [
+        20.0000000000003,
+        32.5,
+        5.0
+      ],
+      "edge_ids": [
+        "EDGE-57157fc352",
+        "EDGE-6a266e3be6",
+        "EDGE-8ef49cc3de"
+      ],
+      "adjacent_face_ids": [
+        "FACE-2ad042e203",
+        "FACE-6a75847b02"
+      ]
+    },
+    {
+      "id": "FACE-fc39720d99",
+      "index": 11,
+      "body_id": "BODY-1",
+      "surface_type": "CYLINDER",
+      "surface": {
+        "kind": "CYLINDER",
+        "axis": {
+          "origin": [
+            60.0,
+            32.5,
+            -1.0
+          ],
+          "direction": [
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "radius": 4.5,
+        "concave": true,
+        "angular_extent_deg": 360.0000000000237
+      },
+      "area": 282.7433388231001,
+      "centroid": [
+        60.00000000000029,
+        32.5,
+        5.0
+      ],
+      "edge_ids": [
+        "EDGE-0a22cc2c89",
+        "EDGE-68a54588f1",
+        "EDGE-ad0e1e6a81"
+      ],
+      "adjacent_face_ids": [
+        "FACE-2ad042e203",
+        "FACE-6a75847b02"
+      ]
+    },
+    {
+      "id": "FACE-8f89899104",
+      "index": 12,
+      "body_id": "BODY-1",
+      "surface_type": "CYLINDER",
+      "surface": {
+        "kind": "CYLINDER",
+        "axis": {
+          "origin": [
+            55.0,
+            -1.0,
+            40.0
+          ],
+          "direction": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        "radius": 5.0,
+        "concave": true,
+        "angular_extent_deg": 180.00000000001185
+      },
+      "area": 157.0796326795,
+      "centroid": [
+        58.1830988618377,
+        5.0,
+        39.99999999999967
+      ],
+      "edge_ids": [
+        "EDGE-924ab2489e",
+        "EDGE-b0fb5fbda7",
+        "EDGE-baafef39fa",
+        "EDGE-bd8f6fa985"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-955ea09ed3"
+      ]
+    },
+    {
+      "id": "FACE-2f3e35720f",
+      "index": 13,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          25.0,
+          -1.0,
+          35.0
+        ],
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      "area": 300.0,
+      "centroid": [
+        40.0,
+        5.0,
+        35.0
+      ],
+      "edge_ids": [
+        "EDGE-559c86f922",
+        "EDGE-8df0d2953e",
+        "EDGE-94d9d171f7",
+        "EDGE-bd8f6fa985"
+      ],
+      "adjacent_face_ids": [
+        "FACE-0992d434ce",
+        "FACE-1ea2431bbe",
+        "FACE-8f89899104",
+        "FACE-955ea09ed3"
+      ]
+    },
+    {
+      "id": "FACE-0992d434ce",
+      "index": 14,
+      "body_id": "BODY-1",
+      "surface_type": "CYLINDER",
+      "surface": {
+        "kind": "CYLINDER",
+        "axis": {
+          "origin": [
+            25.0,
+            -1.0,
+            40.0
+          ],
+          "direction": [
+            0.0,
+            1.0,
+            0.0
+          ]
+        },
+        "radius": 5.0,
+        "concave": true,
+        "angular_extent_deg": 180.0000000000237
+      },
+      "area": 157.07963267949998,
+      "centroid": [
+        21.8169011381623,
+        5.000000000000001,
+        40.00000000000099
+      ],
+      "edge_ids": [
+        "EDGE-18edacc2f8",
+        "EDGE-4b63877f6b",
+        "EDGE-559c86f922",
+        "EDGE-6292c357f8"
+      ],
+      "adjacent_face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-955ea09ed3"
+      ]
+    },
+    {
+      "id": "FACE-6020c23d18",
+      "index": 15,
+      "body_id": "BODY-1",
+      "surface_type": "PLANE",
+      "surface": {
+        "kind": "PLANE",
+        "origin": [
+          25.0,
+          -1.0,
+          45.0
+        ],
+        "normal": [
+          -0.0,
+          -0.0,
+          -1.0
+        ]
+      },
+      "area": 300.0,
+      "centroid": [
+        40.0,
+        5.0,
+        45.0
+      ],
+      "edge_ids": [
+        "EDGE-464c2b9a6e",
+        "EDGE-6292c357f8",
+        "EDGE-8b01d9c5e8",
+        "EDGE-baafef39fa"
+      ],
+      "adjacent_face_ids": [
+        "FACE-0992d434ce",
+        "FACE-1ea2431bbe",
+        "FACE-8f89899104",
+        "FACE-955ea09ed3"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "EDGE-28d78b705b",
+      "index": 1,
+      "curve_type": "LINE",
+      "length": 35.0,
+      "start": [
+        0.0,
+        15.0,
+        10.0
+      ],
+      "end": [
+        0.0,
+        50.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-0579851889",
+        "VTX-c46a5745d7"
+      ],
+      "face_ids": [
+        "FACE-2ad042e203",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-8ccda03870",
+      "index": 2,
+      "curve_type": "CIRCLE",
+      "length": 7.853981633974483,
+      "start": [
+        0.0,
+        10.0,
+        15.0
+      ],
+      "end": [
+        0.0,
+        15.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-a3f18b8ff0",
+        "VTX-c46a5745d7"
+      ],
+      "face_ids": [
+        "FACE-cf6d9cd077",
+        "FACE-dde8309f89"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        0.0,
+        15.0,
+        15.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        1.0,
+        0.0,
+        -0.0
+      ]
+    },
+    {
+      "id": "EDGE-aaac1aab3e",
+      "index": 3,
+      "curve_type": "LINE",
+      "length": 45.0,
+      "start": [
+        0.0,
+        10.0,
+        15.0
+      ],
+      "end": [
+        0.0,
+        10.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-3bd6a5ba3b",
+        "VTX-a3f18b8ff0"
+      ],
+      "face_ids": [
+        "FACE-955ea09ed3",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-c7b45cab54",
+      "index": 4,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        0.0,
+        0.0,
+        60.0
+      ],
+      "end": [
+        0.0,
+        10.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-3bd6a5ba3b",
+        "VTX-b43a44ccbe"
+      ],
+      "face_ids": [
+        "FACE-17b3f57bee",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-350cce8e79",
+      "index": 5,
+      "curve_type": "LINE",
+      "length": 60.0,
+      "start": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end": [
+        0.0,
+        0.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-b43a44ccbe",
+        "VTX-ca3f564b8b"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-9abcbf906b",
+      "index": 6,
+      "curve_type": "LINE",
+      "length": 50.0,
+      "start": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end": [
+        0.0,
+        50.0,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-ab8e8980ae",
+        "VTX-ca3f564b8b"
+      ],
+      "face_ids": [
+        "FACE-6a75847b02",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-d7de7beefb",
+      "index": 7,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        0.0,
+        50.0,
+        0.0
+      ],
+      "end": [
+        0.0,
+        50.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-0579851889",
+        "VTX-ab8e8980ae"
+      ],
+      "face_ids": [
+        "FACE-1767984be8",
+        "FACE-cf6d9cd077"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-e35cc7f395",
+      "index": 8,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        15.0,
+        10.0
+      ],
+      "end": [
+        80.0,
+        15.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-7dfa1e39f6",
+        "VTX-c46a5745d7"
+      ],
+      "face_ids": [
+        "FACE-2ad042e203",
+        "FACE-dde8309f89"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-c261dd3bc1",
+      "index": 9,
+      "curve_type": "LINE",
+      "length": 35.0,
+      "start": [
+        80.0,
+        15.0,
+        10.0
+      ],
+      "end": [
+        80.0,
+        50.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-7dfa1e39f6",
+        "VTX-d247a2e1a3"
+      ],
+      "face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-2ad042e203"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-48d2382032",
+      "index": 10,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        50.0,
+        10.0
+      ],
+      "end": [
+        80.0,
+        50.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-0579851889",
+        "VTX-d247a2e1a3"
+      ],
+      "face_ids": [
+        "FACE-1767984be8",
+        "FACE-2ad042e203"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-57157fc352",
+      "index": 11,
+      "curve_type": "CIRCLE",
+      "length": 28.274333882308138,
+      "start": [
+        24.5,
+        32.5,
+        10.0
+      ],
+      "end": [
+        24.5,
+        32.5,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-70a69ae427"
+      ],
+      "face_ids": [
+        "FACE-2ad042e203",
+        "FACE-fb9348ed42"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        20.0,
+        32.5,
+        10.0
+      ],
+      "circle_radius": 4.5,
+      "circle_axis": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "EDGE-0a22cc2c89",
+      "index": 12,
+      "curve_type": "CIRCLE",
+      "length": 28.274333882308138,
+      "start": [
+        64.5,
+        32.5,
+        10.0
+      ],
+      "end": [
+        64.5,
+        32.5,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-f244bf7356"
+      ],
+      "face_ids": [
+        "FACE-2ad042e203",
+        "FACE-fc39720d99"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        60.0,
+        32.5,
+        10.0
+      ],
+      "circle_radius": 4.5,
+      "circle_axis": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "EDGE-81690e5a85",
+      "index": 13,
+      "curve_type": "CIRCLE",
+      "length": 7.853981633974483,
+      "start": [
+        80.0,
+        10.0,
+        15.0
+      ],
+      "end": [
+        80.0,
+        15.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-7dfa1e39f6",
+        "VTX-d39454ce66"
+      ],
+      "face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-dde8309f89"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        80.0,
+        15.0,
+        15.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        1.0,
+        0.0,
+        -0.0
+      ]
+    },
+    {
+      "id": "EDGE-6be7011b5a",
+      "index": 14,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        10.0,
+        15.0
+      ],
+      "end": [
+        80.0,
+        10.0,
+        15.0
+      ],
+      "vertex_ids": [
+        "VTX-a3f18b8ff0",
+        "VTX-d39454ce66"
+      ],
+      "face_ids": [
+        "FACE-955ea09ed3",
+        "FACE-dde8309f89"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-b684873318",
+      "index": 15,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        50.0,
+        0.0
+      ],
+      "end": [
+        80.0,
+        50.0,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-7469159960",
+        "VTX-ab8e8980ae"
+      ],
+      "face_ids": [
+        "FACE-1767984be8",
+        "FACE-6a75847b02"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-27f3ccd1e0",
+      "index": 16,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        80.0,
+        50.0,
+        0.0
+      ],
+      "end": [
+        80.0,
+        50.0,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-7469159960",
+        "VTX-d247a2e1a3"
+      ],
+      "face_ids": [
+        "FACE-1767984be8",
+        "FACE-23bdf595aa"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-a80d01cbe4",
+      "index": 17,
+      "curve_type": "LINE",
+      "length": 45.0,
+      "start": [
+        80.0,
+        10.0,
+        15.0
+      ],
+      "end": [
+        80.0,
+        10.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-673b02c032",
+        "VTX-d39454ce66"
+      ],
+      "face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-1f715e6cb4",
+      "index": 18,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        10.0,
+        60.0
+      ],
+      "end": [
+        80.0,
+        10.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-3bd6a5ba3b",
+        "VTX-673b02c032"
+      ],
+      "face_ids": [
+        "FACE-17b3f57bee",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-b0fb5fbda7",
+      "index": 19,
+      "curve_type": "CIRCLE",
+      "length": 15.707963267948966,
+      "start": [
+        55.0,
+        10.0,
+        45.0
+      ],
+      "end": [
+        55.0,
+        10.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-4eedb03647",
+        "VTX-adaa5ff83f"
+      ],
+      "face_ids": [
+        "FACE-8f89899104",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        55.0,
+        10.0,
+        40.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "EDGE-464c2b9a6e",
+      "index": 20,
+      "curve_type": "LINE",
+      "length": 30.0,
+      "start": [
+        25.0,
+        10.0,
+        45.0
+      ],
+      "end": [
+        55.0,
+        10.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-08cafdb62e",
+        "VTX-adaa5ff83f"
+      ],
+      "face_ids": [
+        "FACE-6020c23d18",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-18edacc2f8",
+      "index": 21,
+      "curve_type": "CIRCLE",
+      "length": 15.707963267948966,
+      "start": [
+        25.0,
+        10.0,
+        35.0
+      ],
+      "end": [
+        25.0,
+        10.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-08cafdb62e",
+        "VTX-b7b708ccf0"
+      ],
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        25.0,
+        10.0,
+        40.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "EDGE-94d9d171f7",
+      "index": 22,
+      "curve_type": "LINE",
+      "length": 30.0,
+      "start": [
+        25.0,
+        10.0,
+        35.0
+      ],
+      "end": [
+        55.0,
+        10.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-4eedb03647",
+        "VTX-b7b708ccf0"
+      ],
+      "face_ids": [
+        "FACE-2f3e35720f",
+        "FACE-955ea09ed3"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-cad74b99e2",
+      "index": 23,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "end": [
+        80.0,
+        0.0,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-bfe6595429",
+        "VTX-ca3f564b8b"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-6a75847b02"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-7969f551e7",
+      "index": 24,
+      "curve_type": "LINE",
+      "length": 50.0,
+      "start": [
+        80.0,
+        0.0,
+        0.0
+      ],
+      "end": [
+        80.0,
+        50.0,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-7469159960",
+        "VTX-bfe6595429"
+      ],
+      "face_ids": [
+        "FACE-23bdf595aa",
+        "FACE-6a75847b02"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-6a266e3be6",
+      "index": 25,
+      "curve_type": "CIRCLE",
+      "length": 28.274333882308138,
+      "start": [
+        24.5,
+        32.5,
+        0.0
+      ],
+      "end": [
+        24.5,
+        32.5,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-2fa422033c"
+      ],
+      "face_ids": [
+        "FACE-6a75847b02",
+        "FACE-fb9348ed42"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        20.0,
+        32.5,
+        0.0
+      ],
+      "circle_radius": 4.5,
+      "circle_axis": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "EDGE-68a54588f1",
+      "index": 26,
+      "curve_type": "CIRCLE",
+      "length": 28.274333882308138,
+      "start": [
+        64.5,
+        32.5,
+        0.0
+      ],
+      "end": [
+        64.5,
+        32.5,
+        0.0
+      ],
+      "vertex_ids": [
+        "VTX-ef1ca79afb"
+      ],
+      "face_ids": [
+        "FACE-6a75847b02",
+        "FACE-fc39720d99"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        60.0,
+        32.5,
+        0.0
+      ],
+      "circle_radius": 4.5,
+      "circle_axis": [
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "id": "EDGE-407c8c57d7",
+      "index": 27,
+      "curve_type": "LINE",
+      "length": 80.0,
+      "start": [
+        0.0,
+        0.0,
+        60.0
+      ],
+      "end": [
+        80.0,
+        0.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-1f2eb0994a",
+        "VTX-b43a44ccbe"
+      ],
+      "face_ids": [
+        "FACE-17b3f57bee",
+        "FACE-1ea2431bbe"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-d0decde2a1",
+      "index": 28,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        80.0,
+        0.0,
+        60.0
+      ],
+      "end": [
+        80.0,
+        10.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-1f2eb0994a",
+        "VTX-673b02c032"
+      ],
+      "face_ids": [
+        "FACE-17b3f57bee",
+        "FACE-23bdf595aa"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-3715512f39",
+      "index": 29,
+      "curve_type": "LINE",
+      "length": 60.0,
+      "start": [
+        80.0,
+        0.0,
+        0.0
+      ],
+      "end": [
+        80.0,
+        0.0,
+        60.0
+      ],
+      "vertex_ids": [
+        "VTX-1f2eb0994a",
+        "VTX-bfe6595429"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-23bdf595aa"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-924ab2489e",
+      "index": 30,
+      "curve_type": "CIRCLE",
+      "length": 15.707963267948966,
+      "start": [
+        55.0,
+        0.0,
+        45.0
+      ],
+      "end": [
+        55.0,
+        0.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-3d856fcc3b",
+        "VTX-4177d55f46"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-8f89899104"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        55.0,
+        0.0,
+        40.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "EDGE-8b01d9c5e8",
+      "index": 31,
+      "curve_type": "LINE",
+      "length": 30.0,
+      "start": [
+        25.0,
+        0.0,
+        45.0
+      ],
+      "end": [
+        55.0,
+        0.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-4177d55f46",
+        "VTX-ffd8d6f3f5"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-6020c23d18"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-4b63877f6b",
+      "index": 32,
+      "curve_type": "CIRCLE",
+      "length": 15.707963267948966,
+      "start": [
+        25.0,
+        0.0,
+        35.0
+      ],
+      "end": [
+        25.0,
+        0.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-c66772fa67",
+        "VTX-ffd8d6f3f5"
+      ],
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-1ea2431bbe"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": [
+        25.0,
+        0.0,
+        40.0
+      ],
+      "circle_radius": 5.0,
+      "circle_axis": [
+        0.0,
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "id": "EDGE-8df0d2953e",
+      "index": 33,
+      "curve_type": "LINE",
+      "length": 30.0,
+      "start": [
+        25.0,
+        0.0,
+        35.0
+      ],
+      "end": [
+        55.0,
+        0.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-3d856fcc3b",
+        "VTX-c66772fa67"
+      ],
+      "face_ids": [
+        "FACE-1ea2431bbe",
+        "FACE-2f3e35720f"
+      ],
+      "convexity": "CONVEX",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-8ef49cc3de",
+      "index": 34,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        24.5,
+        32.5,
+        0.0
+      ],
+      "end": [
+        24.5,
+        32.5,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-2fa422033c",
+        "VTX-70a69ae427"
+      ],
+      "face_ids": [
+        "FACE-fb9348ed42"
+      ],
+      "convexity": "SEAM",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-ad0e1e6a81",
+      "index": 35,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        64.5,
+        32.5,
+        0.0
+      ],
+      "end": [
+        64.5,
+        32.5,
+        10.0
+      ],
+      "vertex_ids": [
+        "VTX-ef1ca79afb",
+        "VTX-f244bf7356"
+      ],
+      "face_ids": [
+        "FACE-fc39720d99"
+      ],
+      "convexity": "SEAM",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-baafef39fa",
+      "index": 36,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        55.0,
+        0.0,
+        45.0
+      ],
+      "end": [
+        55.0,
+        10.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-4177d55f46",
+        "VTX-adaa5ff83f"
+      ],
+      "face_ids": [
+        "FACE-6020c23d18",
+        "FACE-8f89899104"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-bd8f6fa985",
+      "index": 37,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        55.0,
+        0.0,
+        35.0
+      ],
+      "end": [
+        55.0,
+        10.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-3d856fcc3b",
+        "VTX-4eedb03647"
+      ],
+      "face_ids": [
+        "FACE-2f3e35720f",
+        "FACE-8f89899104"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-559c86f922",
+      "index": 38,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        25.0,
+        0.0,
+        35.0
+      ],
+      "end": [
+        25.0,
+        10.0,
+        35.0
+      ],
+      "vertex_ids": [
+        "VTX-b7b708ccf0",
+        "VTX-c66772fa67"
+      ],
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-2f3e35720f"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    },
+    {
+      "id": "EDGE-6292c357f8",
+      "index": 39,
+      "curve_type": "LINE",
+      "length": 10.0,
+      "start": [
+        25.0,
+        0.0,
+        45.0
+      ],
+      "end": [
+        25.0,
+        10.0,
+        45.0
+      ],
+      "vertex_ids": [
+        "VTX-08cafdb62e",
+        "VTX-ffd8d6f3f5"
+      ],
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-6020c23d18"
+      ],
+      "convexity": "TANGENT",
+      "circle_center": null,
+      "circle_radius": null,
+      "circle_axis": null
+    }
+  ],
+  "vertices": [
+    {
+      "id": "VTX-c46a5745d7",
+      "index": 1,
+      "point": [
+        0.0,
+        15.0,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-0579851889",
+      "index": 2,
+      "point": [
+        0.0,
+        50.0,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-a3f18b8ff0",
+      "index": 3,
+      "point": [
+        0.0,
+        10.0,
+        15.0
+      ]
+    },
+    {
+      "id": "VTX-3bd6a5ba3b",
+      "index": 4,
+      "point": [
+        0.0,
+        10.0,
+        60.0
+      ]
+    },
+    {
+      "id": "VTX-b43a44ccbe",
+      "index": 5,
+      "point": [
+        0.0,
+        0.0,
+        60.0
+      ]
+    },
+    {
+      "id": "VTX-ca3f564b8b",
+      "index": 6,
+      "point": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-ab8e8980ae",
+      "index": 7,
+      "point": [
+        0.0,
+        50.0,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-7dfa1e39f6",
+      "index": 8,
+      "point": [
+        80.0,
+        15.0,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-d247a2e1a3",
+      "index": 9,
+      "point": [
+        80.0,
+        50.0,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-70a69ae427",
+      "index": 10,
+      "point": [
+        24.5,
+        32.5,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-f244bf7356",
+      "index": 11,
+      "point": [
+        64.5,
+        32.5,
+        10.0
+      ]
+    },
+    {
+      "id": "VTX-d39454ce66",
+      "index": 12,
+      "point": [
+        80.0,
+        10.0,
+        15.0
+      ]
+    },
+    {
+      "id": "VTX-7469159960",
+      "index": 13,
+      "point": [
+        80.0,
+        50.0,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-673b02c032",
+      "index": 14,
+      "point": [
+        80.0,
+        10.0,
+        60.0
+      ]
+    },
+    {
+      "id": "VTX-adaa5ff83f",
+      "index": 15,
+      "point": [
+        55.0,
+        10.0,
+        45.0
+      ]
+    },
+    {
+      "id": "VTX-4eedb03647",
+      "index": 16,
+      "point": [
+        55.0,
+        10.0,
+        35.0
+      ]
+    },
+    {
+      "id": "VTX-08cafdb62e",
+      "index": 17,
+      "point": [
+        25.0,
+        10.0,
+        45.0
+      ]
+    },
+    {
+      "id": "VTX-b7b708ccf0",
+      "index": 18,
+      "point": [
+        25.0,
+        10.0,
+        35.0
+      ]
+    },
+    {
+      "id": "VTX-bfe6595429",
+      "index": 19,
+      "point": [
+        80.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-2fa422033c",
+      "index": 20,
+      "point": [
+        24.5,
+        32.5,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-ef1ca79afb",
+      "index": 21,
+      "point": [
+        64.5,
+        32.5,
+        0.0
+      ]
+    },
+    {
+      "id": "VTX-1f2eb0994a",
+      "index": 22,
+      "point": [
+        80.0,
+        0.0,
+        60.0
+      ]
+    },
+    {
+      "id": "VTX-4177d55f46",
+      "index": 23,
+      "point": [
+        55.0,
+        0.0,
+        45.0
+      ]
+    },
+    {
+      "id": "VTX-3d856fcc3b",
+      "index": 24,
+      "point": [
+        55.0,
+        0.0,
+        35.0
+      ]
+    },
+    {
+      "id": "VTX-ffd8d6f3f5",
+      "index": 25,
+      "point": [
+        25.0,
+        0.0,
+        45.0
+      ]
+    },
+    {
+      "id": "VTX-c66772fa67",
+      "index": 26,
+      "point": [
+        25.0,
+        0.0,
+        35.0
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "FILLET-4e5a8425",
+      "confidence": 0.85,
+      "face_ids": [
+        "FACE-dde8309f89"
+      ],
+      "edge_ids": [
+        "EDGE-6be7011b5a",
+        "EDGE-e35cc7f395"
+      ],
+      "provenance": {
+        "method": "partial_cylinder_or_torus+tangent_neighbours",
+        "exact": true
+      },
+      "notes": [],
+      "type": "FILLET",
+      "radius": 5.0,
+      "concave": true
+    },
+    {
+      "id": "HOLE-20cb75ac",
+      "confidence": 0.99,
+      "face_ids": [
+        "FACE-fc39720d99"
+      ],
+      "edge_ids": [
+        "EDGE-0a22cc2c89",
+        "EDGE-68a54588f1"
+      ],
+      "provenance": {
+        "method": "concave_cylinder_stack+axial_probe",
+        "exact": true
+      },
+      "notes": [],
+      "type": "HOLE",
+      "kind": "SIMPLE",
+      "diameter": 9.0,
+      "axis": {
+        "origin": [
+          60.0,
+          32.5,
+          10.0
+        ],
+        "direction": [
+          -0.0,
+          -0.0,
+          -1.0
+        ]
+      },
+      "depth": 10.0,
+      "through": true,
+      "counterbore": null,
+      "countersink": null
+    },
+    {
+      "id": "HOLE-f97847bf",
+      "confidence": 0.99,
+      "face_ids": [
+        "FACE-fb9348ed42"
+      ],
+      "edge_ids": [
+        "EDGE-57157fc352",
+        "EDGE-6a266e3be6"
+      ],
+      "provenance": {
+        "method": "concave_cylinder_stack+axial_probe",
+        "exact": true
+      },
+      "notes": [],
+      "type": "HOLE",
+      "kind": "SIMPLE",
+      "diameter": 9.0,
+      "axis": {
+        "origin": [
+          20.0,
+          32.5,
+          10.0
+        ],
+        "direction": [
+          -0.0,
+          -0.0,
+          -1.0
+        ]
+      },
+      "depth": 10.0,
+      "through": true,
+      "counterbore": null,
+      "countersink": null
+    },
+    {
+      "id": "SLOT-74d4f5b0",
+      "confidence": 0.9,
+      "face_ids": [
+        "FACE-0992d434ce",
+        "FACE-2f3e35720f",
+        "FACE-6020c23d18",
+        "FACE-8f89899104"
+      ],
+      "edge_ids": [],
+      "provenance": {
+        "method": "paired_half_cylinders+tangent_walls",
+        "exact": true
+      },
+      "notes": [],
+      "type": "SLOT",
+      "width": 10.0,
+      "length": 40.0,
+      "center_distance": 30.0,
+      "depth": 10.0,
+      "through": true,
+      "length_direction": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "depth_direction": [
+        -0.0,
+        -1.0,
+        -0.0
+      ],
+      "center": [
+        40.0,
+        5.0,
+        40.0
+      ]
+    }
+  ],
+  "diagnostics": [],
+  "analysis": {
+    "duration_s": 0.066,
+    "linear_tolerance_mm": 0.00011180339887498948,
+    "angular_tolerance_deg": 0.5,
+    "recognizers": [
+      "HOLE",
+      "BOSS",
+      "SLOT",
+      "POCKET",
+      "FILLET",
+      "CHAMFER",
+      "PATTERN(HOLE)"
+    ],
+    "not_recognized": [
+      "THREAD (not representable in plain B-Rep; needs PMI/user input)",
+      "BOSS (non-cylindrical)"
+    ]
+  }
+}

@@ -19,21 +19,23 @@ for real engineering/manufacturing workflows.
 
 | Component | Responsibility |
 |---|---|
-| GPT-5.6 Sol (OpenAI API, model id `gpt-5.6-sol`, configurable) | reasoning + planning + interpretation, via **structured outputs** only |
+| Deterministic planner (no LLM; optional LLM hook `CADAI_LLM_BACKEND`, default `none`) | planning: views, dimension selection, redundancy - output validated against the DrawingPlan schema |
 | OCCT | geometry truth |
 | Deterministic algorithms | measurements, feature recognition, dimension candidates, validation |
-| SolidWorks (Windows worker) | authoritative drawing generation |
+| Open-source executor (OCCT HLR + ezdxf) | PDF/DXF/SVG drawings today, labelled "not produced by SolidWorks" |
+| SolidWorks (Windows worker, planned) | authoritative native drawings (SLDDRW) and DWG |
 | QA system | drawing validation |
 
-The LLM never controls low-level CAD API calls. It emits a typed
-**DrawingPlan**; a deterministic compiler turns it into drawing ops.
+No LLM is required: drafting decisions are deterministic rules. The planner emits a typed
+**DrawingPlan**; a deterministic compiler turns it into a CompiledDrawing (sheet ops) that an
+executor (OCCT/ezdxf today, SolidWorks later) draws.
 
 ## Workflow
 
 upload → validation → geometry extraction → feature recognition → GeometryIR →
-user drawing settings → DrawingPlan (LLM, structured) → deterministic plan
-validation → drawing compiler → SolidWorks worker → SLDDRW → DWG/PDF/DXF →
-deterministic QA → visual QA → repair (max `QA_MAX_RETRIES`, default 3) → final.
+user drawing settings → DrawingPlan (deterministic planner) → plan validation →
+drawing compiler → executor (OCCT HLR + ezdxf; SolidWorks worker later for SLDDRW/DWG) →
+deterministic QA → repair (max `QA_MAX_RETRIES`, default 3) → PDF/DXF/SVG.
 
 Defaults: primary view **ISOMETRIC**, standard **ISO**, projection **FIRST
 ANGLE**, sheet **A3 LANDSCAPE**, units **mm**.
@@ -63,7 +65,7 @@ through the compiler.
 - SolidWorks COM runs only in the dedicated Windows worker, never in FastAPI.
 - Never claim SolidWorks produced a file unless the operation actually ran.
   **Mock mode** results are labelled `MOCK` and never presented as real.
-- Never invent APIs (SolidWorks, OCCT, OpenAI). Consult official docs; if a
+- Never invent APIs (SolidWorks, OCCT, Hugging Face transformers). Consult official docs; if a
   member can't be verified, mark it `UNVERIFIED` (see
   `.claude/skills/solidworks-api-automation/references/api-verification.md`).
   When docs conflict with assumptions, docs win.

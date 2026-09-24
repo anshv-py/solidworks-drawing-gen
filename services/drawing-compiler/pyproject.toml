@@ -1,7 +1,7 @@
 [project]
 name = "drawing-compiler"
 version = "0.1.0"
-description = "DrawingPlan -> DrawingOps compiler - not implemented yet"
+description = "DrawingPlan -> CompiledDrawing: deterministic sheet layout and dimension placement"
 requires-python = ">=3.12"
 dependencies = ["drawing-schema", "geometry-schema"]
 

@@ -29,6 +29,11 @@ executes a deterministic, pre-compiled list of drawing operations
    lengths and angles, independent of document units. Convert at one boundary
    (`Units.MmToM`). GeometryIR is in mm.
 
+## Input contract
+The worker will consume `CompiledDrawing` (`packages/drawing-schema/src/drawing_schema/compiled.py`),
+the same executor-neutral sheet description that the open-source OCCT/ezdxf executor draws
+today. `examples/drawing-ops.json` is an earlier sketch.
+
 ## Worker architecture (see `references/worker-architecture.md`)
 
 ```

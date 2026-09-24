@@ -24,7 +24,7 @@ services:
       CADAI_CORS_ORIGINS: '["http://localhost:8080"]'
       CADAI_MAX_UPLOAD_MB: ${CADAI_MAX_UPLOAD_MB:-100}
       CADAI_SOLIDWORKS_MODE: ${CADAI_SOLIDWORKS_MODE:-mock}
-      CADAI_OPENAI_API_KEY: ${CADAI_OPENAI_API_KEY:-}
+      CADAI_LLM_BACKEND: ${CADAI_LLM_BACKEND:-none}
     volumes: [storage:/data]
     depends_on:
       postgres: { condition: service_healthy }

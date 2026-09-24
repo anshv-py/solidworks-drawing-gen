@@ -4,32 +4,25 @@
 |---|---|---|
 | 0 | Claude skills, project instructions, knowledge structure | ✅ done |
 | 1 | STEP/STL → OCCT → GeometryIR → features → API → 3D preview | ✅ done, tested |
-| 2 | **Dimension-candidate engine + deterministic planner baseline** | ⏭ next |
-| 3 | LLM planner (structured DrawingPlan) + plan validator | planned |
-| 4 | Drawing compiler (view layout, ISO 5455 scale, DrawingOps) + mock executor | planned |
-| 5 | Job system hardening: RQ runner, SSE progress, Alembic, auth | planned |
-| 6 | SolidWorks Windows worker (verified API, STA, leasing, exports) | planned |
-| 7 | Deterministic QA + repair loop | planned |
-| 8 | Visual QA (rendered sheet → structured issues) | planned |
-| 9 | STL feature recognition (segmentation + primitive fitting) | planned |
-| 10 | End-to-end evaluation vs reference drawings | planned |
+| 2 | Dimension candidates + deterministic planner + compiler + open-source executor (PDF/DXF/SVG) + deterministic QA/repair + API/UI | ✅ done, tested (no LLM) |
+| 3 | **Section & detail views** (turned parts, internal features), ISO projection symbol | ⏭ next |
+| 4 | Better annotation layout (leader routing around geometry, ordinate dims option) | planned |
+| 5 | Job system hardening: RQ runner, SSE progress, Alembic migrations, auth | planned |
+| 6 | SolidWorks Windows worker (verified API, STA, leasing) → SLDDRW + DWG | planned |
+| 7 | Visual QA (optional, only if a free local vision model proves useful) | planned |
+| 8 | STL feature recognition + mesh drawings | planned |
+| 9 | Evaluation against human reference drawings | planned |
 
-## Next milestone (2) - exact scope
-1. `services/drawing-planner`: `DimensionCandidate` schema (id, kind, value from GeometryIR,
-   entity refs, preferred view direction, priority) in `packages/drawing-schema`.
-2. Candidate generation for: overall extents; hole Ø + depth/THRU; hole positions relative to
-   bbox faces; pattern PCD/pitch; pocket L/W/depth; slot width/length; fillet R; chamfer legs;
-   boss Ø/height.
-3. View-direction assignment (which orthographic view shows each candidate true-size).
-4. Redundancy rules (pattern members share one callout; no closed chains).
-5. `plan_baseline(geometry, settings) -> DrawingPlan` (no LLM), plus referential validation of
-   candidate ids against GeometryIR.
-6. Tests on all fixtures (e.g. flange → 8X Ø8 THRU on PCD Ø86 as one candidate; mounting plate →
-   counterbore callouts), API `POST /api/drawings/plan` (dry-run plan preview), UI list of planned
-   dimensions.
+## Next milestone (3) - exact scope
+1. Section views: `SectionPlane` through a feature axis (turned parts: plane through the boss
+   axis). OCCT cut by a half-space, hidden-line removal of the remaining half, and hatching of the
+   faces lying in the cutting plane (DXF HATCH, ISO 128-50 45° lines). Section line and "A-A" labels.
+2. Planner rule: use a full section as FRONT for axisymmetric parts with internal bores (like the
+   reference flange drawing). Move internal-diameter dimensions into the section.
+3. Detail views for features below a readable size at sheet scale.
+4. ISO 5456-2 projection symbol, after checking its geometry against the standard.
+5. QA: section-line ↔ section-view consistency (QA-SEC-001), detail labels (QA-DET-001).
 
 ## Open questions / verification debt
 - SolidWorks API signatures (register in the solidworks skill) - unverified.
-- GeometryIR→SolidWorks orientation mapping.
-- OpenAI request parameters for structured outputs with `gpt-5.6-sol` - check current API reference.
-- Docker image with `libgl1` not built in sandbox (Debian mirror blocked).
+- Docker image with `libgl1` not built in the sandbox (Debian mirror blocked).

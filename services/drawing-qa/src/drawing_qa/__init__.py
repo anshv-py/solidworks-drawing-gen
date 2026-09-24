@@ -1,10 +1,12 @@
-"""Drawing QA - NOT IMPLEMENTED (milestone 5).
+"""Deterministic drawing QA + repair actions.
 
-Contract: ``validate(plan, geometry, manifest) -> QaReport`` plus an optional
-visual QA pass. See .claude/skills/cad-drawing-qa/SKILL.md for the check
-catalogue. Critical issues block export; the repair loop is bounded by
-``QA_MAX_RETRIES`` (default 3).
+``validate(plan, candidates, geometry, compiled, rendered) -> QaReport``. CRITICAL issues block
+export. Repairs are compiler options (``REDUCE_SCALE``, ``INCREASE_TIER_GAP``) applied by the
+pipeline for at most ``QA_MAX_RETRIES`` (default 3) extra iterations. Visual (vision-model) QA is
+not implemented, and no LLM is used.
 """
 
-STATUS = "NOT_IMPLEMENTED"
+from drawing_qa.checks import INCREASE_TIER_GAP, REDUCE_SCALE, Rendered, validate
+
 DEFAULT_MAX_RETRIES = 3
+__all__ = ["validate", "Rendered", "REDUCE_SCALE", "INCREASE_TIER_GAP", "DEFAULT_MAX_RETRIES"]

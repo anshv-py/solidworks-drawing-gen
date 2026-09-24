@@ -40,8 +40,9 @@ export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
 export type GeometrySchemaVersion = string;
 export type SourceSha256 = string;
-export type Dimensioned = boolean;
 export type DisplayStyle = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
+export type Dimensioned = boolean;
+export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 export type Id1 = string;
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
@@ -82,10 +83,17 @@ export type RelatedIds = string[];
 export type Uncertainties = PlanUncertainty[];
 export type Units = "mm";
 /**
+ * Which model axis points up in the drawing views.
+ *
+ * Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
+ * Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
+ */
+export type ViewFrame = "Z_UP" | "Y_UP";
+/**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "DisplayStyle".
  */
-export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
+export type DisplayStyle2 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "DrawingKind".
@@ -111,6 +119,16 @@ export type SheetOrientation1 = "LANDSCAPE" | "PORTRAIT";
  * via the `definition` "SheetSize".
  */
 export type SheetSize1 = "A0" | "A1" | "A2" | "A3" | "A4";
+/**
+ * Which model axis points up in the drawing views.
+ *
+ * Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
+ * Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "ViewFrame".
+ */
+export type ViewFrame1 = "Z_UP" | "Y_UP";
 
 export interface DrawingPlan {
   annotations: AnnotationPreferences;
@@ -121,6 +139,7 @@ export interface DrawingPlan {
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
   geometry: GeometryReference;
+  orthographic_display_style: DisplayStyle;
   primary_view: ViewSpec;
   projected_views: ProjectedViews;
   projection_method: ProjectionMethod;
@@ -131,6 +150,7 @@ export interface DrawingPlan {
   title_block: TitleBlock;
   uncertainties: Uncertainties;
   units: Units;
+  view_frame: ViewFrame;
 }
 export interface AnnotationPreferences {
   center_marks: CenterMarks;
@@ -200,7 +220,7 @@ export interface GeometryReference {
 }
 export interface ViewSpec {
   dimensioned: Dimensioned;
-  display_style: DisplayStyle;
+  display_style: DisplayStyle1;
   id: Id1;
   orientation: ViewOrientation;
   scale: Scale1;
@@ -308,7 +328,7 @@ export interface TitleBlock1 {
  */
 export interface ViewSpec1 {
   dimensioned: Dimensioned;
-  display_style: DisplayStyle;
+  display_style: DisplayStyle1;
   id: Id1;
   orientation: ViewOrientation;
   scale: Scale1;
