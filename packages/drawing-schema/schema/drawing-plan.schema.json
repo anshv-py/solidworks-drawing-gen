@@ -1,0 +1,758 @@
+{
+  "$defs": {
+    "AnnotationPreferences": {
+      "additionalProperties": false,
+      "properties": {
+        "center_marks": {
+          "default": true,
+          "title": "Center Marks",
+          "type": "boolean"
+        },
+        "centerlines": {
+          "default": true,
+          "title": "Centerlines",
+          "type": "boolean"
+        },
+        "hole_callouts": {
+          "default": true,
+          "title": "Hole Callouts",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "center_marks",
+        "centerlines",
+        "hole_callouts"
+      ],
+      "title": "AnnotationPreferences",
+      "type": "object"
+    },
+    "DetailView": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_id": {
+          "description": "region is centred on this GeometryIR feature",
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "pattern": "^[A-Z]{1,2}$",
+          "title": "Label",
+          "type": "string"
+        },
+        "parent_view_id": {
+          "title": "Parent View Id",
+          "type": "string"
+        },
+        "scale": {
+          "title": "Scale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "parent_view_id",
+        "feature_id",
+        "scale"
+      ],
+      "title": "DetailView",
+      "type": "object"
+    },
+    "DimensionPreferences": {
+      "additionalProperties": false,
+      "properties": {
+        "angles": {
+          "default": true,
+          "title": "Angles",
+          "type": "boolean"
+        },
+        "decimal_places": {
+          "default": 2,
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Decimal Places",
+          "type": "integer"
+        },
+        "depths": {
+          "default": true,
+          "title": "Depths",
+          "type": "boolean"
+        },
+        "diameters": {
+          "default": true,
+          "title": "Diameters",
+          "type": "boolean"
+        },
+        "feature": {
+          "default": true,
+          "title": "Feature",
+          "type": "boolean"
+        },
+        "holes": {
+          "default": true,
+          "title": "Holes",
+          "type": "boolean"
+        },
+        "overall": {
+          "default": true,
+          "title": "Overall",
+          "type": "boolean"
+        },
+        "radii": {
+          "default": true,
+          "title": "Radii",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "overall",
+        "feature",
+        "holes",
+        "radii",
+        "diameters",
+        "angles",
+        "depths",
+        "decimal_places"
+      ],
+      "title": "DimensionPreferences",
+      "type": "object"
+    },
+    "DimensionSelection": {
+      "additionalProperties": false,
+      "description": "Selects a dimension candidate (produced deterministically from GeometryIR) for a view.\n\nThere is intentionally no value field: values come from GeometryIR only.",
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "view_id": {
+          "title": "View Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "view_id"
+      ],
+      "title": "DimensionSelection",
+      "type": "object"
+    },
+    "DisplayStyle": {
+      "enum": [
+        "HIDDEN_LINES_REMOVED",
+        "HIDDEN_LINES_VISIBLE",
+        "SHADED_WITH_EDGES"
+      ],
+      "title": "DisplayStyle",
+      "type": "string"
+    },
+    "DrawingKind": {
+      "enum": [
+        "GEOMETRY",
+        "MANUFACTURING"
+      ],
+      "title": "DrawingKind",
+      "type": "string"
+    },
+    "DrawingStandard": {
+      "enum": [
+        "ISO",
+        "ASME"
+      ],
+      "title": "DrawingStandard",
+      "type": "string"
+    },
+    "EngineeringField": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InfoSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "default": "UNSPECIFIED",
+          "enum": [
+            "SPECIFIED",
+            "UNSPECIFIED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "status",
+        "value",
+        "source"
+      ],
+      "title": "EngineeringField",
+      "type": "object"
+    },
+    "EngineeringInformation": {
+      "additionalProperties": false,
+      "properties": {
+        "coating": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "datum_scheme": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "gdt": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "general_tolerance": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "heat_treatment": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "inspection_requirements": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "manufacturing_process": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "material": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "surface_finish": {
+          "$ref": "#/$defs/EngineeringField"
+        }
+      },
+      "required": [
+        "material",
+        "general_tolerance",
+        "gdt",
+        "datum_scheme",
+        "surface_finish",
+        "heat_treatment",
+        "coating",
+        "inspection_requirements",
+        "manufacturing_process"
+      ],
+      "title": "EngineeringInformation",
+      "type": "object"
+    },
+    "GeometryReference": {
+      "additionalProperties": false,
+      "properties": {
+        "geometry_schema_version": {
+          "title": "Geometry Schema Version",
+          "type": "string"
+        },
+        "source_sha256": {
+          "title": "Source Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_sha256",
+        "geometry_schema_version"
+      ],
+      "title": "GeometryReference",
+      "type": "object"
+    },
+    "InfoSource": {
+      "description": "Where a piece of engineering information came from.",
+      "enum": [
+        "USER",
+        "CAD_MODEL"
+      ],
+      "title": "InfoSource",
+      "type": "string"
+    },
+    "PlanUncertainty": {
+      "additionalProperties": false,
+      "properties": {
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "related_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Related Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "message",
+        "related_ids"
+      ],
+      "title": "PlanUncertainty",
+      "type": "object"
+    },
+    "ProjectionMethod": {
+      "enum": [
+        "FIRST_ANGLE",
+        "THIRD_ANGLE"
+      ],
+      "title": "ProjectionMethod",
+      "type": "string"
+    },
+    "SectionPlane": {
+      "additionalProperties": false,
+      "description": "Cutting plane defined only by references into GeometryIR - never by coordinates.",
+      "properties": {
+        "principal_plane": {
+          "anyOf": [
+            {
+              "enum": [
+                "XY",
+                "YZ",
+                "XZ"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "model principal plane through the bounding-box centre",
+          "title": "Principal Plane"
+        },
+        "through_feature_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "plane contains this feature's axis (holes, bosses)",
+          "title": "Through Feature Id"
+        }
+      },
+      "required": [
+        "through_feature_id",
+        "principal_plane"
+      ],
+      "title": "SectionPlane",
+      "type": "object"
+    },
+    "SectionView": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "pattern": "^[A-Z]{1,2}$",
+          "title": "Label",
+          "type": "string"
+        },
+        "parent_view_id": {
+          "title": "Parent View Id",
+          "type": "string"
+        },
+        "plane": {
+          "$ref": "#/$defs/SectionPlane"
+        },
+        "scale": {
+          "default": "AUTO",
+          "title": "Scale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "parent_view_id",
+        "plane",
+        "scale"
+      ],
+      "title": "SectionView",
+      "type": "object"
+    },
+    "Sheet": {
+      "additionalProperties": false,
+      "properties": {
+        "orientation": {
+          "$ref": "#/$defs/SheetOrientation",
+          "default": "LANDSCAPE"
+        },
+        "size": {
+          "$ref": "#/$defs/SheetSize",
+          "default": "A3"
+        }
+      },
+      "required": [
+        "size",
+        "orientation"
+      ],
+      "title": "Sheet",
+      "type": "object"
+    },
+    "SheetOrientation": {
+      "enum": [
+        "LANDSCAPE",
+        "PORTRAIT"
+      ],
+      "title": "SheetOrientation",
+      "type": "string"
+    },
+    "SheetSize": {
+      "enum": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4"
+      ],
+      "title": "SheetSize",
+      "type": "string"
+    },
+    "TitleBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "drawn_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drawn By"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "part_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Number"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "title",
+        "part_number",
+        "revision",
+        "drawn_by",
+        "organization"
+      ],
+      "title": "TitleBlock",
+      "type": "object"
+    },
+    "ViewOrientation": {
+      "enum": [
+        "FRONT",
+        "BACK",
+        "TOP",
+        "BOTTOM",
+        "LEFT",
+        "RIGHT",
+        "ISOMETRIC",
+        "DIMETRIC",
+        "TRIMETRIC"
+      ],
+      "title": "ViewOrientation",
+      "type": "string"
+    },
+    "ViewSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "dimensioned": {
+          "default": true,
+          "title": "Dimensioned",
+          "type": "boolean"
+        },
+        "display_style": {
+          "$ref": "#/$defs/DisplayStyle",
+          "default": "HIDDEN_LINES_REMOVED"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "orientation": {
+          "$ref": "#/$defs/ViewOrientation"
+        },
+        "scale": {
+          "default": "AUTO",
+          "title": "Scale",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "orientation",
+        "scale",
+        "display_style",
+        "dimensioned"
+      ],
+      "title": "ViewSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "annotations": {
+      "$ref": "#/$defs/AnnotationPreferences",
+      "default": {
+        "center_marks": true,
+        "centerlines": true,
+        "hole_callouts": true
+      }
+    },
+    "detail_views": {
+      "items": {
+        "$ref": "#/$defs/DetailView"
+      },
+      "title": "Detail Views",
+      "type": "array"
+    },
+    "dimension_selections": {
+      "description": "explicit candidate choices; empty = deterministic engine selects per preferences",
+      "items": {
+        "$ref": "#/$defs/DimensionSelection"
+      },
+      "title": "Dimension Selections",
+      "type": "array"
+    },
+    "dimensions": {
+      "$ref": "#/$defs/DimensionPreferences",
+      "default": {
+        "angles": true,
+        "decimal_places": 2,
+        "depths": true,
+        "diameters": true,
+        "feature": true,
+        "holes": true,
+        "overall": true,
+        "radii": true
+      }
+    },
+    "drawing_kind": {
+      "$ref": "#/$defs/DrawingKind",
+      "default": "GEOMETRY"
+    },
+    "drawing_standard": {
+      "$ref": "#/$defs/DrawingStandard",
+      "default": "ISO"
+    },
+    "engineering_information": {
+      "$ref": "#/$defs/EngineeringInformation",
+      "default": {
+        "coating": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "datum_scheme": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "gdt": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "general_tolerance": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "heat_treatment": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "inspection_requirements": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "manufacturing_process": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "material": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "surface_finish": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        }
+      }
+    },
+    "geometry": {
+      "$ref": "#/$defs/GeometryReference"
+    },
+    "primary_view": {
+      "$ref": "#/$defs/ViewSpec",
+      "default": {
+        "dimensioned": false,
+        "display_style": "HIDDEN_LINES_REMOVED",
+        "id": "V-PRIMARY",
+        "orientation": "ISOMETRIC",
+        "scale": "AUTO"
+      }
+    },
+    "projected_views": {
+      "description": "orthographic views, placed relative to FRONT per projection_method",
+      "items": {
+        "$ref": "#/$defs/ViewOrientation"
+      },
+      "title": "Projected Views",
+      "type": "array"
+    },
+    "projection_method": {
+      "$ref": "#/$defs/ProjectionMethod",
+      "default": "FIRST_ANGLE"
+    },
+    "rationale": {
+      "anyOf": [
+        {
+          "maxLength": 2000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Rationale"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/SectionView"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "sheet": {
+      "$ref": "#/$defs/Sheet",
+      "default": {
+        "orientation": "LANDSCAPE",
+        "size": "A3"
+      }
+    },
+    "title_block": {
+      "$ref": "#/$defs/TitleBlock",
+      "default": {
+        "drawn_by": null,
+        "organization": null,
+        "part_number": null,
+        "revision": null,
+        "title": null
+      }
+    },
+    "uncertainties": {
+      "items": {
+        "$ref": "#/$defs/PlanUncertainty"
+      },
+      "title": "Uncertainties",
+      "type": "array"
+    },
+    "units": {
+      "const": "mm",
+      "default": "mm",
+      "title": "Units",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "geometry",
+    "drawing_kind",
+    "drawing_standard",
+    "projection_method",
+    "sheet",
+    "units",
+    "primary_view",
+    "projected_views",
+    "sections",
+    "detail_views",
+    "dimensions",
+    "dimension_selections",
+    "annotations",
+    "engineering_information",
+    "title_block",
+    "uncertainties",
+    "rationale"
+  ],
+  "title": "DrawingPlan",
+  "type": "object"
+}

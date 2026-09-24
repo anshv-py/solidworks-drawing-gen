@@ -1,0 +1,17 @@
+[project]
+name = "geometry-service"
+version = "0.1.0"
+description = "OCCT geometry pipeline: STEP/STL -> GeometryIR"
+requires-python = ">=3.12"
+dependencies = ["cadquery-ocp>=8.0.1,<9", "numpy>=1.26", "geometry-schema", "shared-types"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/geometry_service"]
+
+[tool.uv.sources]
+geometry-schema = { workspace = true }
+shared-types = { workspace = true }

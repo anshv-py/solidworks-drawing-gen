@@ -1,0 +1,20 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+# Node
+node_modules/
+apps/frontend/dist/
+apps/frontend/node_modules/.tmp/
+# Runtime data
+var/
+*.sqlite
+# Secrets
+.env
+!.env.example
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

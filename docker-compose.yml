@@ -1,0 +1,40 @@
+# Development / single-host stack. The SolidWorks worker runs on a separate Windows host.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: cadai
+      POSTGRES_USER: cadai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cadai"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  api:
+    build: { context: ., dockerfile: infrastructure/docker/api.Dockerfile }
+    environment:
+      CADAI_ENVIRONMENT: ${CADAI_ENVIRONMENT:-development}
+      CADAI_DATABASE_URL: postgresql+psycopg://cadai:${POSTGRES_PASSWORD}@postgres:5432/cadai
+      CADAI_CORS_ORIGINS: '["http://localhost:8080"]'
+      CADAI_MAX_UPLOAD_MB: ${CADAI_MAX_UPLOAD_MB:-100}
+      CADAI_SOLIDWORKS_MODE: ${CADAI_SOLIDWORKS_MODE:-mock}
+      CADAI_OPENAI_API_KEY: ${CADAI_OPENAI_API_KEY:-}
+    volumes: [storage:/data]
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["8000:8000"]
+
+  frontend:
+    build: { context: ., dockerfile: infrastructure/docker/frontend.Dockerfile }
+    depends_on: [api]
+    ports: ["8080:80"]
+
+volumes:
+  pgdata:
+  storage:

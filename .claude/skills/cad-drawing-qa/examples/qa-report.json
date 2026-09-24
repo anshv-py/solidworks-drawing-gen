@@ -1,0 +1,26 @@
+{
+  "drawing_id": "drw_0001",
+  "iteration": 1,
+  "passed": false,
+  "summary": { "critical": 1, "major": 1, "minor": 0 },
+  "issues": [
+    {
+      "id": "iss-1",
+      "check_id": "QA-SHEET-003",
+      "severity": "CRITICAL",
+      "message": "View V-ISO overlaps title block by 14.2 x 6.0 mm",
+      "entity_refs": ["V-ISO", "TITLE_BLOCK"],
+      "bbox_mm": [250.0, 20.0, 264.2, 26.0],
+      "suggested_repair": { "op": "SET_VIEW_SCALE", "view_id": "V-ISO", "scale": "1:5" }
+    },
+    {
+      "id": "iss-2",
+      "check_id": "QA-ANN-001",
+      "severity": "MAJOR",
+      "message": "Hole HOLE-3f2a91c0 has no center mark in V-LEFT (axis parallel to view direction)",
+      "entity_refs": ["HOLE-3f2a91c0", "V-LEFT"],
+      "bbox_mm": null,
+      "suggested_repair": { "op": "ADD_CENTER_MARK", "view_id": "V-LEFT", "feature_id": "HOLE-3f2a91c0" }
+    }
+  ]
+}

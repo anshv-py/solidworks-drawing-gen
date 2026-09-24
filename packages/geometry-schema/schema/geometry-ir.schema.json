@@ -1,0 +1,2175 @@
+{
+  "$defs": {
+    "AnalysisInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "angular_tolerance_deg": {
+          "title": "Angular Tolerance Deg",
+          "type": "number"
+        },
+        "duration_s": {
+          "title": "Duration S",
+          "type": "number"
+        },
+        "linear_tolerance_mm": {
+          "title": "Linear Tolerance Mm",
+          "type": "number"
+        },
+        "not_recognized": {
+          "description": "feature classes this analysis could not look for",
+          "items": {
+            "type": "string"
+          },
+          "title": "Not Recognized",
+          "type": "array"
+        },
+        "recognizers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Recognizers",
+          "type": "array"
+        }
+      },
+      "required": [
+        "duration_s",
+        "linear_tolerance_mm",
+        "angular_tolerance_deg",
+        "recognizers",
+        "not_recognized"
+      ],
+      "title": "AnalysisInfo",
+      "type": "object"
+    },
+    "Axis": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Direction",
+          "type": "array"
+        },
+        "origin": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Origin",
+          "type": "array"
+        }
+      },
+      "required": [
+        "origin",
+        "direction"
+      ],
+      "title": "Axis",
+      "type": "object"
+    },
+    "Body": {
+      "additionalProperties": false,
+      "properties": {
+        "bounding_box": {
+          "$ref": "#/$defs/BoundingBox"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "is_closed": {
+          "title": "Is Closed",
+          "type": "boolean"
+        },
+        "is_valid": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "BRepCheck result; None when not checked",
+          "title": "Is Valid"
+        },
+        "kind": {
+          "$ref": "#/$defs/BodyKind"
+        },
+        "mass_properties": {
+          "$ref": "#/$defs/MassProperties"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "is_closed",
+        "is_valid",
+        "mass_properties",
+        "bounding_box",
+        "face_ids"
+      ],
+      "title": "Body",
+      "type": "object"
+    },
+    "BodyKind": {
+      "enum": [
+        "SOLID",
+        "SHELL",
+        "MESH"
+      ],
+      "title": "BodyKind",
+      "type": "string"
+    },
+    "BossFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "$ref": "#/$defs/Axis",
+          "description": "origin = centre of the base end, direction toward the free end"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "diameter": {
+          "title": "Diameter",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "height": {
+          "title": "Height",
+          "type": "number"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "type": {
+          "const": "BOSS",
+          "default": "BOSS",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "diameter",
+        "axis",
+        "height"
+      ],
+      "title": "BossFeature",
+      "type": "object"
+    },
+    "BoundingBox": {
+      "additionalProperties": false,
+      "description": "Axis-aligned bounding box in model coordinates.",
+      "properties": {
+        "max": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Max",
+          "type": "array"
+        },
+        "min": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Min",
+          "type": "array"
+        },
+        "size": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Size",
+          "type": "array"
+        }
+      },
+      "required": [
+        "min",
+        "max",
+        "size"
+      ],
+      "title": "BoundingBox",
+      "type": "object"
+    },
+    "ChamferFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "adjacent_face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Adjacent Face Ids",
+          "type": "array"
+        },
+        "angle_deg": {
+          "description": "angle between chamfer face and the first adjacent face",
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "distance_1": {
+          "description": "leg length measured on the first adjacent face",
+          "title": "Distance 1",
+          "type": "number"
+        },
+        "distance_2": {
+          "description": "leg length measured on the second adjacent face",
+          "title": "Distance 2",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "type": {
+          "const": "CHAMFER",
+          "default": "CHAMFER",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "distance_1",
+        "distance_2",
+        "angle_deg",
+        "adjacent_face_ids"
+      ],
+      "title": "ChamferFeature",
+      "type": "object"
+    },
+    "ConeSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "apex": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Apex",
+          "type": "array"
+        },
+        "axis": {
+          "$ref": "#/$defs/Axis"
+        },
+        "concave": {
+          "title": "Concave",
+          "type": "boolean"
+        },
+        "half_angle_deg": {
+          "title": "Half Angle Deg",
+          "type": "number"
+        },
+        "kind": {
+          "const": "CONE",
+          "default": "CONE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reference_radius": {
+          "title": "Reference Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "axis",
+        "half_angle_deg",
+        "reference_radius",
+        "apex",
+        "concave"
+      ],
+      "title": "ConeSurface",
+      "type": "object"
+    },
+    "Convexity": {
+      "enum": [
+        "CONVEX",
+        "CONCAVE",
+        "TANGENT",
+        "BOUNDARY",
+        "SEAM",
+        "UNKNOWN"
+      ],
+      "title": "Convexity",
+      "type": "string"
+    },
+    "Counterbore": {
+      "additionalProperties": false,
+      "properties": {
+        "depth": {
+          "title": "Depth",
+          "type": "number"
+        },
+        "diameter": {
+          "title": "Diameter",
+          "type": "number"
+        }
+      },
+      "required": [
+        "diameter",
+        "depth"
+      ],
+      "title": "Counterbore",
+      "type": "object"
+    },
+    "Countersink": {
+      "additionalProperties": false,
+      "properties": {
+        "angle_deg": {
+          "description": "included angle",
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "diameter": {
+          "description": "diameter at the surface",
+          "title": "Diameter",
+          "type": "number"
+        }
+      },
+      "required": [
+        "diameter",
+        "angle_deg"
+      ],
+      "title": "Countersink",
+      "type": "object"
+    },
+    "CurveType": {
+      "enum": [
+        "LINE",
+        "CIRCLE",
+        "ELLIPSE",
+        "HYPERBOLA",
+        "PARABOLA",
+        "BEZIER",
+        "BSPLINE",
+        "OFFSET",
+        "OTHER"
+      ],
+      "title": "CurveType",
+      "type": "string"
+    },
+    "CylinderSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "angular_extent_deg": {
+          "title": "Angular Extent Deg",
+          "type": "number"
+        },
+        "axis": {
+          "$ref": "#/$defs/Axis"
+        },
+        "concave": {
+          "description": "True if material is outside the cylinder (hole-like)",
+          "title": "Concave",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "CYLINDER",
+          "default": "CYLINDER",
+          "title": "Kind",
+          "type": "string"
+        },
+        "radius": {
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "axis",
+        "radius",
+        "concave",
+        "angular_extent_deg"
+      ],
+      "title": "CylinderSurface",
+      "type": "object"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "entity_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entity Ids",
+          "type": "array"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message",
+        "entity_ids"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "Edge": {
+      "additionalProperties": false,
+      "properties": {
+        "circle_axis": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Circle Axis"
+        },
+        "circle_center": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Circle Center"
+        },
+        "circle_radius": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Circle Radius"
+        },
+        "convexity": {
+          "$ref": "#/$defs/Convexity"
+        },
+        "curve_type": {
+          "$ref": "#/$defs/CurveType"
+        },
+        "end": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "End",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "length": {
+          "title": "Length",
+          "type": "number"
+        },
+        "start": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Start",
+          "type": "array"
+        },
+        "vertex_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Vertex Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "index",
+        "curve_type",
+        "length",
+        "start",
+        "end",
+        "vertex_ids",
+        "face_ids",
+        "convexity",
+        "circle_center",
+        "circle_radius",
+        "circle_axis"
+      ],
+      "title": "Edge",
+      "type": "object"
+    },
+    "Face": {
+      "additionalProperties": false,
+      "properties": {
+        "adjacent_face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Adjacent Face Ids",
+          "type": "array"
+        },
+        "area": {
+          "title": "Area",
+          "type": "number"
+        },
+        "body_id": {
+          "title": "Body Id",
+          "type": "string"
+        },
+        "centroid": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Centroid",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "surface": {
+          "discriminator": {
+            "mapping": {
+              "CONE": "#/$defs/ConeSurface",
+              "CYLINDER": "#/$defs/CylinderSurface",
+              "OTHER": "#/$defs/OtherSurface",
+              "PLANE": "#/$defs/PlaneSurface",
+              "SPHERE": "#/$defs/SphereSurface",
+              "TORUS": "#/$defs/TorusSurface"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PlaneSurface"
+            },
+            {
+              "$ref": "#/$defs/CylinderSurface"
+            },
+            {
+              "$ref": "#/$defs/ConeSurface"
+            },
+            {
+              "$ref": "#/$defs/SphereSurface"
+            },
+            {
+              "$ref": "#/$defs/TorusSurface"
+            },
+            {
+              "$ref": "#/$defs/OtherSurface"
+            }
+          ],
+          "title": "Surface"
+        },
+        "surface_type": {
+          "$ref": "#/$defs/SurfaceType"
+        }
+      },
+      "required": [
+        "id",
+        "index",
+        "body_id",
+        "surface_type",
+        "surface",
+        "area",
+        "centroid",
+        "edge_ids",
+        "adjacent_face_ids"
+      ],
+      "title": "Face",
+      "type": "object"
+    },
+    "FeatureType": {
+      "enum": [
+        "HOLE",
+        "BOSS",
+        "POCKET",
+        "SLOT",
+        "FILLET",
+        "CHAMFER",
+        "PATTERN"
+      ],
+      "title": "FeatureType",
+      "type": "string"
+    },
+    "FilletFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "concave": {
+          "description": "True = fillet (adds material in an inside corner); False = round",
+          "title": "Concave",
+          "type": "boolean"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "radius": {
+          "title": "Radius",
+          "type": "number"
+        },
+        "type": {
+          "const": "FILLET",
+          "default": "FILLET",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "radius",
+        "concave"
+      ],
+      "title": "FilletFeature",
+      "type": "object"
+    },
+    "HoleFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "$ref": "#/$defs/Axis",
+          "description": "origin = centre of the entry (open) end; direction points into material"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "counterbore": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Counterbore"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "countersink": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Countersink"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "depth": {
+          "description": "axial length of the main bore (for THRU = material thickness along axis)",
+          "title": "Depth",
+          "type": "number"
+        },
+        "diameter": {
+          "title": "Diameter",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/HoleKind"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "through": {
+          "title": "Through",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "HOLE",
+          "default": "HOLE",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "kind",
+        "diameter",
+        "axis",
+        "depth",
+        "through",
+        "counterbore",
+        "countersink"
+      ],
+      "title": "HoleFeature",
+      "type": "object"
+    },
+    "HoleKind": {
+      "enum": [
+        "SIMPLE",
+        "COUNTERBORE",
+        "COUNTERSINK"
+      ],
+      "title": "HoleKind",
+      "type": "string"
+    },
+    "MassProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "centroid": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "volume centroid; None when not a closed volume",
+          "title": "Centroid"
+        },
+        "surface_area": {
+          "title": "Surface Area",
+          "type": "number"
+        },
+        "volume": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "mm^3; None when not a closed volume",
+          "title": "Volume"
+        }
+      },
+      "required": [
+        "volume",
+        "surface_area",
+        "centroid"
+      ],
+      "title": "MassProperties",
+      "type": "object"
+    },
+    "OtherSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "OTHER",
+          "default": "OTHER",
+          "title": "Kind",
+          "type": "string"
+        },
+        "surface_type": {
+          "$ref": "#/$defs/SurfaceType"
+        }
+      },
+      "required": [
+        "kind",
+        "surface_type"
+      ],
+      "title": "OtherSurface",
+      "type": "object"
+    },
+    "PatternFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "angular_step_deg": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Angular Step Deg"
+        },
+        "axis_direction": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Axis Direction"
+        },
+        "center": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Center"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "counts": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Counts",
+          "type": "array"
+        },
+        "directions": {
+          "items": {
+            "additionalItems": false,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "maxItems": 3,
+            "minItems": 3,
+            "type": "array"
+          },
+          "title": "Directions",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "member_feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Member Feature Ids",
+          "type": "array"
+        },
+        "member_type": {
+          "$ref": "#/$defs/FeatureType"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "pattern_type": {
+          "$ref": "#/$defs/PatternType"
+        },
+        "pitch_circle_diameter": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pitch Circle Diameter"
+        },
+        "pitches": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Pitches",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "type": {
+          "const": "PATTERN",
+          "default": "PATTERN",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "pattern_type",
+        "member_feature_ids",
+        "member_type",
+        "count",
+        "center",
+        "axis_direction",
+        "pitch_circle_diameter",
+        "angular_step_deg",
+        "directions",
+        "pitches",
+        "counts"
+      ],
+      "title": "PatternFeature",
+      "type": "object"
+    },
+    "PatternType": {
+      "enum": [
+        "CIRCULAR",
+        "LINEAR",
+        "RECTANGULAR"
+      ],
+      "title": "PatternType",
+      "type": "string"
+    },
+    "PlaneSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "PLANE",
+          "default": "PLANE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "normal": {
+          "additionalItems": false,
+          "description": "outward normal (face orientation applied)",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Normal",
+          "type": "array"
+        },
+        "origin": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Origin",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "origin",
+        "normal"
+      ],
+      "title": "PlaneSurface",
+      "type": "object"
+    },
+    "PocketFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "center": {
+          "additionalItems": false,
+          "description": "centre of the floor bounding rectangle",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Center",
+          "type": "array"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "corner_radius": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Corner Radius"
+        },
+        "depth": {
+          "title": "Depth",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "floor_face_id": {
+          "title": "Floor Face Id",
+          "type": "string"
+        },
+        "floor_normal": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Floor Normal",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "length": {
+          "description": "extent of the floor along its principal (longest) direction",
+          "title": "Length",
+          "type": "number"
+        },
+        "length_direction": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Length Direction",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "type": {
+          "const": "POCKET",
+          "default": "POCKET",
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "description": "extent of the floor perpendicular to length",
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "floor_face_id",
+        "floor_normal",
+        "depth",
+        "length",
+        "width",
+        "length_direction",
+        "center",
+        "corner_radius"
+      ],
+      "title": "PocketFeature",
+      "type": "object"
+    },
+    "PrincipalAxis": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Direction",
+          "type": "array"
+        },
+        "moment": {
+          "description": "principal moment of inertia (unit density), mm^5",
+          "title": "Moment",
+          "type": "number"
+        }
+      },
+      "required": [
+        "direction",
+        "moment"
+      ],
+      "title": "PrincipalAxis",
+      "type": "object"
+    },
+    "Provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "exact": {
+          "description": "True if derived from exact analytic geometry",
+          "title": "Exact",
+          "type": "boolean"
+        },
+        "method": {
+          "title": "Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "exact"
+      ],
+      "title": "Provenance",
+      "type": "object"
+    },
+    "Representation": {
+      "description": "How much the geometry can be trusted.",
+      "enum": [
+        "EXACT_BREP",
+        "TESSELLATED"
+      ],
+      "title": "Representation",
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "INFO",
+        "WARNING",
+        "ERROR"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "SlotFeature": {
+      "additionalProperties": false,
+      "properties": {
+        "center": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Center",
+          "type": "array"
+        },
+        "center_distance": {
+          "description": "distance between end-arc centres",
+          "title": "Center Distance",
+          "type": "number"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "depth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Depth"
+        },
+        "depth_direction": {
+          "additionalItems": false,
+          "description": "points from the opening into the material",
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Depth Direction",
+          "type": "array"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "length": {
+          "description": "overall length including rounded ends",
+          "title": "Length",
+          "type": "number"
+        },
+        "length_direction": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Length Direction",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "through": {
+          "title": "Through",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "SLOT",
+          "default": "SLOT",
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "width",
+        "length",
+        "center_distance",
+        "depth",
+        "through",
+        "length_direction",
+        "depth_direction",
+        "center"
+      ],
+      "title": "SlotFeature",
+      "type": "object"
+    },
+    "SourceFormat": {
+      "enum": [
+        "STEP",
+        "STL"
+      ],
+      "title": "SourceFormat",
+      "type": "string"
+    },
+    "SourceInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "file_length_units": {
+          "description": "length units declared in the file (STEP); empty for STL",
+          "items": {
+            "type": "string"
+          },
+          "title": "File Length Units",
+          "type": "array"
+        },
+        "filename": {
+          "description": "sanitized original filename (display only)",
+          "title": "Filename",
+          "type": "string"
+        },
+        "format": {
+          "$ref": "#/$defs/SourceFormat"
+        },
+        "kernel": {
+          "default": "OCCT",
+          "title": "Kernel",
+          "type": "string"
+        },
+        "kernel_version": {
+          "title": "Kernel Version",
+          "type": "string"
+        },
+        "sha256": {
+          "title": "Sha256",
+          "type": "string"
+        },
+        "size_bytes": {
+          "title": "Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "filename",
+        "format",
+        "sha256",
+        "size_bytes",
+        "file_length_units",
+        "kernel",
+        "kernel_version"
+      ],
+      "title": "SourceInfo",
+      "type": "object"
+    },
+    "SphereSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "center": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Center",
+          "type": "array"
+        },
+        "concave": {
+          "title": "Concave",
+          "type": "boolean"
+        },
+        "kind": {
+          "const": "SPHERE",
+          "default": "SPHERE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "radius": {
+          "title": "Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "center",
+        "radius",
+        "concave"
+      ],
+      "title": "SphereSurface",
+      "type": "object"
+    },
+    "SurfaceType": {
+      "enum": [
+        "PLANE",
+        "CYLINDER",
+        "CONE",
+        "SPHERE",
+        "TORUS",
+        "BSPLINE",
+        "BEZIER",
+        "REVOLUTION",
+        "EXTRUSION",
+        "OFFSET",
+        "OTHER"
+      ],
+      "title": "SurfaceType",
+      "type": "string"
+    },
+    "SymmetryCandidate": {
+      "additionalProperties": false,
+      "description": "A plane the part appears to be mirror-symmetric about.",
+      "properties": {
+        "method": {
+          "title": "Method",
+          "type": "string"
+        },
+        "plane_normal": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Plane Normal",
+          "type": "array"
+        },
+        "plane_point": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Plane Point",
+          "type": "array"
+        },
+        "score": {
+          "description": "fraction of sampled entities matched by reflection",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "plane_point",
+        "plane_normal",
+        "score",
+        "method"
+      ],
+      "title": "SymmetryCandidate",
+      "type": "object"
+    },
+    "TopologyCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "edges": {
+          "title": "Edges",
+          "type": "integer"
+        },
+        "faces": {
+          "title": "Faces",
+          "type": "integer"
+        },
+        "shells": {
+          "title": "Shells",
+          "type": "integer"
+        },
+        "solids": {
+          "title": "Solids",
+          "type": "integer"
+        },
+        "triangles": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Triangles"
+        },
+        "vertices": {
+          "title": "Vertices",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "solids",
+        "shells",
+        "faces",
+        "edges",
+        "vertices",
+        "triangles"
+      ],
+      "title": "TopologyCounts",
+      "type": "object"
+    },
+    "TorusSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "$ref": "#/$defs/Axis"
+        },
+        "kind": {
+          "const": "TORUS",
+          "default": "TORUS",
+          "title": "Kind",
+          "type": "string"
+        },
+        "major_radius": {
+          "title": "Major Radius",
+          "type": "number"
+        },
+        "minor_radius": {
+          "title": "Minor Radius",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "axis",
+        "major_radius",
+        "minor_radius"
+      ],
+      "title": "TorusSurface",
+      "type": "object"
+    },
+    "Units": {
+      "additionalProperties": false,
+      "properties": {
+        "angle": {
+          "const": "deg",
+          "default": "deg",
+          "title": "Angle",
+          "type": "string"
+        },
+        "length": {
+          "const": "mm",
+          "default": "mm",
+          "title": "Length",
+          "type": "string"
+        }
+      },
+      "required": [
+        "length",
+        "angle"
+      ],
+      "title": "Units",
+      "type": "object"
+    },
+    "Vertex": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "index": {
+          "title": "Index",
+          "type": "integer"
+        },
+        "point": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Point",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "index",
+        "point"
+      ],
+      "title": "Vertex",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "analysis": {
+      "$ref": "#/$defs/AnalysisInfo"
+    },
+    "bodies": {
+      "items": {
+        "$ref": "#/$defs/Body"
+      },
+      "title": "Bodies",
+      "type": "array"
+    },
+    "bounding_box": {
+      "$ref": "#/$defs/BoundingBox"
+    },
+    "diagnostics": {
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/Edge"
+      },
+      "title": "Edges",
+      "type": "array"
+    },
+    "faces": {
+      "items": {
+        "$ref": "#/$defs/Face"
+      },
+      "title": "Faces",
+      "type": "array"
+    },
+    "features": {
+      "items": {
+        "discriminator": {
+          "mapping": {
+            "BOSS": "#/$defs/BossFeature",
+            "CHAMFER": "#/$defs/ChamferFeature",
+            "FILLET": "#/$defs/FilletFeature",
+            "HOLE": "#/$defs/HoleFeature",
+            "PATTERN": "#/$defs/PatternFeature",
+            "POCKET": "#/$defs/PocketFeature",
+            "SLOT": "#/$defs/SlotFeature"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/HoleFeature"
+          },
+          {
+            "$ref": "#/$defs/BossFeature"
+          },
+          {
+            "$ref": "#/$defs/PocketFeature"
+          },
+          {
+            "$ref": "#/$defs/SlotFeature"
+          },
+          {
+            "$ref": "#/$defs/FilletFeature"
+          },
+          {
+            "$ref": "#/$defs/ChamferFeature"
+          },
+          {
+            "$ref": "#/$defs/PatternFeature"
+          }
+        ]
+      },
+      "title": "Features",
+      "type": "array"
+    },
+    "mass_properties": {
+      "$ref": "#/$defs/MassProperties"
+    },
+    "principal_axes": {
+      "items": {
+        "$ref": "#/$defs/PrincipalAxis"
+      },
+      "title": "Principal Axes",
+      "type": "array"
+    },
+    "representation": {
+      "$ref": "#/$defs/Representation"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/SourceInfo"
+    },
+    "symmetry_candidates": {
+      "items": {
+        "$ref": "#/$defs/SymmetryCandidate"
+      },
+      "title": "Symmetry Candidates",
+      "type": "array"
+    },
+    "topology": {
+      "$ref": "#/$defs/TopologyCounts"
+    },
+    "units": {
+      "$ref": "#/$defs/Units",
+      "default": {
+        "angle": "deg",
+        "length": "mm"
+      }
+    },
+    "vertices": {
+      "items": {
+        "$ref": "#/$defs/Vertex"
+      },
+      "title": "Vertices",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source",
+    "representation",
+    "units",
+    "bounding_box",
+    "mass_properties",
+    "principal_axes",
+    "symmetry_candidates",
+    "topology",
+    "bodies",
+    "faces",
+    "edges",
+    "vertices",
+    "features",
+    "diagnostics",
+    "analysis"
+  ],
+  "title": "GeometryIR",
+  "type": "object"
+}

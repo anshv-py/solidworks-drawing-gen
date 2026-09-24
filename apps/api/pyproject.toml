@@ -1,0 +1,18 @@
+[project]
+name = "cad-api"
+version = "0.1.0"
+description = "CAD Drawing AI HTTP API"
+requires-python = ">=3.12"
+dependencies = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "pydantic>=2.7", "pydantic-settings>=2.3", "python-multipart>=0.0.9", "sqlalchemy>=2.0", "psycopg[binary]>=3.2", "geometry-schema", "drawing-schema", "shared-types"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cad_api"]
+
+[tool.uv.sources]
+geometry-schema = { workspace = true }
+drawing-schema = { workspace = true }
+shared-types = { workspace = true }

@@ -1,0 +1,39 @@
+[project]
+name = "cad-drawing-ai"
+version = "0.1.0"
+description = "CAD Drawing AI - STEP/STL to engineering drawings (workspace root)"
+requires-python = ">=3.12"
+dependencies = [
+    "cad-api",
+    "geometry-service",
+    "geometry-schema",
+    "drawing-schema",
+    "shared-types",
+    "drawing-planner",
+    "drawing-compiler",
+    "drawing-qa",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "pyyaml>=6"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "services/*", "packages/*"]
+
+[tool.uv.sources]
+cad-api = { workspace = true }
+geometry-service = { workspace = true }
+geometry-schema = { workspace = true }
+drawing-schema = { workspace = true }
+shared-types = { workspace = true }
+drawing-planner = { workspace = true }
+drawing-compiler = { workspace = true }
+drawing-qa = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = ["slow: tests that exercise the full OCCT pipeline in a subprocess"]

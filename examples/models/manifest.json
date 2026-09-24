@@ -1,0 +1,362 @@
+{
+  "generator": "scripts/generate_fixtures.py",
+  "models": {
+    "bracket": {
+      "expected": {
+        "bbox_size": [
+          80.0,
+          50.0,
+          60.0
+        ],
+        "fillets": [
+          {
+            "concave": true,
+            "count": 1,
+            "radius": 5.0
+          }
+        ],
+        "holes": [
+          {
+            "count": 2,
+            "diameter": 9.0,
+            "through": true
+          }
+        ],
+        "slots": [
+          {
+            "center_distance": 30.0,
+            "count": 1,
+            "length": 40.0,
+            "through": true,
+            "width": 10.0
+          }
+        ]
+      },
+      "step": "bracket.step",
+      "stl": "bracket.stl"
+    },
+    "chamfered_block": {
+      "expected": {
+        "bbox_size": [
+          60.0,
+          40.0,
+          20.0
+        ],
+        "chamfers": [
+          {
+            "count": 1,
+            "distance": 3.0
+          }
+        ],
+        "fillets": [
+          {
+            "concave": false,
+            "count": 1,
+            "radius": 4.0
+          }
+        ],
+        "holes": []
+      },
+      "step": "chamfered_block.step"
+    },
+    "cylindrical_part": {
+      "expected": {
+        "bbox_size": [
+          50.0,
+          50.0,
+          80.0
+        ],
+        "bosses": [
+          {
+            "count": 1,
+            "diameter": 50.0
+          }
+        ],
+        "holes": [
+          {
+            "count": 1,
+            "depth": 30.0,
+            "diameter": 12.0,
+            "through": false
+          },
+          {
+            "count": 1,
+            "diameter": 6.0,
+            "through": true
+          }
+        ]
+      },
+      "step": "cylindrical_part.step"
+    },
+    "enclosure": {
+      "expected": {
+        "bbox_size": [
+          100.0,
+          60.0,
+          40.0
+        ],
+        "holes": [
+          {
+            "count": 2,
+            "diameter": 5.0,
+            "through": true
+          }
+        ],
+        "pockets": [
+          {
+            "count": 1,
+            "depth": 38.0,
+            "length": 96.0,
+            "width": 56.0
+          }
+        ],
+        "volume": 35633.46018366025
+      },
+      "step": "enclosure.step"
+    },
+    "flange": {
+      "expected": {
+        "bbox_size": [
+          100.0,
+          100.0,
+          40.0
+        ],
+        "bosses": [
+          {
+            "count": 1,
+            "diameter": 45.0
+          },
+          {
+            "count": 1,
+            "diameter": 100.0
+          }
+        ],
+        "holes": [
+          {
+            "count": 8,
+            "diameter": 8.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 20.0,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "angular_step_deg": 45.0,
+            "count": 8,
+            "member_diameter": 8.0,
+            "pattern_type": "CIRCULAR",
+            "pitch_circle_diameter": 86.0
+          }
+        ],
+        "volume": 109665.1455551857
+      },
+      "step": "flange.step",
+      "stl": "flange.stl"
+    },
+    "mounting_plate": {
+      "expected": {
+        "bbox_size": [
+          150.0,
+          100.0,
+          8.0
+        ],
+        "counterbores": [
+          {
+            "count": 2,
+            "depth": 4.0,
+            "diameter": 11.0
+          }
+        ],
+        "fillets": [
+          {
+            "concave": false,
+            "count": 4,
+            "radius": 10.0
+          }
+        ],
+        "holes": [
+          {
+            "count": 5,
+            "diameter": 6.6,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "count": 3,
+            "member_diameter": 6.6,
+            "pattern_type": "LINEAR",
+            "pitches": [
+              40.0
+            ]
+          }
+        ]
+      },
+      "step": "mounting_plate.step"
+    },
+    "plate_with_holes": {
+      "expected": {
+        "bbox_size": [
+          120.0,
+          80.0,
+          10.0
+        ],
+        "holes": [
+          {
+            "count": 4,
+            "diameter": 8.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 20.0,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "count": 4,
+            "member_diameter": 8.0,
+            "pattern_type": "RECTANGULAR",
+            "pitches": [
+              50.0,
+              90.0
+            ]
+          }
+        ],
+        "volume": 90847.78804811275
+      },
+      "step": "plate_with_holes.step",
+      "stl": "plate_with_holes.stl"
+    },
+    "pocketed_block": {
+      "expected": {
+        "bbox_size": [
+          100.0,
+          60.0,
+          30.0
+        ],
+        "holes": [
+          {
+            "count": 1,
+            "depth": 15.0,
+            "diameter": 6.0,
+            "through": false
+          }
+        ],
+        "pockets": [
+          {
+            "count": 1,
+            "depth": 10.0,
+            "length": 50.0,
+            "width": 30.0
+          }
+        ],
+        "volume": 164575.88499176537
+      },
+      "step": "pocketed_block.step"
+    },
+    "shaft": {
+      "expected": {
+        "bbox_size": [
+          30.0,
+          30.0,
+          140.0
+        ],
+        "bosses": [
+          {
+            "count": 2,
+            "diameter": 20.0
+          },
+          {
+            "count": 1,
+            "diameter": 30.0
+          }
+        ],
+        "chamfers": [
+          {
+            "count": 2,
+            "distance": 1.0
+          }
+        ],
+        "holes": []
+      },
+      "step": "shaft.step"
+    }
+  },
+  "unit_variants": {
+    "plate_with_holes_inches.step": {
+      "declared_unit": "INCH",
+      "expected": {
+        "bbox_size": [
+          120.0,
+          80.0,
+          10.0
+        ],
+        "holes": [
+          {
+            "count": 4,
+            "diameter": 8.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 20.0,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "count": 4,
+            "member_diameter": 8.0,
+            "pattern_type": "RECTANGULAR",
+            "pitches": [
+              50.0,
+              90.0
+            ]
+          }
+        ],
+        "volume": 90847.78804811275
+      }
+    },
+    "plate_with_holes_metres.step": {
+      "declared_unit": "metre",
+      "expected": {
+        "bbox_size": [
+          120.0,
+          80.0,
+          10.0
+        ],
+        "holes": [
+          {
+            "count": 4,
+            "diameter": 8.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 20.0,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "count": 4,
+            "member_diameter": 8.0,
+            "pattern_type": "RECTANGULAR",
+            "pitches": [
+              50.0,
+              90.0
+            ]
+          }
+        ],
+        "volume": 90847.78804811275
+      }
+    }
+  },
+  "units": "mm"
+}

@@ -1,0 +1,101 @@
+{
+  "schema_version": "0.1.0",
+  "geometry": {
+    "source_sha256": "d8fca3e43ec984082f7ee6a10574073ef12b1ed41b08a04d2fb0fcb972910f95",
+    "geometry_schema_version": "0.1.0"
+  },
+  "drawing_kind": "GEOMETRY",
+  "drawing_standard": "ISO",
+  "projection_method": "FIRST_ANGLE",
+  "sheet": {
+    "size": "A3",
+    "orientation": "LANDSCAPE"
+  },
+  "units": "mm",
+  "primary_view": {
+    "id": "V-PRIMARY",
+    "orientation": "ISOMETRIC",
+    "scale": "AUTO",
+    "display_style": "HIDDEN_LINES_REMOVED",
+    "dimensioned": false
+  },
+  "projected_views": [
+    "FRONT",
+    "TOP",
+    "RIGHT"
+  ],
+  "sections": [],
+  "detail_views": [],
+  "dimensions": {
+    "overall": true,
+    "feature": true,
+    "holes": true,
+    "radii": true,
+    "diameters": true,
+    "angles": true,
+    "depths": true,
+    "decimal_places": 2
+  },
+  "dimension_selections": [],
+  "annotations": {
+    "center_marks": true,
+    "centerlines": true,
+    "hole_callouts": true
+  },
+  "engineering_information": {
+    "material": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "general_tolerance": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "gdt": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "datum_scheme": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "surface_finish": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "heat_treatment": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "coating": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "inspection_requirements": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    },
+    "manufacturing_process": {
+      "status": "UNSPECIFIED",
+      "value": null,
+      "source": null
+    }
+  },
+  "title_block": {
+    "title": null,
+    "part_number": null,
+    "revision": null,
+    "drawn_by": null,
+    "organization": null
+  },
+  "uncertainties": [],
+  "rationale": null
+}
