@@ -16,10 +16,31 @@ GeometryIR), entity refs, preferred view, priority. The planner selects ids; val
 supplied by the LLM (the DrawingPlan schema has no value field).
 
 ## LLM usage (planned)
-OpenAI Responses API with JSON-schema structured output of DrawingPlan; model configurable
-(`CADAI_OPENAI_MODEL`, default `gpt-5.6-sol` - model id found in OpenAI's model documentation
-index via web search on 2026-09-24; request parameters must be checked against the current
-API reference at implementation time). Input: GeometryIR summary + candidate list + user settings.
+Model: **DeepSeek-V4-Pro** (`deepseek-ai/DeepSeek-V4-Pro` on the Hugging Face Hub, MIT licence),
+run with Hugging Face `transformers`; configurable via `CADAI_LLM_MODEL` / `CADAI_LLM_REVISION`.
+Input: GeometryIR summary + dimension-candidate ids + user settings. Output: DrawingPlan JSON,
+validated against the DrawingPlan schema. Constrained decoding is used where the backend supports
+it; otherwise the output is validated, rejected on failure and retried. Plans never contain values.
+
+What was checked (web search, 2026-09-24; huggingface.co itself was blocked from the sandbox):
+- 1.6T-parameter MoE, 49B active, 1M-token context, MIT licence.
+- The FP4/FP8 instruct checkpoint is about 865 GB. Reported hardware: Blackwell (B200/B300) for native
+  FP4 on one node, or 16+ H100 at FP8.
+- vLLM and SGLang have official V4 recipes with OpenAI-compatible endpoints.
+
+Consequences for the architecture:
+- The model **never** loads in the API process. It runs in a dedicated GPU planner worker
+  (`CADAI_LLM_BACKEND=transformers`) or behind a served endpoint
+  (`CADAI_LLM_BACKEND=openai_compatible`, `CADAI_LLM_ENDPOINT_URL`), for example vLLM, SGLang or
+  `transformers serve` hosting the same Hub model.
+- `trust_remote_code` executes Python from the model repository. It stays off (`CADAI_LLM_TRUST_REMOTE_CODE=false`)
+  unless a specific Hub commit is pinned in `CADAI_LLM_REVISION` and reviewed.
+- The deterministic baseline planner (milestone 2) works without any LLM, so development and CI
+  do not need the GPUs.
+
+To verify at implementation time: the required `transformers` version and `trust_remote_code`
+need; JSON-schema constrained-decoding support in the chosen backend; the chat template; and
+whether V4-Pro accepts images. Visual QA needs a vision-capable model.
 
 ## Mock mode
 Without SolidWorks, the compiler and a `MockDrawingExecutor` run; artifacts are watermarked and

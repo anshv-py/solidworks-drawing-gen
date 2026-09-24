@@ -19,7 +19,7 @@ for real engineering/manufacturing workflows.
 
 | Component | Responsibility |
 |---|---|
-| GPT-5.6 Sol (OpenAI API, model id `gpt-5.6-sol`, configurable) | reasoning + planning + interpretation, via **structured outputs** only |
+| DeepSeek-V4-Pro (`deepseek-ai/DeepSeek-V4-Pro`, Hugging Face `transformers`, configurable) | reasoning + planning + interpretation; output must validate against the DrawingPlan schema |
 | OCCT | geometry truth |
 | Deterministic algorithms | measurements, feature recognition, dimension candidates, validation |
 | SolidWorks (Windows worker) | authoritative drawing generation |
@@ -63,7 +63,7 @@ through the compiler.
 - SolidWorks COM runs only in the dedicated Windows worker, never in FastAPI.
 - Never claim SolidWorks produced a file unless the operation actually ran.
   **Mock mode** results are labelled `MOCK` and never presented as real.
-- Never invent APIs (SolidWorks, OCCT, OpenAI). Consult official docs; if a
+- Never invent APIs (SolidWorks, OCCT, Hugging Face transformers). Consult official docs; if a
   member can't be verified, mark it `UNVERIFIED` (see
   `.claude/skills/solidworks-api-automation/references/api-verification.md`).
   When docs conflict with assumptions, docs win.

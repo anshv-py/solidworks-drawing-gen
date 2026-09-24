@@ -11,7 +11,8 @@
 | React, Vite, Tailwind CSS, three.js, Vitest, json-schema-to-typescript | frontend | MIT | |
 | Playwright (dev only) | browser e2e | Apache-2.0 | |
 | SolidWorks API | drawing generation (planned) | proprietary (Dassault Systèmes) | requires licensed seats on worker hosts |
-| OpenAI API | planning (planned) | commercial terms | |
+| DeepSeek-V4-Pro weights (`deepseek-ai/DeepSeek-V4-Pro`) | planning LLM (planned) | MIT | ~865 GB FP4/FP8 checkpoint; pin a Hub revision |
+| Hugging Face transformers | LLM runtime (planned) | Apache-2.0 | `trust_remote_code` only with a pinned revision |
 
 ## Reference repositories (not used as dependencies)
 | Repo | Licence | Decision |

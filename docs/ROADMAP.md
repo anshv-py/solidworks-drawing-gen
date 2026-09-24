@@ -31,5 +31,7 @@
 ## Open questions / verification debt
 - SolidWorks API signatures (register in the solidworks skill) - unverified.
 - GeometryIR→SolidWorks orientation mapping.
-- OpenAI request parameters for structured outputs with `gpt-5.6-sol` - check current API reference.
+- DeepSeek-V4-Pro: confirm `transformers` loading requirements (version, `trust_remote_code`), JSON-schema
+  constrained decoding options, and GPU sizing from the model card (huggingface.co was unreachable from the
+  build sandbox). Visual QA needs a vision-capable model; whether V4-Pro accepts images is unverified.
 - Docker image with `libgl1` not built in sandbox (Debian mirror blocked).

@@ -6,7 +6,7 @@
 |---|---|---|
 | OCCT (`services/geometry`) | geometric truth: import, measurement, topology, features | **implemented (M1)** |
 | Deterministic algorithms | dimension candidates, view layout, plan validation, QA | planned |
-| GPT-5.6 Sol (OpenAI, structured outputs) | reasoning/planning → `DrawingPlan` only | planned |
+| DeepSeek-V4-Pro (Hugging Face `transformers`, GPU planner worker) | reasoning/planning → `DrawingPlan` only | planned |
 | Drawing compiler | `DrawingPlan` → ordered `DrawingOps` | planned |
 | SolidWorks worker (Windows, C#) | authoritative drawing generation + export | planned (contract drafted) |
 | QA | deterministic + visual checks, repair loop (max 3) | planned |

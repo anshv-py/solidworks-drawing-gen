@@ -26,8 +26,14 @@ class Settings(BaseSettings):
 
     # later milestones
     qa_max_retries: int = Field(default=3, ge=0, le=10)
-    openai_model: str = "gpt-5.6-sol"
-    openai_api_key: SecretStr | None = None
+    # Planning LLM: DeepSeek-V4-Pro (MIT) from the Hugging Face Hub, run with `transformers`
+    # in a dedicated GPU planner worker - never inside the API process.
+    llm_model: str = "deepseek-ai/DeepSeek-V4-Pro"
+    llm_revision: str | None = None  # pin a Hub commit sha for reproducible plans
+    llm_backend: str = Field(default="transformers", pattern="^(transformers|openai_compatible)$")
+    llm_endpoint_url: str | None = None  # openai_compatible: vLLM / SGLang / `transformers serve`
+    llm_trust_remote_code: bool = False  # executes code from the model repo: only with a pinned revision
+    hf_token: SecretStr | None = None
     solidworks_mode: str = Field(default="mock", pattern="^(mock|worker)$")
 
     @property

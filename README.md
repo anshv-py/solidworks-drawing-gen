@@ -2,7 +2,8 @@
 
 Turns STEP/STP and STL models into professional engineering drawings
 (SLDDRW, DWG, PDF, DXF). Geometry comes from a deterministic engine (OCCT),
-drawings from SolidWorks, and the LLM (OpenAI `gpt-5.6-sol`) only *plans*.
+drawings from SolidWorks, and the LLM (DeepSeek-V4-Pro via Hugging Face
+`transformers`) only *plans*.
 It never measures, and it never invents dimensions, tolerances or
 manufacturing data.
 
