@@ -199,6 +199,7 @@ class CompiledDrawing(StrictModel):
     zones: tuple[int, int] = Field(default=(8, 6), description="ISO 5457 grid: columns, rows")
     sheet_notes: list[str] = Field(default_factory=list, description="numbered notes printed above the title block")
     notes_rect: Rect | None = None
+    notes_split: int | None = Field(default=None, description="two-column notes: index of the first right-column line")
     revision_rows: list[list[str]] = Field(default_factory=list)
     revision_rect: Rect | None = None
     notes: list[str] = Field(default_factory=list, description="compiler notes (not printed)")

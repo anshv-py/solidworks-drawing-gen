@@ -15,7 +15,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import AfterValidator, Field, field_validator, model_validator
 
-from drawing_schema.pmi import ManufacturingAnnotations
+from drawing_schema.pmi import GeneralNotes, ManufacturingAnnotations
 from shared_types import InfoSource, StrictModel
 
 SCHEMA_VERSION = "0.1.0"
@@ -325,6 +325,7 @@ class DrawingPlan(StrictModel):
     engineering_information: EngineeringInformation = EngineeringInformation()
     title_block: TitleBlock = TitleBlock()
     manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
+    general_notes: GeneralNotes = GeneralNotes()
     pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
     uncertainties: list[PlanUncertainty] = Field(default_factory=list)
     rationale: str | None = Field(default=None, max_length=2000)

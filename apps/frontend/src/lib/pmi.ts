@@ -6,6 +6,8 @@ export interface AnnotationTargets {
   dimensions: { id: string; text: string; kind: string }[];
   planar_faces: { id: string; normal: [number, number, number] | null; area: number; centroid: [number, number, number] }[];
   features: { id: string; type: string; diameter: number | null }[];
+  datum_suggestion: { letter: string; target: Target; feature: string; reasons: string[] }[];
+  datum_cautions: string[];
 }
 
 /** A blank input means UNSPECIFIED; anything typed is SPECIFIED by the user. */

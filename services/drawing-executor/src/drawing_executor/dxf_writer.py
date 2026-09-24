@@ -575,12 +575,20 @@ def _sheet_notes(msp, cd: CompiledDrawing) -> None:
     if not cd.sheet_notes or cd.notes_rect is None:
         return
     r = cd.notes_rect
-    y = r.y1 - 1.0 - 3.0
-    _text(msp, "Note:", (r.x0 + 1.0, y), 3.0, "NOTES")
-    for line in cd.sheet_notes:
-        y -= 5.0
-        t, h = _fit(line, r.w - 8.0, 3.0, 2.0)
-        _text(msp, t, (r.x0 + 6.0, y), h, "NOTES")
+    split = cd.notes_split
+    columns = ([cd.sheet_notes] if split is None else [cd.sheet_notes[:split], cd.sheet_notes[split:]])
+    rows = max(len(c) for c in columns)
+    pitch = (r.h - 3.0) / (rows + 1)  # compiler: NOTE_LINE per line incl. the header row
+    h = min(2.5, pitch / 1.5)
+    col_w = r.w / len(columns)
+    _text(msp, "Note:", (r.x0 + 1.0, r.y1 - 1.0 - h), h, "NOTES")
+    for k, col in enumerate(columns):
+        x0 = r.x0 + k * col_w
+        y = r.y1 - 1.0 - h
+        for line in col:
+            y -= pitch
+            t, hh = _fit(line, col_w - 5.0, h, 1.8)
+            _text(msp, t, (x0 + 4.0, y), hh, "NOTES")
 
 
 def _revision_table(msp, cd: CompiledDrawing) -> None:
@@ -622,6 +630,9 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
             msp.add_solid([pts[0], pts[1], pts[2]],
                           dxfattribs={"layer": "SHADE", "true_color": ezdxf.colors.rgb2int((g - 8, g - 4, g))})
         lines = sheet_lines[view.id]
+        if view.label:  # only a view drawn at a scale other than the sheet scale is labelled
+            o = view.outline
+            _text(msp, view.label, ((o.x0 + o.x1) / 2, o.y0 - 5.0), 2.5, "NOTES", "MC")
         for layer in ("hidden", "visible"):
             for pl in lines[layer]:
                 if len(pl) == 2:

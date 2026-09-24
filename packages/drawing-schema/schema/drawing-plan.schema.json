@@ -440,6 +440,134 @@
       "title": "GdtCharacteristic",
       "type": "string"
     },
+    "GeneralNotes": {
+      "additionalProperties": false,
+      "description": "The default numbered drawing notes (on by default).\n\nNotes are assembled deterministically from these user entries, the rest of the drawing\nsettings and GeometryIR. Anything not supplied is printed as a [PLACEHOLDER] - never a\nguessed value.",
+      "properties": {
+        "edge_break": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sharp-edge break value, e.g. as specified",
+          "title": "Edge Break"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "general_geometric_tolerance": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "General Geometric Tolerance"
+        },
+        "marking": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Marking"
+        },
+        "masked_surfaces": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Masked Surfaces"
+        },
+        "model_revision": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Revision"
+        },
+        "process": {
+          "$ref": "#/$defs/ManufacturingProcess",
+          "default": "UNSPECIFIED"
+        },
+        "process_sequence": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "machining vs heat treatment / coating order",
+          "title": "Process Sequence"
+        },
+        "supplier_bullets": {
+          "default": true,
+          "description": "print \"WHAT THE SUPPLIER MUST NOT ASSUME\"",
+          "title": "Supplier Bullets",
+          "type": "boolean"
+        },
+        "thread_class": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thread Class"
+        }
+      },
+      "required": [
+        "enabled",
+        "process",
+        "general_geometric_tolerance",
+        "edge_break",
+        "masked_surfaces",
+        "thread_class",
+        "process_sequence",
+        "model_revision",
+        "marking",
+        "supplier_bullets"
+      ],
+      "title": "GeneralNotes",
+      "type": "object"
+    },
     "GeometryReference": {
       "additionalProperties": false,
       "properties": {
@@ -558,6 +686,20 @@
       ],
       "title": "ManufacturingAnnotations",
       "type": "object"
+    },
+    "ManufacturingProcess": {
+      "enum": [
+        "UNSPECIFIED",
+        "CNC_MACHINED",
+        "SHEET_METAL",
+        "CASTING",
+        "FORGING",
+        "WELDMENT",
+        "MOULDED",
+        "ADDITIVE"
+      ],
+      "title": "ManufacturingProcess",
+      "type": "string"
     },
     "MaterialCondition": {
       "enum": [
@@ -1268,6 +1410,21 @@
         }
       }
     },
+    "general_notes": {
+      "$ref": "#/$defs/GeneralNotes",
+      "default": {
+        "edge_break": null,
+        "enabled": true,
+        "general_geometric_tolerance": null,
+        "marking": null,
+        "masked_surfaces": null,
+        "model_revision": null,
+        "process": "UNSPECIFIED",
+        "process_sequence": null,
+        "supplier_bullets": true,
+        "thread_class": null
+      }
+    },
     "geometry": {
       "$ref": "#/$defs/GeometryReference"
     },
@@ -1409,6 +1566,7 @@
     "engineering_information",
     "title_block",
     "manufacturing",
+    "general_notes",
     "pictorial_style",
     "uncertainties",
     "rationale"

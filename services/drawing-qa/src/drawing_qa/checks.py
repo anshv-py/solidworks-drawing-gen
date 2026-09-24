@@ -274,6 +274,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
               ["EDGES"])
 
     _pmi_checks(R, plan, cd, geo_bbox)
+    _datum_and_note_checks(R, plan, ir, cd)
 
     crit = sum(i.severity == QaSeverity.CRITICAL for i in R.issues)
     return QaReport(
@@ -336,3 +337,30 @@ def _pmi_checks(R: _Report, plan: DrawingPlan, cd: CompiledDrawing, geo_bbox: di
             for vid, gb in geo_bbox.items():
                 if gb is not None and vid != va and ba.intersects(gb, 0.5):
                     R.add("QA-PMI-003", QaSeverity.MAJOR, f"{a} overlaps view {vid}", [a, vid], ba, REDUCE_SCALE)
+
+
+_RULE_CHECK = {"R3": "QA-DAT-003", "R5/R7": "QA-DAT-005", "R7": "QA-DAT-007", "R8": "QA-DAT-008",
+               "R9": "QA-DAT-009", "MEAS": "QA-TOL-001"}
+
+
+def _datum_and_note_checks(R: _Report, plan: DrawingPlan, ir: GeometryIR, cd: CompiledDrawing) -> None:
+    """Datum-scheme rules (see drawing_planner.datum_rules) and unresolved note placeholders.
+    Findings are reported, never auto-corrected: the user owns the datum scheme."""
+    from drawing_compiler.notes import build_notes, placeholders
+    from drawing_planner.datum_rules import check_datum_scheme
+
+    for cid in _RULE_CHECK.values():
+        R.check(cid)
+    for f in check_datum_scheme(ir, plan.manufacturing, plan.general_notes.process):
+        R.add(_RULE_CHECK[f.rule], QaSeverity(f.severity), f"rule {f.rule[1:] if f.rule[0] == 'R' else ''}"
+              f"{': ' if f.rule[0] == 'R' else ''}{f.message}", f.refs)
+    R.check("QA-NOTE-001")
+    if plan.general_notes.enabled:  # check the unwrapped notes (a placeholder may wrap across lines)
+        notes, bullets, summary = build_notes(plan, ir)
+        missing = placeholders(notes + [summary])
+    else:
+        missing = placeholders(cd.sheet_notes)
+    if missing:
+        uniq = list(dict.fromkeys(missing))
+        R.add("QA-NOTE-001", QaSeverity.MAJOR,
+              f"{len(uniq)} drawing-note values not supplied (printed as placeholders): " + ", ".join(uniq)[:600])

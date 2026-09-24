@@ -27,7 +27,8 @@ Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 | API | upload (validated, size-limited, sniffed), async analysis jobs with progress, GeometryIR, preview mesh |
 | Drawing generation | deterministic plan (views, dimension candidates from GeometryIR, redundancy removal), ISO/ASME, first/third angle, A0-A4, ISO 5455 scale, OCCT hidden-line removal, hole callouts / PCD / radii / chamfers, center marks & centerlines, title block with UNSPECIFIED engineering data |
 | Manufacturing annotations | entered by the user, never generated: datums, feature control frames (14 characteristics, Ø, MMC/LMC), ±/deviation/limit tolerances, threads, inspection ovals, ISO 1302 Ra symbols, feature/sheet notes, revision table; validated against GeometryIR |
-| QA | 21 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3); critical issues block export |
+| Default notes & datum rules | 15 standard notes + "what the supplier must not assume" + summary, filled from your data, `[PLACEHOLDER]` where missing; datum-scheme checks (form refinement, one datum one job, unreferenced datums, sheet-metal edges, measurable tolerances) and a datum suggestion you confirm |
+| QA | 28 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3); critical issues block export |
 | Exports | PDF, DXF (real DIMENSION entities), SVG, PNG preview - labelled "not produced by SolidWorks"; DWG/SLDDRW → 501 until the SolidWorks worker exists |
 | UI | upload, progress, geometry summary, feature table, Three.js preview, drawing settings, generate, drawing preview, QA report, downloads, regenerate |
 

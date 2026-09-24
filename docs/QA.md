@@ -29,6 +29,13 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-TB-001 | CRITICAL | every engineering value in the title block (material, tolerances, finish, edge note) was supplied by the user |
 | QA-PMI-001 | CRITICAL / MAJOR | every user annotation was placed (UNPLACED → critical); crowded placement → major, repair `REDUCE_SCALE` |
 | QA-PMI-002 | CRITICAL | each datum is shown exactly once. Frame count, datum references, tolerances, inspection marks and finish symbols all match what the user supplied |
+| QA-DAT-003 | MAJOR / MINOR | datum feature form control missing (primary: major) or not tighter than what references it (rule 3) |
+| QA-DAT-005 | MINOR | cast/forged/welded/moulded part: confirm datum features are machined or use datum targets (rules 5, 7) |
+| QA-DAT-007 | MAJOR | sheet metal datum on a sheet edge (rule 7) |
+| QA-DAT-008 | MAJOR | one datum feature used for two datums, or a frame referencing its own datum feature (rule 8) |
+| QA-DAT-009 | MAJOR | datum not referenced by any frame (rule 9) |
+| QA-TOL-001 | MAJOR | tolerance zone below 0.01 mm (not verifiable with standard shop equipment) |
+| QA-NOTE-001 | MAJOR | default-note values not supplied (printed as placeholders) |
 | QA-PMI-003 | MAJOR | frames, datum symbols and finish symbols don't overlap dimension text, each other or other views |
 | QA-REF-001 | CRITICAL | every dimension references a known candidate |
 

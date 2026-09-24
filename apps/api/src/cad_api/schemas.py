@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
+from drawing_schema.pmi import Target
 from drawing_schema.qa import QaReport
 from drawing_schema.settings import DrawingSettings
 
@@ -120,9 +121,20 @@ class AnnotationFeature(BaseModel):
     diameter: float | None = None
 
 
+class SuggestedDatum(BaseModel):
+    letter: str
+    target: Target
+    feature: str = Field(description="the real feature, in drawing language")
+    reasons: list[str]
+
+
 class AnnotationTargets(BaseModel):
     """Ids a user annotation may reference (all from GeometryIR / the deterministic plan)."""
 
     dimensions: list[AnnotationDimension]
     planar_faces: list[AnnotationFace]
     features: list[AnnotationFeature]
+    datum_suggestion: list[SuggestedDatum] = Field(
+        default_factory=list, description="deterministic proposal (datum rules 1, 2, 4, 5, 7) - applied only "
+                                          "when the user confirms it")
+    datum_cautions: list[str] = Field(default_factory=list)

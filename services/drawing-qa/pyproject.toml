@@ -3,7 +3,7 @@ name = "drawing-qa"
 version = "0.1.0"
 description = "Deterministic drawing QA and repair actions"
 requires-python = ">=3.12"
-dependencies = ["drawing-schema", "geometry-schema", "drawing-planner"]
+dependencies = ["drawing-schema", "geometry-schema", "drawing-planner", "drawing-compiler"]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -16,3 +16,4 @@ packages = ["src/drawing_qa"]
 geometry-schema = { workspace = true }
 drawing-schema = { workspace = true }
 drawing-planner = { workspace = true }
+drawing-compiler = { workspace = true }
