@@ -1,0 +1,29 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { python-version: "3.12" }
+      - run: uv sync --frozen --all-packages
+      - run: uv run python scripts/export_schemas.py --check
+      - run: uv run pytest
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/frontend } }
+    env: { PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/frontend/package-lock.json }
+      - run: npm ci
+      - run: npm run gen:types && git diff --exit-code src/generated
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

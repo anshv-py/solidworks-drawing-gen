@@ -1,0 +1,19 @@
+{
+  "schema_version": "0.1.0",
+  "job_id": "5d0c1c1e-0000-4000-8000-000000000000",
+  "units": "mm",
+  "model": { "path": "model.step", "format": "STEP" },
+  "template": { "standard": "ISO", "sheet": "A3", "orientation": "LANDSCAPE" },
+  "ops": [
+    { "id": "op-001", "kind": "CREATE_DRAWING", "critical": true },
+    { "id": "op-002", "kind": "PLACE_MODEL_VIEW", "view_id": "V-FRONT", "model_view": "FRONT", "position_mm": [140, 170], "scale": "1:1", "critical": true },
+    { "id": "op-003", "kind": "PLACE_PROJECTED_VIEW", "view_id": "V-LEFT", "parent": "V-FRONT", "direction": "LEFT", "position_mm": [300, 170], "critical": true },
+    { "id": "op-004", "kind": "PLACE_MODEL_VIEW", "view_id": "V-ISO", "model_view": "ISOMETRIC", "position_mm": [330, 70], "scale": "1:2", "critical": false },
+    { "id": "op-005", "kind": "CENTER_MARKS", "view_id": "V-LEFT", "feature_ids": ["HOLE-3f2a91c0", "PAT-8c1d22aa"], "critical": false },
+    { "id": "op-006", "kind": "DIMENSION", "view_id": "V-FRONT", "candidate_id": "DIM-OVERALL-X", "critical": true },
+    { "id": "op-007", "kind": "HOLE_CALLOUT", "view_id": "V-LEFT", "feature_id": "PAT-8c1d22aa", "critical": true },
+    { "id": "op-008", "kind": "SAVE", "format": "SLDDRW", "critical": true },
+    { "id": "op-009", "kind": "EXPORT", "format": "PDF", "critical": true },
+    { "id": "op-010", "kind": "EXPORT", "format": "DWG", "critical": true }
+  ]
+}

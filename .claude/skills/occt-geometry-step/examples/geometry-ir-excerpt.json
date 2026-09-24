@@ -1,0 +1,18 @@
+{
+  "schema_version": "0.1.0",
+  "units": { "length": "mm", "angle": "deg" },
+  "representation": "EXACT_BREP",
+  "features": [
+    {
+      "id": "HOLE-3f2a91c0",
+      "type": "HOLE",
+      "confidence": 0.99,
+      "face_ids": ["FACE-9b1c02d4", "FACE-e07a1133"],
+      "diameter": 8.0,
+      "depth": 10.0,
+      "through": true,
+      "axis": { "origin": [50.0, 30.0, 0.0], "direction": [0.0, 0.0, 1.0] },
+      "provenance": { "method": "concave_cylinder_group", "exact": true }
+    }
+  ]
+}
