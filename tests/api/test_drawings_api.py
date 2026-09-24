@@ -82,3 +82,24 @@ def test_api_process_never_loads_occt():
     code = "import sys, cad_api.main, cad_api.routers.drawings; print('OCP' in sys.modules)"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
     assert out.stdout.strip() == "False", out.stderr
+
+
+def test_crash_reports_the_cause(client, models_dir, monkeypatch):  # noqa: F811
+    """A drawing process that dies without a structured error must still say why."""
+    model = analyzed_model(client, models_dir / "shaft.step")
+    runner = client.app.state.runner
+    orig = runner._run_process
+
+    def broken(job_id, argv, cwd, on_progress):
+        if "drawing_executor" in argv:
+            argv = ["-c", "import drawing_executor_missing_module"]
+        return orig(job_id, argv, cwd, on_progress)
+
+    monkeypatch.setattr(runner, "_run_process", broken)
+    drawing_id = client.post("/api/drawings/generate", json={"model_id": model["id"]}).json()["drawing_id"]
+    job = wait(client, drawing_id)
+    assert job["state"] == "FAILED"
+    assert job["error"]["code"] == "JOB_CRASHED"
+    assert "ModuleNotFoundError" in job["error"]["message"]
+    d = client.get(f"/api/drawings/{drawing_id}").json()
+    assert d["qa"] is None and d["downloads"] == []

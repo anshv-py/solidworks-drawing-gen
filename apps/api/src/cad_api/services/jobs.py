@@ -106,7 +106,10 @@ class LocalProcessRunner:
             self._fail(job_id, "JOB_KILLED", f"process terminated by signal {-out.rc} (e.g. memory limit)",
                        model_failed=model_failed)
         else:
-            self._fail(job_id, "JOB_CRASHED", f"process exited with code {out.rc}", model_failed=model_failed)
+            # surface the last line of the child's stderr (e.g. "ModuleNotFoundError: ...") - never file contents
+            last = next((ln.strip() for ln in reversed(out.stderr_tail.splitlines()) if ln.strip()), "")
+            detail = f": {last[:300]}" if last else ""
+            self._fail(job_id, "JOB_CRASHED", f"process exited with code {out.rc}{detail}", model_failed=model_failed)
         log.warning("job failed rc=%s stderr_tail=%s", out.rc, out.stderr_tail[-2000:], extra={"job_id": job_id})
 
     # ------------------------------------------------------------------ subprocess
