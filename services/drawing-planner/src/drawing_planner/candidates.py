@@ -38,9 +38,17 @@ P_OVERALL, P_CALLOUT, P_DIAMETER, P_PCD, P_SIZE, P_PITCH, P_LOCATION, P_HEIGHT, 
 )
 
 
-def fmt(v: float, dp: int) -> str:
+TRAILING_ZEROS = True  # module default; the builder passes the plan's preference explicitly
+
+
+def _fmt(v: float, dp: int, trailing_zeros: bool | None = None) -> str:
+    keep = TRAILING_ZEROS if trailing_zeros is None else trailing_zeros
     s = f"{v:.{dp}f}"
-    return s.rstrip("0").rstrip(".") if "." in s else s
+    if s.startswith("-") and float(s) == 0:
+        s = s[1:]
+    if keep or "." not in s:
+        return s
+    return s.rstrip("0").rstrip(".")
 
 
 def _prefix(n: int) -> str:
@@ -68,34 +76,51 @@ def _with(p, i, v):
     return tuple(q)
 
 
-def hole_text(h: HoleFeature, n: int, dp: int, equally_spaced: bool = False) -> str:
-    t = f"{_prefix(n)}Ø{fmt(h.diameter, dp)} " + ("THRU" if h.through else f"DEPTH {fmt(h.depth, dp)}")
+fmt = _fmt
+
+
+def hole_text(h: HoleFeature, n: int, dp: int, equally_spaced: bool = False, thread=None,
+              tz: bool | None = None) -> str:
+    def fmt(v: float, d: int) -> str:  # noqa: F811 - bind the trailing-zero preference
+        return _fmt(v, d, tz)
+
+    if thread is not None:  # user-specified thread designation replaces the drilled Ø
+        depth = "THRU" if h.through else f"DEPTH {fmt(thread.depth, dp)}"
+        t = f"{_prefix(n)}{thread.designation} {depth}"
+    else:
+        t = f"{_prefix(n)}Ø{fmt(h.diameter, dp)} " + ("THRU" if h.through else f"DEPTH {fmt(h.depth, dp)}")
     if h.counterbore:
         t += f"\nCBORE Ø{fmt(h.counterbore.diameter, dp)} DEPTH {fmt(h.counterbore.depth, dp)}"
     if h.countersink:
-        t += f"\nCSK Ø{fmt(h.countersink.diameter, dp)} × {fmt(h.countersink.angle_deg, 1)}°"
+        t += f"\nCSK Ø{fmt(h.countersink.diameter, dp)} X {_fmt(h.countersink.angle_deg, 0, False)}°"
     if equally_spaced:
         t += " EQ SP"
     return t
 
 
-def _hole_key(h: HoleFeature) -> tuple:
+def _hole_key(h: HoleFeature, threads: dict | None = None) -> tuple:
     r = lambda x: None if x is None else round(x, 4)  # noqa: E731
     return (
         r(h.diameter), h.kind.value, h.through, None if h.through else r(h.depth),
         (r(h.counterbore.diameter), r(h.counterbore.depth)) if h.counterbore else None,
         (r(h.countersink.diameter), r(h.countersink.angle_deg)) if h.countersink else None,
         _axis_name(h.axis.direction),
+        (threads or {}).get(h.id).designation if (threads or {}).get(h.id) else None,
     )
 
 
 class _Builder:
-    def __init__(self, ir: GeometryIR, dp: int) -> None:
+    def __init__(self, ir: GeometryIR, dp: int, trailing_zeros: bool = True, threads: dict | None = None) -> None:
         self.ir, self.dp = ir, dp
+        self.tz = trailing_zeros
+        self.threads = threads or {}
         self.out: list[DimensionCandidate] = []
         self.bmin, self.bmax = ir.bounding_box.min, ir.bounding_box.max
         self.faces = {f.id: f for f in ir.faces}
         self.bosses = [f for f in ir.features if f.type == FeatureType.BOSS]
+
+    def f(self, v: float) -> str:
+        return fmt(v, self.dp, self.tz)
 
     def add(self, **kw) -> None:
         self.out.append(DimensionCandidate(**kw))
@@ -119,7 +144,7 @@ class _Builder:
             p2 = _with(self.bmin, i, self.bmax[i])
             self.add(
                 id=f"DIM-OVERALL-{name}", kind=CandidateKind.LINEAR, role=CandidateRole.OVERALL,
-                value=size[i], text=fmt(size[i], self.dp), source=f"bounding_box.size[{i}]",
+                value=size[i], text=self.f(size[i]), source=f"bounding_box.size[{i}]",
                 view_rule=ViewRule.IN_PLANE, priority=P_OVERALL, p1=p1, p2=p2, direction=AXES[name],
             )
 
@@ -151,7 +176,7 @@ class _Builder:
                 continue
             self.add(
                 id=f"DIM-LOC-{tag}-{name}", kind=CandidateKind.LINEAR, role=CandidateRole.LOCATION,
-                value=value, text=fmt(value, self.dp),
+                value=value, text=self.f(value),
                 source=f"{fid}.center[{i}] - bounding_box.min[{i}]",
                 view_rule=ViewRule.IN_PLANE, priority=P_LOCATION,
                 p1=_with(h_center, i, self.bmin[i]), p2=tuple(h_center), direction=AXES[name],
@@ -171,11 +196,11 @@ class _Builder:
         groups: dict[tuple, list[HoleFeature]] = defaultdict(list)
         for h in holes.values():
             if h.id not in in_pattern:
-                groups[_hole_key(h)].append(h)
+                groups[_hole_key(h, self.threads)].append(h)
         for members in groups.values():
             members.sort(key=lambda h: h.id)
             ref = members[0]
-            self._callout(ref, members, hole_text(ref, len(members), self.dp))
+            self._callout(ref, members, hole_text(ref, len(members), self.dp, thread=self.threads.get(ref.id), tz=self.tz))
             for h in members:
                 if not self._on_boss_axis(h):
                     self._locate(h.axis.origin, h.axis.direction, h.id, h.id, [h.id])
@@ -192,12 +217,13 @@ class _Builder:
         members = sorted(members, key=lambda h: h.id)
         full_circle = p.pattern_type == PatternType.CIRCULAR and not p.notes
         ref = min(members, key=lambda h: tuple(round(c, 4) for c in h.axis.origin))
-        self._callout(ref, members, hole_text(ref, len(members), self.dp, equally_spaced=full_circle), p.id)
+        self._callout(ref, members, hole_text(ref, len(members), self.dp, equally_spaced=full_circle,
+                                              thread=self.threads.get(ref.id), tz=self.tz), p.id)
         ids = [p.id] + [m.id for m in members]
         if p.pattern_type == PatternType.CIRCULAR:
             self.add(
                 id=f"DIM-PCD-{p.id}", kind=CandidateKind.PCD, role=CandidateRole.SIZE,
-                value=p.pitch_circle_diameter, text=f"Ø{fmt(p.pitch_circle_diameter, self.dp)}",
+                value=p.pitch_circle_diameter, text=f"Ø{self.f(p.pitch_circle_diameter)}",
                 source=f"{p.id}.pitch_circle_diameter", view_rule=ViewRule.ALONG_AXIS, priority=P_PCD,
                 center=p.center, axis=p.axis_direction, radius=p.pitch_circle_diameter / 2, feature_ids=ids,
             )
@@ -217,7 +243,7 @@ class _Builder:
             if n < 2:
                 continue
             p2 = _add(ref.axis.origin, _scale(d, pitch))
-            label = f"{n - 1}X {fmt(pitch, self.dp)}" if n > 2 else fmt(pitch, self.dp)
+            label = f"{n - 1}X {self.f(pitch)}" if n > 2 else self.f(pitch)
             self.add(
                 id=f"DIM-PITCH-{p.id}-{k}", kind=CandidateKind.LINEAR, role=CandidateRole.PITCH,
                 value=pitch, text=label, source=f"{p.id}.pitches[{k}]", view_rule=ViewRule.IN_PLANE,
@@ -241,7 +267,7 @@ class _Builder:
             mid = _add(b.axis.origin, _scale(b.axis.direction, b.height / 2))
             self.add(
                 id=f"DIM-DIA-{b.id}", kind=CandidateKind.DIAMETER, role=CandidateRole.SIZE,
-                value=b.diameter, text=f"Ø{fmt(b.diameter, self.dp)}", source=f"{b.id}.diameter",
+                value=b.diameter, text=f"Ø{self.f(b.diameter)}", source=f"{b.id}.diameter",
                 view_rule=ViewRule.ACROSS_AXIS, priority=P_DIAMETER, center=mid, axis=b.axis.direction,
                 radius=b.diameter / 2, feature_ids=[b.id],
             )
@@ -259,7 +285,7 @@ class _Builder:
                 source += f" + {ch.id}.distance_1"
             self.add(
                 id=f"DIM-HEIGHT-{b.id}", kind=CandidateKind.LINEAR, role=CandidateRole.SIZE,
-                value=length, text=fmt(length, self.dp), source=source,
+                value=length, text=self.f(length), source=source,
                 view_rule=ViewRule.IN_PLANE, priority=P_HEIGHT, p1=p1, p2=p2, direction=b.axis.direction,
                 feature_ids=[b.id],
             )
@@ -274,7 +300,7 @@ class _Builder:
             for tag, d, size in (("L", u, pk.length), ("W", v, pk.width)):
                 self.add(
                     id=f"DIM-{tag}-{pk.id}", kind=CandidateKind.LINEAR, role=CandidateRole.SIZE, value=size,
-                    text=fmt(size, self.dp), source=f"{pk.id}.{'length' if tag == 'L' else 'width'}",
+                    text=self.f(size), source=f"{pk.id}.{'length' if tag == 'L' else 'width'}",
                     view_rule=ViewRule.IN_PLANE, priority=P_SIZE,
                     p1=_add(pk.center, _scale(d, -size / 2)), p2=_add(pk.center, _scale(d, size / 2)),
                     direction=d, feature_ids=[pk.id],
@@ -282,7 +308,7 @@ class _Builder:
             top = _add(pk.center, _scale(n, pk.depth))
             self.add(
                 id=f"DIM-DEPTH-{pk.id}", kind=CandidateKind.LINEAR, role=CandidateRole.DEPTH, value=pk.depth,
-                text=fmt(pk.depth, self.dp), source=f"{pk.id}.depth", view_rule=ViewRule.IN_PLANE,
+                text=self.f(pk.depth), source=f"{pk.id}.depth", view_rule=ViewRule.IN_PLANE,
                 priority=P_DEPTH, p1=pk.center, p2=top, direction=n, feature_ids=[pk.id],
             )
             # locate the pocket's near edges from the part edges
@@ -297,7 +323,7 @@ class _Builder:
             for tag, d, size, src in (("L", u, s.length, "length"), ("W", v, s.width, "width")):
                 self.add(
                     id=f"DIM-{tag}-{s.id}", kind=CandidateKind.LINEAR, role=CandidateRole.SIZE, value=size,
-                    text=fmt(size, self.dp), source=f"{s.id}.{src}", view_rule=ViewRule.IN_PLANE,
+                    text=self.f(size), source=f"{s.id}.{src}", view_rule=ViewRule.IN_PLANE,
                     priority=P_SIZE, p1=_add(s.center, _scale(d, -size / 2)), p2=_add(s.center, _scale(d, size / 2)),
                     direction=d, feature_ids=[s.id],
                 )
@@ -319,7 +345,7 @@ class _Builder:
             surf = face.surface
             self.add(
                 id=f"DIM-R-{ref.id}", kind=CandidateKind.RADIUS, role=CandidateRole.SIZE, value=ref.radius,
-                text=f"{_prefix(len(members))}R{fmt(ref.radius, self.dp)}", source=f"{ref.id}.radius",
+                text=f"{_prefix(len(members))}R{self.f(ref.radius)}", source=f"{ref.id}.radius",
                 view_rule=ViewRule.ALONG_AXIS, priority=P_RADIUS, center=surf.axis.origin,
                 axis=surf.axis.direction, radius=ref.radius, anchor=face.centroid, count=len(members),
                 feature_ids=[m.id for m in members],
@@ -337,8 +363,8 @@ class _Builder:
             face = self.faces[c.face_ids[0]]
             d1, d2 = c.distance_1, c.distance_2
             label = (
-                f"{fmt(d1, self.dp)} × {fmt(c.angle_deg, 1)}°" if abs(d1 - d2) < TOL
-                else f"{fmt(d1, self.dp)} × {fmt(d2, self.dp)}"
+                f"{self.f(d1)} X {fmt(c.angle_deg, 0, False)}°" if abs(d1 - d2) < TOL
+                else f"{self.f(d1)} X {self.f(d2)}"
             )
             common = dict(
                 id=f"DIM-CH-{c.id}", kind=CandidateKind.CHAMFER, role=CandidateRole.SIZE, value=d1,
@@ -365,8 +391,9 @@ class _Builder:
                          **common)
 
 
-def generate_candidates(ir: GeometryIR, decimal_places: int = 2) -> list[DimensionCandidate]:
-    b = _Builder(ir, decimal_places)
+def generate_candidates(ir: GeometryIR, decimal_places: int = 2, trailing_zeros: bool = True,
+                        threads: list | None = None) -> list[DimensionCandidate]:
+    b = _Builder(ir, decimal_places, trailing_zeros, {t.feature_id: t for t in threads or []})
     b.overall()
     b.holes()
     b.bosses_()

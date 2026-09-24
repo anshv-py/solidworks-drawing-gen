@@ -70,3 +70,84 @@ def hidden_line_removal(shape: TopoDS_Shape, center, eye, x_axis, *, with_hidden
     if with_hidden:
         lines.hidden = _polylines(h.HCompound(), max_seg) + _polylines(h.OutLineHCompound(), max_seg)
     return lines
+
+
+@dataclass
+class Facet:
+    points: list[tuple[float, float]]  # projected triangle (projector-plane coordinates)
+    shade: float  # 0 (dark) .. 1 (light)
+    depth: float  # distance toward the viewer (larger = nearer)
+
+
+def shaded_facets(shape: TopoDS_Shape, center, eye, x_axis, *, deflection: float | None = None) -> list[Facet]:
+    """Flat-shaded, back-face-culled triangles for a pictorial view, sorted far → near.
+
+    Drawn in this order (painter's algorithm) and overdrawn by the exact HLR edges, this gives
+    the 'shaded with edges' look of the reference drawings. Pure display: never used for
+    measurement.
+    """
+    from OCP.BRep import BRep_Tool
+    from OCP.BRepMesh import BRepMesh_IncrementalMesh
+    from OCP.TopAbs import TopAbs_FACE, TopAbs_REVERSED
+    from OCP.TopLoc import TopLoc_Location
+
+    from geometry_service.occt import geom as g
+
+    lo, hi = g.bounding_box(shape)
+    diag = max(g.dist(lo, hi), 1e-6)
+    BRepMesh_IncrementalMesh(shape, deflection or diag * 2e-3, False, 0.3, True)
+    e = _unit(eye)
+    xa = _unit(x_axis)
+    ya = _cross(e, xa)
+    light = _unit((e[0] + 0.35 * ya[0] - 0.3 * xa[0], e[1] + 0.35 * ya[1] - 0.3 * xa[1],
+                   e[2] + 0.35 * ya[2] - 0.3 * xa[2]))
+    m = ShapeMap()
+    TopExp.MapShapes_s(shape, TopAbs_FACE, m)
+    out: list[Facet] = []
+    for i in range(1, m.Size() + 1):
+        face = TopoDS.Face(m.FindKey(i))
+        loc = TopLoc_Location()
+        tri = BRep_Tool.Triangulation_s(face, loc)
+        if tri is None:
+            continue
+        trsf = loc.Transformation()
+        nodes = []
+        for n in range(1, tri.NbNodes() + 1):
+            p = tri.Node(n).Transformed(trsf)
+            nodes.append((p.X() - center[0], p.Y() - center[1], p.Z() - center[2]))
+        rev = face.Orientation() == TopAbs_REVERSED
+        for t in range(1, tri.NbTriangles() + 1):
+            a, b, c = tri.Triangle(t).Get()
+            if rev:
+                b, c = c, b
+            pa, pb, pc = nodes[a - 1], nodes[b - 1], nodes[c - 1]
+            nrm = _cross(_sub3(pb, pa), _sub3(pc, pa))
+            ln = math.sqrt(_dot(nrm, nrm))
+            if ln < 1e-12:
+                continue
+            nrm = (nrm[0] / ln, nrm[1] / ln, nrm[2] / ln)
+            if _dot(nrm, e) <= 1e-6:  # facing away
+                continue
+            shade = 0.25 + 0.75 * max(0.0, _dot(nrm, light))
+            pts = [(_dot(p, xa), _dot(p, ya)) for p in (pa, pb, pc)]
+            depth = (_dot(pa, e) + _dot(pb, e) + _dot(pc, e)) / 3
+            out.append(Facet(points=pts, shade=round(shade, 3), depth=depth))
+    out.sort(key=lambda f: f.depth)
+    return out
+
+
+def _dot(a, b) -> float:
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+
+
+def _sub3(a, b):
+    return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+
+def _unit(a):
+    n = math.sqrt(_dot(a, a)) or 1.0
+    return (a[0] / n, a[1] / n, a[2] / n)

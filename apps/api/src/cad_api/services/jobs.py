@@ -35,6 +35,39 @@ class JobRunner(Protocol):
     def shutdown(self) -> None: ...
 
 
+# system variables Windows processes need to function (never secrets)
+_WINDOWS_PASSTHROUGH = ("SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT", "NUMBER_OF_PROCESSORS",
+                        "PROCESSOR_ARCHITECTURE")
+
+
+def child_env(cwd: Path, platform: str = sys.platform, parent: dict | None = None) -> dict[str, str]:
+    """Minimal environment for a CAD job process.
+
+    The parent's environment (which may hold secrets) is not inherited. Home, config, cache
+    and temp directories all point into the job's own directory, so libraries such as ezdxf
+    and matplotlib never touch the real user profile - and never fail when the OS-specific
+    home variable (HOME on POSIX, USERPROFILE on Windows) is missing.
+    """
+    parent = os.environ if parent is None else parent
+    work = str(cwd)
+    env = {
+        "PATH": parent.get("PATH", "/usr/bin:/bin"),
+        "LANG": "C.UTF-8",
+        "HOME": work,
+        "XDG_CONFIG_HOME": work,
+        "XDG_CACHE_HOME": work,
+        "MPLCONFIGDIR": str(cwd / ".mpl"),
+        "MPLBACKEND": "Agg",
+        "TMPDIR": work,
+        "OMP_NUM_THREADS": "1",
+        "PYTHONIOENCODING": "utf-8",
+    }
+    if platform == "win32":
+        env.update({"USERPROFILE": work, "TEMP": work, "TMP": work, "APPDATA": work, "LOCALAPPDATA": work})
+        env.update({k: parent[k] for k in _WINDOWS_PASSTHROUGH if k in parent})
+    return env
+
+
 def _limit_resources(memory_bytes: int):  # pragma: no cover - runs in the child
     def apply() -> None:
         import resource
@@ -106,15 +139,17 @@ class LocalProcessRunner:
             self._fail(job_id, "JOB_KILLED", f"process terminated by signal {-out.rc} (e.g. memory limit)",
                        model_failed=model_failed)
         else:
-            self._fail(job_id, "JOB_CRASHED", f"process exited with code {out.rc}", model_failed=model_failed)
+            # surface the last line of the child's stderr (e.g. "ModuleNotFoundError: ...") - never file contents
+            last = next((ln.strip() for ln in reversed(out.stderr_tail.splitlines()) if ln.strip()), "")
+            detail = f": {last[:300]}" if last else ""
+            self._fail(job_id, "JOB_CRASHED", f"process exited with code {out.rc}{detail}", model_failed=model_failed)
         log.warning("job failed rc=%s stderr_tail=%s", out.rc, out.stderr_tail[-2000:], extra={"job_id": job_id})
 
     # ------------------------------------------------------------------ subprocess
 
     def _run_process(self, job_id: str, argv: list[str], cwd: Path,
                      on_progress: Callable[[dict], None]) -> ProcessOutcome:
-        env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "LANG": "C.UTF-8", "HOME": str(cwd),
-               "OMP_NUM_THREADS": "1", "MPLBACKEND": "Agg", "MPLCONFIGDIR": str(cwd / ".mpl")}
+        env = child_env(cwd)
         preexec = (_limit_resources(self.settings.analysis_memory_mb * 1024 * 1024)
                    if sys.platform.startswith("linux") else None)
         proc = subprocess.Popen(  # noqa: S603 - fixed argv, no shell

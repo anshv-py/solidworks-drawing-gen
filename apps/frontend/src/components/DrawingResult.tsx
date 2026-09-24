@@ -9,24 +9,40 @@ const SEVERITY_STYLE: Record<string, string> = {
 
 export default function DrawingResult({ drawing, onRegenerate }: { drawing: DrawingOut; onRegenerate: () => void }) {
   const qa = drawing.qa;
+  const err = drawing.job.error;
+  const qaRejected = err?.code === "QA_FAILED";
+  // the job failed before QA could run (engine error, layout failure, crash): no preview, no QA
+  const engineFailed = drawing.job.state === "FAILED" && !qaRejected;
+  const title = drawing.passed ? "Drawing passed QA"
+    : qaRejected ? "Drawing rejected by QA – exports blocked"
+    : engineFailed ? "Drawing generation failed" : "Drawing not available";
   return (
     <div className="space-y-3" data-testid="drawing-result">
-      <div className="overflow-hidden rounded-lg bg-white shadow-sm">
-        <img src={previewUrl(drawing.id, drawing.job.finished_at ?? "")} alt="Drawing preview"
-          className="w-full" data-testid="drawing-preview" />
-      </div>
+      {!engineFailed && (
+        <div className="overflow-hidden rounded-lg bg-white shadow-sm">
+          <img src={previewUrl(drawing.id, drawing.job.finished_at ?? "")} alt="Drawing preview"
+            className="w-full" data-testid="drawing-preview" />
+        </div>
+      )}
       <div className="rounded-lg bg-white p-3 text-sm shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="font-medium">
-            {drawing.passed ? "Drawing passed QA" : "Drawing rejected by QA – exports blocked"}
-          </span>
-          <span className={`rounded px-2 py-0.5 text-xs ${drawing.passed ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
-            {qa ? `${qa.critical} critical · ${qa.major} major · ${qa.minor} minor` : "no QA"}
-          </span>
+          <span className="font-medium">{title}</span>
+          {qa && (
+            <span className={`rounded px-2 py-0.5 text-xs ${drawing.passed ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>
+              {`${qa.critical} critical · ${qa.major} major · ${qa.minor} minor`}
+            </span>
+          )}
         </div>
-        <p className="mt-1 text-xs text-slate-500">
-          Scale {drawing.scale ?? "–"} · {drawing.generator} · {drawing.solidworks ? "SolidWorks" : "not a SolidWorks drawing"}
-        </p>
+        {engineFailed && err && (
+          <p className="mt-2 rounded bg-red-50 p-2 font-mono text-xs text-red-800" data-testid="drawing-error">
+            {err.code}: {err.message}
+          </p>
+        )}
+        {!engineFailed && (
+          <p className="mt-1 text-xs text-slate-500">
+            Scale {drawing.scale ?? "–"} · {drawing.generator} · {drawing.solidworks ? "SolidWorks" : "not a SolidWorks drawing"}
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {drawing.downloads.map((fmt) => (
             <a key={fmt} href={downloadUrl(drawing.id, fmt)} data-testid={`download-${fmt}`}

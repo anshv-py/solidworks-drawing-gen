@@ -17,7 +17,7 @@ def texts(cands):
 
 def test_values_are_copied_from_geometry(analyzed):
     ir, _ = analyzed["plate_with_holes"]
-    c = {x.id: x for x in generate_candidates(ir)}
+    c = {x.id: x for x in generate_candidates(ir, trailing_zeros=False)}
     assert c["DIM-OVERALL-X"].value == ir.bounding_box.size[0]
     callouts = [x for x in c.values() if x.kind == CandidateKind.HOLE_CALLOUT]
     assert {x.text for x in callouts} == {"4X Ø8 THRU", "Ø20 THRU"}
@@ -31,12 +31,18 @@ def test_values_are_copied_from_geometry(analyzed):
     ("mounting_plate", {"150", "100", "8", "3X Ø6.6 THRU", "2X Ø6.6 THRU\nCBORE Ø11 DEPTH 4", "2X 40", "4X R10"}),
     ("pocketed_block", {"100", "60", "30", "50", "Ø6 DEPTH 15"}),
     ("bracket", {"80", "50", "60", "2X Ø9 THRU", "R5", "10", "40"}),
-    ("shaft", {"140", "Ø30", "Ø20", "40", "2X 1 × 45°"}),
-    ("chamfered_block", {"60", "40", "20", "3 × 45°", "R4"}),
+    ("shaft", {"140", "Ø30", "Ø20", "40", "2X 1 X 45°"}),
+    ("chamfered_block", {"60", "40", "20", "3 X 45°", "R4"}),
 ])
 def test_expected_labels(analyzed, name, expected):
     ir, _ = analyzed[name]
-    assert expected <= texts(generate_candidates(ir))
+    assert expected <= texts(generate_candidates(ir, trailing_zeros=False))
+
+
+def test_trailing_zeros_follow_decimal_places(analyzed):
+    # default: every value printed with the drawing's decimal places (as in the reference drawings)
+    t = texts(generate_candidates(analyzed["mounting_plate"][0]))
+    assert {"150.00", "3X Ø6.60 THRU", "2X Ø6.60 THRU\nCBORE Ø11.00 DEPTH 4.00", "4X R10.00"} <= t
 
 
 def test_turned_part_uses_diameter_instead_of_overall_width(analyzed):

@@ -88,22 +88,31 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
     R.check("QA-SHEET-002")
     for d in cd.dimensions:
         pts = [p for p in (d.p1, d.p2) if p] + list(d.leader)
-        box = d.text_bbox
+        box = d.text_bbox if d.extra_bbox is None else d.text_bbox.union(d.extra_bbox)
         for p in pts:
             box = box.union(Rect(x0=p[0], y0=p[1], x1=p[0], y1=p[1]))
         if not box.inside(cd.frame):
             R.add("QA-SHEET-002", QaSeverity.CRITICAL, f"dimension {d.id} ({d.text}) extends outside the frame",
                   [d.id], box, REDUCE_SCALE)
+    for p in cd.pmi:
+        if not p.bbox.inside(cd.frame):
+            R.add("QA-SHEET-002", QaSeverity.CRITICAL, f"annotation {p.id} extends outside the frame",
+                  [p.id], p.bbox, REDUCE_SCALE)
     R.check("QA-SHEET-003")
-    strip = Rect(x0=cd.frame.x0, y0=cd.frame.y0, x1=cd.frame.x1, y1=cd.title_block.y1)
-    for vid, bb in geo_bbox.items():
-        if bb is not None and bb.intersects(strip):
-            R.add("QA-SHEET-003", QaSeverity.CRITICAL, f"view {vid} collides with the title block / notes area",
-                  [vid], bb, REDUCE_SCALE)
-    for d in cd.dimensions:
-        if d.text_bbox.intersects(strip):
-            R.add("QA-SHEET-003", QaSeverity.CRITICAL, f"dimension {d.id} text collides with the title block",
-                  [d.id], d.text_bbox, REDUCE_SCALE)
+    blocks = [("title block", cd.title_block)]
+    if cd.notes_rect is not None:
+        blocks.append(("sheet notes", cd.notes_rect))
+    if cd.revision_rect is not None:
+        blocks.append(("revision table", cd.revision_rect))
+    drawn = [(f"view {vid}", vid, bb) for vid, bb in geo_bbox.items() if bb is not None]
+    drawn += [(f"dimension {d.id}", d.id, d.text_bbox) for d in cd.dimensions]
+    drawn += [(f"annotations of {d.id}", d.id, d.extra_bbox) for d in cd.dimensions if d.extra_bbox]
+    drawn += [(f"annotation {p.id}", p.id, p.bbox) for p in cd.pmi]
+    for what, ref, bb in drawn:
+        for name, blk in blocks:
+            if bb.intersects(blk):
+                R.add("QA-SHEET-003", QaSeverity.CRITICAL, f"{what} collides with the {name}", [ref], bb,
+                      REDUCE_SCALE)
 
     # ---------------------------------------------------------------- views
     R.check("QA-VIEW-001")
@@ -249,12 +258,22 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
             R.add("QA-TXT-001", QaSeverity.MAJOR, f"{d.id} text height {d.text_height} mm < {MIN_TEXT} mm", [d.id])
     R.check("QA-TB-001")
     info = plan.engineering_information
-    tb_map = {"MATERIAL": "material", "GENERAL TOL.": "general_tolerance", "SURFACE FINISH": "surface_finish"}
+    tb_map = {  # title field -> engineering fields that may legitimately fill it
+        "MATERIAL": ("material",), "GENERAL_TOL": ("general_tolerance",), "SURFACE_FINISH": ("surface_finish",),
+        "LINEAR_TOL": ("linear_tolerance", "general_tolerance"),
+        "ANGULAR_TOL": ("angular_tolerance", "general_tolerance"), "FINISH": ("coating", "heat_treatment"),
+    }
     for f in cd.title_fields:
-        if f.label in tb_map:
-            src = getattr(info, tb_map[f.label])
-            if f.value != "UNSPECIFIED" and src.status != "SPECIFIED":
+        if f.label in tb_map and f.value not in ("UNSPECIFIED", ""):
+            supplied = {getattr(info, n).value for n in tb_map[f.label] if getattr(info, n).status == "SPECIFIED"}
+            if not supplied or not all(part.strip() in supplied for part in f.value.split(",")):
                 R.add("QA-TB-001", QaSeverity.CRITICAL, f"title block {f.label} shows a value nobody supplied", [f.label])
+    if plan.manufacturing.deburr_break_sharp_edges is False and any(
+            f.label == "EDGES" and f.value for f in cd.title_fields):
+        R.add("QA-TB-001", QaSeverity.CRITICAL, "edge-treatment note printed although the user did not request it",
+              ["EDGES"])
+
+    _pmi_checks(R, plan, cd, geo_bbox)
 
     crit = sum(i.severity == QaSeverity.CRITICAL for i in R.issues)
     return QaReport(
@@ -263,3 +282,57 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         minor=sum(i.severity == QaSeverity.MINOR for i in R.issues),
         checks_run=sorted(set(R.checks)), issues=R.issues,
     )
+
+
+def _pmi_checks(R: _Report, plan: DrawingPlan, cd: CompiledDrawing, geo_bbox: dict) -> None:
+    """User-supplied manufacturing annotations: every one is on the sheet exactly as supplied,
+    and none of them collides with other drawing content."""
+    m = plan.manufacturing
+    R.check("QA-PMI-001")
+    for note in cd.notes:
+        if note.startswith("UNPLACED:"):
+            R.add("QA-PMI-001", QaSeverity.CRITICAL, f"user annotation not shown: {note[9:].strip()}")
+        elif note.startswith("CROWDED:"):
+            R.add("QA-PMI-001", QaSeverity.MAJOR, note[8:].strip(), repair=REDUCE_SCALE)
+    R.check("QA-PMI-002")
+    shown_datums = [d.datum for d in cd.dimensions if d.datum] + [p.datum for p in cd.pmi if p.datum]
+    for d in m.datums:
+        n = shown_datums.count(d.letter)
+        if n != 1:
+            R.add("QA-PMI-002", QaSeverity.CRITICAL, f"datum {d.letter} is shown {n} times (expected once)", [d.letter])
+    for letter in sorted(set(shown_datums) - {d.letter for d in m.datums}):
+        R.add("QA-PMI-002", QaSeverity.CRITICAL, f"datum {letter} is on the sheet but was never defined", [letter])
+    frames = [f for d in cd.dimensions for f in d.frames] + [f for p in cd.pmi for f in p.frames]
+    if len(frames) != len(m.frames):
+        R.add("QA-PMI-002", QaSeverity.CRITICAL,
+              f"{len(frames)} feature control frames on the sheet, {len(m.frames)} supplied")
+    defined = {d.letter for d in m.datums}
+    for fr in frames:
+        for cell in fr.cells[2:]:
+            if cell.text not in defined:
+                R.add("QA-PMI-002", QaSeverity.CRITICAL, f"frame references undefined datum {cell.text}")
+    tol = {d.id for d in cd.dimensions if d.tolerance is not None}
+    for t in m.tolerances:
+        if t.candidate_id not in tol:
+            R.add("QA-PMI-002", QaSeverity.CRITICAL, f"tolerance on {t.candidate_id} is not shown", [t.candidate_id])
+    insp = {d.id for d in cd.dimensions if d.inspection}
+    for cid in m.inspection_dimensions:
+        if cid not in insp:
+            R.add("QA-PMI-002", QaSeverity.CRITICAL, f"inspection mark on {cid} is not shown", [cid])
+    marks = sum(1 for p in cd.pmi if p.kind == "SURFACE_FINISH")
+    if marks != len(m.surface_finish_marks):
+        R.add("QA-PMI-002", QaSeverity.CRITICAL,
+              f"{marks} surface texture symbols on the sheet, {len(m.surface_finish_marks)} supplied")
+    R.check("QA-PMI-003")
+    items = [(f"{d.id} text", d.view_id, d.text_bbox) for d in cd.dimensions]
+    items += [(f"{d.id} frames/datum", d.view_id, d.extra_bbox) for d in cd.dimensions if d.extra_bbox]
+    items += [(p.id, p.view_id, p.bbox) for p in cd.pmi]
+    annotated = {name for name, _, _ in items[len(cd.dimensions):]}
+    for i, (a, va, ba) in enumerate(items):
+        for b, vb, bb in items[i + 1:]:
+            if (a in annotated or b in annotated) and a.split(" ")[0] != b.split(" ")[0] and ba.intersects(bb, 0.3):
+                R.add("QA-PMI-003", QaSeverity.MAJOR, f"{a} overlaps {b}", [a, b], ba.union(bb), REDUCE_SCALE)
+        if a in annotated:
+            for vid, gb in geo_bbox.items():
+                if gb is not None and vid != va and ba.intersects(gb, 0.5):
+                    R.add("QA-PMI-003", QaSeverity.MAJOR, f"{a} overlaps view {vid}", [a, vid], ba, REDUCE_SCALE)

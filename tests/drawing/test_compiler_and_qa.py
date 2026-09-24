@@ -56,8 +56,9 @@ def test_sheet_distances_match_values(analyzed):
 def test_title_block_never_invents_engineering_data(analyzed):
     _, _, cd = compiled(analyzed, "flange")
     f = {x.label: x.value for x in cd.title_fields}
-    assert f["MATERIAL"] == f["GENERAL TOL."] == f["SURFACE FINISH"] == "UNSPECIFIED"
+    assert f["MATERIAL"] == f["GENERAL_TOL"] == f["SURFACE_FINISH"] == f["LINEAR_TOL"] == f["ANGULAR_TOL"] == "UNSPECIFIED"
     assert f["TYPE"] == "GEOMETRY DRAWING" and f["PROJECTION"] == "FIRST ANGLE"
+    assert f["EDGES"] == "" and f["DRAWN_NAME"] == ""  # nothing the user did not supply
 
 
 def test_tiny_sheet_forces_smaller_scale_or_fails(analyzed):

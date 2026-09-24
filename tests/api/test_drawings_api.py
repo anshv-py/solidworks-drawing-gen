@@ -82,3 +82,40 @@ def test_api_process_never_loads_occt():
     code = "import sys, cad_api.main, cad_api.routers.drawings; print('OCP' in sys.modules)"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
     assert out.stdout.strip() == "False", out.stderr
+
+
+def test_crash_reports_the_cause(client, models_dir, monkeypatch):  # noqa: F811
+    """A drawing process that dies without a structured error must still say why."""
+    model = analyzed_model(client, models_dir / "shaft.step")
+    runner = client.app.state.runner
+    orig = runner._run_process
+
+    def broken(job_id, argv, cwd, on_progress):
+        if "drawing_executor" in argv:
+            argv = ["-c", "import drawing_executor_missing_module"]
+        return orig(job_id, argv, cwd, on_progress)
+
+    monkeypatch.setattr(runner, "_run_process", broken)
+    drawing_id = client.post("/api/drawings/generate", json={"model_id": model["id"]}).json()["drawing_id"]
+    job = wait(client, drawing_id)
+    assert job["state"] == "FAILED"
+    assert job["error"]["code"] == "JOB_CRASHED"
+    assert "ModuleNotFoundError" in job["error"]["message"]
+    d = client.get(f"/api/drawings/{drawing_id}").json()
+    assert d["qa"] is None and d["downloads"] == []
+
+
+def test_annotation_targets_and_invalid_annotations(client, models_dir):  # noqa: F811
+    model = analyzed_model(client, models_dir / "flange.step")
+    t = client.post("/api/drawings/annotation-targets", json={"model_id": model["id"], "settings": {}}).json()
+    ids = {d["id"] for d in t["dimensions"]}
+    assert "DIM-OVERALL-Z" in ids and any(d["text"].startswith("8X") for d in t["dimensions"])
+    assert len(t["planar_faces"]) == 3 and any(f["type"] == "PATTERN" for f in t["features"])
+    # references that do not exist on this part are rejected before a job is queued
+    bad = {"manufacturing": {"tolerances": [{"candidate_id": "DIM-NOPE", "kind": "SYMMETRIC", "upper": 0.1}]}}
+    r = client.post("/api/drawings/generate", json={"model_id": model["id"], "settings": bad})
+    assert r.status_code == 422 and r.json()["code"] == "PMI_INVALID"
+    face = t["planar_faces"][0]["id"]
+    ok = {"manufacturing": {"datums": [{"letter": "A", "target": {"face_id": face}}],
+                            "tolerances": [{"candidate_id": "DIM-OVERALL-Z", "kind": "SYMMETRIC", "upper": 0.1}]}}
+    assert client.post("/api/drawings/generate", json={"model_id": model["id"], "settings": ok}).status_code == 202

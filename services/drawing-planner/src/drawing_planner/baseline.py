@@ -13,7 +13,7 @@ Rules (in order):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from drawing_schema import (
     DimensionSelection,
@@ -31,6 +31,7 @@ from drawing_schema.settings import DrawingSettings
 from geometry_schema import FeatureType, GeometryIR
 
 from drawing_planner.candidates import generate_candidates
+from drawing_planner.pmi_validation import validate_pmi
 
 VIEW_PREFERENCE = [
     ViewOrientation.FRONT, ViewOrientation.TOP, ViewOrientation.RIGHT,
@@ -48,6 +49,7 @@ def view_id(o: ViewOrientation) -> str:
 class PlanResult:
     plan: DrawingPlan
     candidates: list[DimensionCandidate]  # all candidates (selected ones are referenced by the plan)
+    errors: list[str] = field(default_factory=list)  # invalid user annotations (drawing must not be made)
 
 
 def _category(c: DimensionCandidate, hole_ids: set[str]) -> str:
@@ -138,7 +140,7 @@ def plan_baseline(
     ir: GeometryIR, settings: DrawingSettings, *, filename: str | None = None
 ) -> PlanResult:
     dp = settings.dimensions.decimal_places
-    candidates = generate_candidates(ir, dp)
+    candidates = generate_candidates(ir, dp, settings.dimensions.trailing_zeros, settings.manufacturing.threads)
     hole_ids = {f.id for f in ir.features if f.type == FeatureType.HOLE}
     prefs = settings.dimensions.model_dump()
     enabled = [c for c in candidates if prefs.get(_category(c, hole_ids), True)]
@@ -223,8 +225,13 @@ def plan_baseline(
         annotations=settings.annotations,
         engineering_information=settings.engineering_information,
         title_block=tb,
+        manufacturing=settings.manufacturing,
+        pictorial_style=settings.pictorial_style,
         uncertainties=uncertainties,
         rationale="deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy "
         "removal, true-size view assignment",
     )
-    return PlanResult(plan=plan, candidates=candidates)
+    result = PlanResult(plan=plan, candidates=candidates)
+    placed = {s.candidate_id for s in plan.dimension_selections}
+    result.errors = validate_pmi(ir, settings.manufacturing, [c for c in candidates if c.id in placed])
+    return result

@@ -15,6 +15,7 @@ for (const [src, dst] of targets) {
     bannerComment: banner,
     additionalProperties: false,
     unreachableDefinitions: true,
+    maxItems: -1, // plain arrays (max length is enforced by the API), not tuple unions
     style: { singleQuote: false },
   });
   await writeFile(new URL(`../${dst}`, import.meta.url), ts);

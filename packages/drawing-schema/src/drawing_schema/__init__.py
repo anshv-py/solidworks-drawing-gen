@@ -15,6 +15,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import AfterValidator, Field, field_validator, model_validator
 
+from drawing_schema.pmi import ManufacturingAnnotations
 from shared_types import InfoSource, StrictModel
 
 SCHEMA_VERSION = "0.1.0"
@@ -202,6 +203,7 @@ class DimensionPreferences(StrictModel):
     angles: bool = True
     depths: bool = True
     decimal_places: int = Field(default=2, ge=0, le=4)
+    trailing_zeros: bool = Field(default=True, description="8.00 rather than 8 (SolidWorks-style)")
 
 
 class DimensionSelection(StrictModel):
@@ -242,6 +244,8 @@ def _unspecified() -> EngineeringField:
 class EngineeringInformation(StrictModel):
     material: EngineeringField = Field(default_factory=_unspecified)
     general_tolerance: EngineeringField = Field(default_factory=_unspecified)
+    linear_tolerance: EngineeringField = Field(default_factory=_unspecified)
+    angular_tolerance: EngineeringField = Field(default_factory=_unspecified)
     gdt: EngineeringField = Field(default_factory=_unspecified)
     datum_scheme: EngineeringField = Field(default_factory=_unspecified)
     surface_finish: EngineeringField = Field(default_factory=_unspecified)
@@ -251,12 +255,36 @@ class EngineeringInformation(StrictModel):
     manufacturing_process: EngineeringField = Field(default_factory=_unspecified)
 
 
+def missing_manufacturing_information(info: "EngineeringInformation") -> list[str]:
+    """A manufacturing drawing needs a material and a general (or linear) tolerance."""
+    missing = []
+    if info.material.status != "SPECIFIED":
+        missing.append("material")
+    if info.general_tolerance.status != "SPECIFIED" and info.linear_tolerance.status != "SPECIFIED":
+        missing.append("general_tolerance")
+    return missing
+
+
 class TitleBlock(StrictModel):
-    title: str | None = None
-    part_number: str | None = None
-    revision: str | None = None
-    drawn_by: str | None = None
-    organization: str | None = None
+    """Identification data - all user-supplied (never generated)."""
+
+    title: str | None = Field(default=None, max_length=60)
+    part_number: str | None = Field(default=None, max_length=40)
+    drawing_number: str | None = Field(default=None, max_length=40)
+    revision: str | None = Field(default=None, max_length=4)
+    organization: str | None = Field(default=None, max_length=60)
+    weight: str | None = Field(default=None, max_length=20, description="as stated by the user, e.g. '475 g'")
+    quantity: str | None = Field(default=None, max_length=10)
+    drawn_by: str | None = Field(default=None, max_length=30)
+    drawn_date: str | None = Field(default=None, max_length=20)
+    checked_by: str | None = Field(default=None, max_length=30)
+    checked_date: str | None = Field(default=None, max_length=20)
+    approved_by: str | None = Field(default=None, max_length=30)
+    approved_date: str | None = Field(default=None, max_length=20)
+    mfg_by: str | None = Field(default=None, max_length=30)
+    mfg_date: str | None = Field(default=None, max_length=20)
+    qa_by: str | None = Field(default=None, max_length=30)
+    qa_date: str | None = Field(default=None, max_length=20)
 
 
 class PlanUncertainty(StrictModel):
@@ -296,6 +324,8 @@ class DrawingPlan(StrictModel):
     annotations: AnnotationPreferences = AnnotationPreferences()
     engineering_information: EngineeringInformation = EngineeringInformation()
     title_block: TitleBlock = TitleBlock()
+    manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
+    pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
     uncertainties: list[PlanUncertainty] = Field(default_factory=list)
     rationale: str | None = Field(default=None, max_length=2000)
 
@@ -312,11 +342,7 @@ class DrawingPlan(StrictModel):
     def _manufacturing_requires_information(self) -> Self:
         if self.drawing_kind == DrawingKind.MANUFACTURING:
             info = self.engineering_information
-            missing = [
-                name
-                for name in ("material", "general_tolerance")
-                if getattr(info, name).status != "SPECIFIED"
-            ]
+            missing = missing_manufacturing_information(info)
             if missing:
                 raise ValueError(
                     "a MANUFACTURING drawing requires supplied engineering information: "

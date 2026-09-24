@@ -9,6 +9,7 @@
 | psycopg 3 | PostgreSQL driver | LGPL-3.0 | dynamic use as a library |
 | NumPy | numerics | BSD-3-Clause | |
 | ezdxf 1.4 | DXF writing + DXF rendering (drawing add-on) | MIT | |
+| Liberation Sans (font) | drawing text (referenced by name; used if installed, not redistributed) | SIL OFL 1.1 | ezdxf falls back to another installed font |
 | matplotlib 3.11 | PDF/SVG/PNG rendering backend | matplotlib licence (PSF-based, BSD-compatible) | |
 | React, Vite, Tailwind CSS, three.js, Vitest, json-schema-to-typescript | frontend | MIT | |
 | Playwright (dev only) | browser e2e | Apache-2.0 | |

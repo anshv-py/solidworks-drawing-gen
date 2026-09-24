@@ -7,5 +7,6 @@ An LLM refinement step is optional future work and is not required for a complet
 
 from drawing_planner.baseline import PlanResult, plan_baseline, remove_redundant
 from drawing_planner.candidates import generate_candidates
+from drawing_planner.pmi_validation import validate_pmi
 
-__all__ = ["PlanResult", "plan_baseline", "remove_redundant", "generate_candidates"]
+__all__ = ["PlanResult", "plan_baseline", "remove_redundant", "generate_candidates", "validate_pmi"]

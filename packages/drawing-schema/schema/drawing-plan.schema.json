@@ -27,6 +27,52 @@
       "title": "AnnotationPreferences",
       "type": "object"
     },
+    "Datum": {
+      "additionalProperties": false,
+      "properties": {
+        "letter": {
+          "pattern": "^[A-HJ-NPR-Z]$",
+          "title": "Letter",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        }
+      },
+      "required": [
+        "letter",
+        "target"
+      ],
+      "title": "Datum",
+      "type": "object"
+    },
+    "DatumReference": {
+      "additionalProperties": false,
+      "properties": {
+        "letter": {
+          "pattern": "^[A-HJ-NPR-Z]$",
+          "title": "Letter",
+          "type": "string"
+        },
+        "material_condition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaterialCondition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "letter",
+        "material_condition"
+      ],
+      "title": "DatumReference",
+      "type": "object"
+    },
     "DetailView": {
       "additionalProperties": false,
       "properties": {
@@ -107,6 +153,12 @@
           "default": true,
           "title": "Radii",
           "type": "boolean"
+        },
+        "trailing_zeros": {
+          "default": true,
+          "description": "8.00 rather than 8 (SolidWorks-style)",
+          "title": "Trailing Zeros",
+          "type": "boolean"
         }
       },
       "required": [
@@ -117,7 +169,8 @@
         "diameters",
         "angles",
         "depths",
-        "decimal_places"
+        "decimal_places",
+        "trailing_zeros"
       ],
       "title": "DimensionPreferences",
       "type": "object"
@@ -140,6 +193,37 @@
         "view_id"
       ],
       "title": "DimensionSelection",
+      "type": "object"
+    },
+    "DimensionTolerance": {
+      "additionalProperties": false,
+      "properties": {
+        "candidate_id": {
+          "title": "Candidate Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ToleranceKind"
+        },
+        "lower": {
+          "default": 0.0,
+          "description": "DEVIATION/LIMITS: lower deviation (signed)",
+          "title": "Lower",
+          "type": "number"
+        },
+        "upper": {
+          "description": "SYMMETRIC: the \u00b1 value; DEVIATION/LIMITS: upper deviation",
+          "title": "Upper",
+          "type": "number"
+        }
+      },
+      "required": [
+        "candidate_id",
+        "kind",
+        "upper",
+        "lower"
+      ],
+      "title": "DimensionTolerance",
       "type": "object"
     },
     "DisplayStyle": {
@@ -214,6 +298,9 @@
     "EngineeringInformation": {
       "additionalProperties": false,
       "properties": {
+        "angular_tolerance": {
+          "$ref": "#/$defs/EngineeringField"
+        },
         "coating": {
           "$ref": "#/$defs/EngineeringField"
         },
@@ -232,6 +319,9 @@
         "inspection_requirements": {
           "$ref": "#/$defs/EngineeringField"
         },
+        "linear_tolerance": {
+          "$ref": "#/$defs/EngineeringField"
+        },
         "manufacturing_process": {
           "$ref": "#/$defs/EngineeringField"
         },
@@ -245,6 +335,8 @@
       "required": [
         "material",
         "general_tolerance",
+        "linear_tolerance",
+        "angular_tolerance",
         "gdt",
         "datum_scheme",
         "surface_finish",
@@ -255,6 +347,98 @@
       ],
       "title": "EngineeringInformation",
       "type": "object"
+    },
+    "FeatureControlFrame": {
+      "additionalProperties": false,
+      "properties": {
+        "characteristic": {
+          "$ref": "#/$defs/GdtCharacteristic"
+        },
+        "datums": {
+          "items": {
+            "$ref": "#/$defs/DatumReference"
+          },
+          "maxItems": 3,
+          "title": "Datums",
+          "type": "array"
+        },
+        "diameter_zone": {
+          "default": false,
+          "title": "Diameter Zone",
+          "type": "boolean"
+        },
+        "material_condition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaterialCondition"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "tolerance": {
+          "description": "tolerance zone size, mm",
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Tolerance",
+          "type": "number"
+        }
+      },
+      "required": [
+        "characteristic",
+        "tolerance",
+        "diameter_zone",
+        "material_condition",
+        "datums",
+        "target"
+      ],
+      "title": "FeatureControlFrame",
+      "type": "object"
+    },
+    "FeatureNote": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "text": {
+          "maxLength": 60,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "text"
+      ],
+      "title": "FeatureNote",
+      "type": "object"
+    },
+    "GdtCharacteristic": {
+      "enum": [
+        "STRAIGHTNESS",
+        "FLATNESS",
+        "CIRCULARITY",
+        "CYLINDRICITY",
+        "PROFILE_OF_A_LINE",
+        "PROFILE_OF_A_SURFACE",
+        "ANGULARITY",
+        "PERPENDICULARITY",
+        "PARALLELISM",
+        "POSITION",
+        "CONCENTRICITY",
+        "SYMMETRY",
+        "CIRCULAR_RUNOUT",
+        "TOTAL_RUNOUT"
+      ],
+      "title": "GdtCharacteristic",
+      "type": "string"
     },
     "GeometryReference": {
       "additionalProperties": false,
@@ -282,6 +466,105 @@
         "CAD_MODEL"
       ],
       "title": "InfoSource",
+      "type": "string"
+    },
+    "ManufacturingAnnotations": {
+      "additionalProperties": false,
+      "properties": {
+        "datums": {
+          "items": {
+            "$ref": "#/$defs/Datum"
+          },
+          "title": "Datums",
+          "type": "array"
+        },
+        "deburr_break_sharp_edges": {
+          "default": false,
+          "description": "print the standard edge note (user choice)",
+          "title": "Deburr Break Sharp Edges",
+          "type": "boolean"
+        },
+        "feature_notes": {
+          "items": {
+            "$ref": "#/$defs/FeatureNote"
+          },
+          "title": "Feature Notes",
+          "type": "array"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/FeatureControlFrame"
+          },
+          "title": "Frames",
+          "type": "array"
+        },
+        "inspection_dimensions": {
+          "description": "candidate ids marked for inspection",
+          "items": {
+            "type": "string"
+          },
+          "title": "Inspection Dimensions",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 12,
+          "title": "Notes",
+          "type": "array"
+        },
+        "revisions": {
+          "items": {
+            "$ref": "#/$defs/RevisionEntry"
+          },
+          "maxItems": 12,
+          "title": "Revisions",
+          "type": "array"
+        },
+        "surface_finish_marks": {
+          "items": {
+            "$ref": "#/$defs/SurfaceFinishMark"
+          },
+          "title": "Surface Finish Marks",
+          "type": "array"
+        },
+        "threads": {
+          "items": {
+            "$ref": "#/$defs/ThreadCallout"
+          },
+          "title": "Threads",
+          "type": "array"
+        },
+        "tolerances": {
+          "items": {
+            "$ref": "#/$defs/DimensionTolerance"
+          },
+          "title": "Tolerances",
+          "type": "array"
+        }
+      },
+      "required": [
+        "datums",
+        "frames",
+        "tolerances",
+        "threads",
+        "inspection_dimensions",
+        "surface_finish_marks",
+        "feature_notes",
+        "notes",
+        "revisions",
+        "deburr_break_sharp_edges"
+      ],
+      "title": "ManufacturingAnnotations",
+      "type": "object"
+    },
+    "MaterialCondition": {
+      "enum": [
+        "MMC",
+        "LMC"
+      ],
+      "title": "MaterialCondition",
       "type": "string"
     },
     "PlanUncertainty": {
@@ -313,6 +596,43 @@
       ],
       "title": "ProjectionMethod",
       "type": "string"
+    },
+    "RevisionEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "approved_by": {
+          "default": "",
+          "maxLength": 30,
+          "title": "Approved By",
+          "type": "string"
+        },
+        "date": {
+          "default": "",
+          "maxLength": 20,
+          "title": "Date",
+          "type": "string"
+        },
+        "description": {
+          "default": "",
+          "maxLength": 80,
+          "title": "Description",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 4,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "description",
+        "date",
+        "approved_by"
+      ],
+      "title": "RevisionEntry",
+      "type": "object"
     },
     "SectionPlane": {
       "additionalProperties": false,
@@ -430,10 +750,31 @@
       "title": "SheetSize",
       "type": "string"
     },
-    "TitleBlock": {
+    "SurfaceFinishMark": {
       "additionalProperties": false,
       "properties": {
-        "drawn_by": {
+        "ra_um": {
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Ra Um",
+          "type": "number"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        }
+      },
+      "required": [
+        "target",
+        "ra_um"
+      ],
+      "title": "SurfaceFinishMark",
+      "type": "object"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "description": "A GeometryIR feature (hole, boss, pattern, slot, pocket \u2026) or a single face.",
+      "properties": {
+        "face_id": {
           "anyOf": [
             {
               "type": "string"
@@ -443,11 +784,190 @@
             }
           ],
           "default": null,
+          "title": "Face Id"
+        },
+        "feature_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Feature Id"
+        }
+      },
+      "required": [
+        "feature_id",
+        "face_id"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "ThreadCallout": {
+      "additionalProperties": false,
+      "properties": {
+        "depth": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "thread depth; required for blind holes",
+          "title": "Depth"
+        },
+        "designation": {
+          "description": "e.g. M8x1.25-6H (as specified by the user)",
+          "maxLength": 40,
+          "minLength": 2,
+          "title": "Designation",
+          "type": "string"
+        },
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "feature_id",
+        "designation",
+        "depth"
+      ],
+      "title": "ThreadCallout",
+      "type": "object"
+    },
+    "TitleBlock": {
+      "additionalProperties": false,
+      "description": "Identification data - all user-supplied (never generated).",
+      "properties": {
+        "approved_by": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved By"
+        },
+        "approved_date": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approved Date"
+        },
+        "checked_by": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checked By"
+        },
+        "checked_date": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Checked Date"
+        },
+        "drawing_number": {
+          "anyOf": [
+            {
+              "maxLength": 40,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drawing Number"
+        },
+        "drawn_by": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
           "title": "Drawn By"
+        },
+        "drawn_date": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drawn Date"
+        },
+        "mfg_by": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mfg By"
+        },
+        "mfg_date": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mfg Date"
         },
         "organization": {
           "anyOf": [
             {
+              "maxLength": 60,
               "type": "string"
             },
             {
@@ -460,6 +980,7 @@
         "part_number": {
           "anyOf": [
             {
+              "maxLength": 40,
               "type": "string"
             },
             {
@@ -469,9 +990,49 @@
           "default": null,
           "title": "Part Number"
         },
+        "qa_by": {
+          "anyOf": [
+            {
+              "maxLength": 30,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Qa By"
+        },
+        "qa_date": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Qa Date"
+        },
+        "quantity": {
+          "anyOf": [
+            {
+              "maxLength": 10,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantity"
+        },
         "revision": {
           "anyOf": [
             {
+              "maxLength": 4,
               "type": "string"
             },
             {
@@ -484,6 +1045,7 @@
         "title": {
           "anyOf": [
             {
+              "maxLength": 60,
               "type": "string"
             },
             {
@@ -492,17 +1054,52 @@
           ],
           "default": null,
           "title": "Title"
+        },
+        "weight": {
+          "anyOf": [
+            {
+              "maxLength": 20,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "as stated by the user, e.g. '475 g'",
+          "title": "Weight"
         }
       },
       "required": [
         "title",
         "part_number",
+        "drawing_number",
         "revision",
+        "organization",
+        "weight",
+        "quantity",
         "drawn_by",
-        "organization"
+        "drawn_date",
+        "checked_by",
+        "checked_date",
+        "approved_by",
+        "approved_date",
+        "mfg_by",
+        "mfg_date",
+        "qa_by",
+        "qa_date"
       ],
       "title": "TitleBlock",
       "type": "object"
+    },
+    "ToleranceKind": {
+      "enum": [
+        "SYMMETRIC",
+        "DEVIATION",
+        "LIMITS"
+      ],
+      "title": "ToleranceKind",
+      "type": "string"
     },
     "ViewFrame": {
       "description": "Which model axis points up in the drawing views.\n\nZ_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).\nY_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).",
@@ -599,7 +1196,8 @@
         "feature": true,
         "holes": true,
         "overall": true,
-        "radii": true
+        "radii": true,
+        "trailing_zeros": true
       }
     },
     "drawing_kind": {
@@ -613,6 +1211,11 @@
     "engineering_information": {
       "$ref": "#/$defs/EngineeringInformation",
       "default": {
+        "angular_tolerance": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
         "coating": {
           "source": null,
           "status": "UNSPECIFIED",
@@ -643,6 +1246,11 @@
           "status": "UNSPECIFIED",
           "value": null
         },
+        "linear_tolerance": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
         "manufacturing_process": {
           "source": null,
           "status": "UNSPECIFIED",
@@ -663,9 +1271,28 @@
     "geometry": {
       "$ref": "#/$defs/GeometryReference"
     },
+    "manufacturing": {
+      "$ref": "#/$defs/ManufacturingAnnotations",
+      "default": {
+        "datums": [],
+        "deburr_break_sharp_edges": false,
+        "feature_notes": [],
+        "frames": [],
+        "inspection_dimensions": [],
+        "notes": [],
+        "revisions": [],
+        "surface_finish_marks": [],
+        "threads": [],
+        "tolerances": []
+      }
+    },
     "orthographic_display_style": {
       "$ref": "#/$defs/DisplayStyle",
       "default": "HIDDEN_LINES_VISIBLE"
+    },
+    "pictorial_style": {
+      "$ref": "#/$defs/DisplayStyle",
+      "default": "SHADED_WITH_EDGES"
     },
     "primary_view": {
       "$ref": "#/$defs/ViewSpec",
@@ -725,11 +1352,23 @@
     "title_block": {
       "$ref": "#/$defs/TitleBlock",
       "default": {
+        "approved_by": null,
+        "approved_date": null,
+        "checked_by": null,
+        "checked_date": null,
+        "drawing_number": null,
         "drawn_by": null,
+        "drawn_date": null,
+        "mfg_by": null,
+        "mfg_date": null,
         "organization": null,
         "part_number": null,
+        "qa_by": null,
+        "qa_date": null,
+        "quantity": null,
         "revision": null,
-        "title": null
+        "title": null,
+        "weight": null
       }
     },
     "uncertainties": {
@@ -769,6 +1408,8 @@
     "annotations",
     "engineering_information",
     "title_block",
+    "manufacturing",
+    "pictorial_style",
     "uncertainties",
     "rationale"
   ],

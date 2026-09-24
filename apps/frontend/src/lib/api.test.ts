@@ -12,3 +12,12 @@ describe("parseProblem", () => {
     expect(p.code).toBe("HTTP_502");
   });
 });
+
+describe("problemText", () => {
+  it("formats FastAPI validation errors", async () => {
+    const { problemText } = await import("./api");
+    expect(problemText([{ loc: ["body", "settings", "manufacturing"], msg: "bad target" }]))
+      .toBe("settings.manufacturing: bad target");
+    expect(problemText("plain")).toBe("plain");
+  });
+});
