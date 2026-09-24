@@ -9,13 +9,16 @@ cp .env.example .env   # set POSTGRES_PASSWORD
 docker compose up --build   # UI http://localhost:8080, API http://localhost:8000
 ```
 
-Verification status (sandbox, 2026-09-24): a variant of the API image *without* the
-`libgl1` apt step was built and run. `/api/health` and uploads worked, but the analysis
-subprocess failed with `libGL.so.1: cannot open shared object file`, which confirms that the
-apt step is required. The committed Dockerfile, with that step, could not be built in the
-sandbox because its egress policy blocks `deb.debian.org`. The frontend image and
-`docker compose up` were not built there either. Validate them in CI or on a host with
-Debian mirror access.
+Verification status (Docker 28.1 on Windows, 2026-09-25): both images built (`api.Dockerfile`
+with the `libgl1` step, `frontend.Dockerfile`). The API image started on its own (health OK) and
+ran a full upload → OCCT analysis → drawing job through the API (flange, scale 1:1.5, default
+datums/GD&T, QA passed, PDF/DXF/SVG). `docker compose up --build` came up healthy: postgres,
+api (on Postgres), and nginx serving the SPA and proxying `/api`.
+
+Notes:
+- The image's default database is SQLite on the `/data` volume (`CADAI_DATABASE_URL=sqlite:////data/cadai.db`);
+  compose overrides it with Postgres. `/data` is the only path the non-root user can write.
+- Host ports 8000 (API) and 8080 (UI) must be free; change the `ports:` mappings if they are taken.
 
 ## Production checklist (open)
 - Alembic migrations (M1 uses `create_all`)

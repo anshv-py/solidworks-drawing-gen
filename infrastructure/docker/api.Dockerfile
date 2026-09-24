@@ -16,7 +16,9 @@ RUN uv sync --frozen --all-packages --no-dev
 
 RUN useradd --system --uid 10001 --home /app cadai && mkdir -p /data && chown cadai /data
 USER cadai
-ENV PATH="/app/.venv/bin:$PATH" CADAI_STORAGE_DIR=/data/storage
+# /data is the only writable path for the non-root user: storage and the standalone SQLite DB live
+# there (docker compose overrides CADAI_DATABASE_URL with Postgres)
+ENV PATH="/app/.venv/bin:$PATH" CADAI_STORAGE_DIR=/data/storage CADAI_DATABASE_URL=sqlite:////data/cadai.db
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/api/health').status==200 else 1)"
 CMD ["uvicorn", "cad_api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
