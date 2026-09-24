@@ -27,6 +27,26 @@ export type DrawingStandard = "ISO" | "ASME";
 export type InfoSource = "USER" | "CAD_MODEL";
 export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
+/**
+ * sharp-edge break value, e.g. as specified
+ */
+export type EdgeBreak = string | null;
+export type Enabled = boolean;
+export type GeneralGeometricTolerance = string | null;
+export type Marking = string | null;
+export type MaskedSurfaces = string | null;
+export type ModelRevision = string | null;
+export type ManufacturingProcess =
+  "UNSPECIFIED" | "CNC_MACHINED" | "SHEET_METAL" | "CASTING" | "FORGING" | "WELDMENT" | "MOULDED" | "ADDITIVE";
+/**
+ * machining vs heat treatment / coating order
+ */
+export type ProcessSequence = string | null;
+/**
+ * print "WHAT THE SUPPLIER MUST NOT ASSUME"
+ */
+export type SupplierBullets = boolean;
+export type ThreadClass = string | null;
 export type Letter = string;
 export type FaceId = string | null;
 export type FeatureId = string | null;
@@ -173,6 +193,12 @@ export type DrawingKind1 = "GEOMETRY" | "MANUFACTURING";
 export type DrawingStandard1 = "ISO" | "ASME";
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "ManufacturingProcess".
+ */
+export type ManufacturingProcess1 =
+  "UNSPECIFIED" | "CNC_MACHINED" | "SHEET_METAL" | "CASTING" | "FORGING" | "WELDMENT" | "MOULDED" | "ADDITIVE";
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "ProjectionMethod".
  */
 export type ProjectionMethod1 = "FIRST_ANGLE" | "THIRD_ANGLE";
@@ -203,6 +229,7 @@ export interface DrawingSettings {
   drawing_kind: DrawingKind;
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
+  general_notes: GeneralNotes;
   manufacturing: ManufacturingAnnotations;
   orthographic_display_style: DisplayStyle;
   pictorial_style: DisplayStyle1;
@@ -250,6 +277,25 @@ export interface EngineeringField {
   source: InfoSource | null;
   status: Status;
   value: Value;
+}
+/**
+ * The default numbered drawing notes (on by default).
+ *
+ * Notes are assembled deterministically from these user entries, the rest of the drawing
+ * settings and GeometryIR. Anything not supplied is printed as a [PLACEHOLDER] - never a
+ * guessed value.
+ */
+export interface GeneralNotes {
+  edge_break: EdgeBreak;
+  enabled: Enabled;
+  general_geometric_tolerance: GeneralGeometricTolerance;
+  marking: Marking;
+  masked_surfaces: MaskedSurfaces;
+  model_revision: ModelRevision;
+  process: ManufacturingProcess;
+  process_sequence: ProcessSequence;
+  supplier_bullets: SupplierBullets;
+  thread_class: ThreadClass;
 }
 export interface ManufacturingAnnotations {
   datums: Datums;
@@ -412,6 +458,28 @@ export interface EngineeringInformation1 {
   manufacturing_process: EngineeringField;
   material: EngineeringField;
   surface_finish: EngineeringField;
+}
+/**
+ * The default numbered drawing notes (on by default).
+ *
+ * Notes are assembled deterministically from these user entries, the rest of the drawing
+ * settings and GeometryIR. Anything not supplied is printed as a [PLACEHOLDER] - never a
+ * guessed value.
+ *
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "GeneralNotes".
+ */
+export interface GeneralNotes1 {
+  edge_break: EdgeBreak;
+  enabled: Enabled;
+  general_geometric_tolerance: GeneralGeometricTolerance;
+  marking: Marking;
+  masked_surfaces: MaskedSurfaces;
+  model_revision: ModelRevision;
+  process: ManufacturingProcess;
+  process_sequence: ProcessSequence;
+  supplier_bullets: SupplierBullets;
+  thread_class: ThreadClass;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema

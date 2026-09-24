@@ -63,7 +63,8 @@ def test_title_block_never_invents_engineering_data(analyzed):
 
 def test_tiny_sheet_forces_smaller_scale_or_fails(analyzed):
     ir, r, _ = compiled(analyzed, "enclosure")
-    plan = type(r.plan).model_validate({**r.plan.model_dump(), "sheet": {"size": "A4", "orientation": "LANDSCAPE"}})
+    plan = type(r.plan).model_validate({**r.plan.model_dump(), "sheet": {"size": "A4", "orientation": "LANDSCAPE"},
+                                        "general_notes": {"enabled": False}})
     cd = compile_drawing(plan, r.candidates, ir)
     assert ISO_5455_SCALES.index(cd.scale) >= ISO_5455_SCALES.index("1:2")
     with pytest.raises(LayoutError):
@@ -115,3 +116,10 @@ def test_qa_catches_overlapping_views(analyzed):
     bad = cd.model_copy(update={"views": [moved if v.id == top.id else v for v in views]})
     rep = validate(r.plan, r.candidates, ir, bad, _fake_render(bad))
     assert any(i.check_id == "QA-VIEW-001" and i.repair == "REDUCE_SCALE" for i in rep.issues)
+
+
+def test_default_notes_that_do_not_fit_are_reported_not_dropped(analyzed):
+    ir, r, _ = compiled(analyzed, "enclosure")
+    plan = type(r.plan).model_validate({**r.plan.model_dump(), "sheet": {"size": "A4", "orientation": "LANDSCAPE"}})
+    with pytest.raises(LayoutError, match="notes block"):
+        compile_drawing(plan, r.candidates, ir)

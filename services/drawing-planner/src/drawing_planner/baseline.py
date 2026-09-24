@@ -226,6 +226,7 @@ def plan_baseline(
         engineering_information=settings.engineering_information,
         title_block=tb,
         manufacturing=settings.manufacturing,
+        general_notes=settings.general_notes,
         pictorial_style=settings.pictorial_style,
         uncertainties=uncertainties,
         rationale="deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy "

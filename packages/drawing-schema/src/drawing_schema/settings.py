@@ -21,7 +21,7 @@ from drawing_schema import (
     ViewOrientation,
     missing_manufacturing_information,
 )
-from drawing_schema.pmi import ManufacturingAnnotations
+from drawing_schema.pmi import GeneralNotes, ManufacturingAnnotations
 from shared_types import StrictModel
 
 
@@ -41,6 +41,7 @@ class DrawingSettings(StrictModel):
     title_block: TitleBlock = TitleBlock()
     engineering_information: EngineeringInformation = EngineeringInformation()
     manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
+    general_notes: GeneralNotes = GeneralNotes()
     pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
 
     @field_validator("projected_views")

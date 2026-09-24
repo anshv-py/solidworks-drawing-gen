@@ -19,7 +19,11 @@ await page.fill('[data-testid="tb-title"]', "E2E PART");
 await form.locator("summary", { hasText: "Material" }).click();
 await page.fill('[data-testid="material"]', "AISI 304");
 await page.fill('[data-testid="general-tol"]', "ISO 2768-mK");
+await form.locator("summary", { hasText: "Drawing notes" }).click();
+if (!(await page.isChecked('[data-testid="notes-enabled"]'))) throw new Error("default notes should be on");
 await form.locator("summary", { hasText: "Datums" }).click();
+await page.waitForSelector('[data-testid="datum-suggestion"]', { timeout: 30_000 });
+const suggestion = await page.locator('[data-testid="datum-suggestion"]').innerText();
 await form.getByRole("button", { name: "+ datum" }).click();
 const datumTarget = form.locator("details", { hasText: "Datums" }).locator("select").nth(1);
 const faceOption = await datumTarget.locator("option").nth(1).getAttribute("value");
@@ -39,5 +43,5 @@ await page.waitForFunction(() => {
 const status = await page.locator('[data-testid="drawing-result"] span').first().innerText();
 await page.screenshot({ path: shot, fullPage: false });
 await browser.close();
-console.log(JSON.stringify({ status, pageErrors: errors }, null, 1));
+console.log(JSON.stringify({ status, suggestion: suggestion.split("\n").slice(0, 4), pageErrors: errors }, null, 1));
 if (errors.length || !status.includes("passed")) process.exit(1);

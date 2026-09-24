@@ -185,3 +185,35 @@ class ManufacturingAnnotations(StrictModel):
         return not (self.datums or self.frames or self.tolerances or self.threads or self.inspection_dimensions
                     or self.surface_finish_marks or self.feature_notes or self.notes or self.revisions
                     or self.deburr_break_sharp_edges)
+
+
+class ManufacturingProcess(StrEnum):
+    UNSPECIFIED = "UNSPECIFIED"
+    CNC_MACHINED = "CNC_MACHINED"
+    SHEET_METAL = "SHEET_METAL"
+    CASTING = "CASTING"
+    FORGING = "FORGING"
+    WELDMENT = "WELDMENT"
+    MOULDED = "MOULDED"
+    ADDITIVE = "ADDITIVE"
+
+
+class GeneralNotes(StrictModel):
+    """The default numbered drawing notes (on by default).
+
+    Notes are assembled deterministically from these user entries, the rest of the drawing
+    settings and GeometryIR. Anything not supplied is printed as a [PLACEHOLDER] - never a
+    guessed value.
+    """
+
+    enabled: bool = True
+    process: ManufacturingProcess = ManufacturingProcess.UNSPECIFIED
+    general_geometric_tolerance: str | None = Field(default=None, max_length=80)
+    edge_break: str | None = Field(default=None, max_length=40, description="sharp-edge break value, e.g. as specified")
+    masked_surfaces: str | None = Field(default=None, max_length=80)
+    thread_class: str | None = Field(default=None, max_length=40)
+    process_sequence: str | None = Field(default=None, max_length=80,
+                                         description="machining vs heat treatment / coating order")
+    model_revision: str | None = Field(default=None, max_length=20)
+    marking: str | None = Field(default=None, max_length=80)
+    supplier_bullets: bool = Field(default=True, description='print "WHAT THE SUPPLIER MUST NOT ASSUME"')

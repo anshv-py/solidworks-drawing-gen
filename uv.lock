@@ -52,6 +52,7 @@ name = "cad-api"
 version = "0.1.0"
 source = { editable = "apps/api" }
 dependencies = [
+    { name = "drawing-compiler" },
     { name = "drawing-planner" },
     { name = "drawing-qa" },
     { name = "drawing-schema" },
@@ -68,6 +69,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "drawing-compiler", editable = "services/drawing-compiler" },
     { name = "drawing-planner", editable = "services/drawing-planner" },
     { name = "drawing-qa", editable = "services/drawing-qa" },
     { name = "drawing-schema", editable = "packages/drawing-schema" },
@@ -341,6 +343,7 @@ name = "drawing-qa"
 version = "0.1.0"
 source = { editable = "services/drawing-qa" }
 dependencies = [
+    { name = "drawing-compiler" },
     { name = "drawing-planner" },
     { name = "drawing-schema" },
     { name = "geometry-schema" },
@@ -348,6 +351,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "drawing-compiler", editable = "services/drawing-compiler" },
     { name = "drawing-planner", editable = "services/drawing-planner" },
     { name = "drawing-schema", editable = "packages/drawing-schema" },
     { name = "geometry-schema", editable = "packages/geometry-schema" },

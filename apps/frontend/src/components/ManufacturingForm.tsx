@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type {
   DatumReference,
+  GeneralNotes,
   DrawingSettings as Settings,
   EngineeringInformation,
   ManufacturingAnnotations,
@@ -26,6 +27,8 @@ interface Props {
   onChange: (s: Settings) => void;
 }
 
+const PROCESSES: GeneralNotes["process"][] = ["UNSPECIFIED", "CNC_MACHINED", "SHEET_METAL", "CASTING", "FORGING",
+  "WELDMENT", "MOULDED", "ADDITIVE"];
 const EMPTY: ManufacturingAnnotations = {
   datums: [], frames: [], tolerances: [], threads: [], inspection_dimensions: [], surface_finish_marks: [],
   feature_notes: [], notes: [], revisions: [], deburr_break_sharp_edges: false,
@@ -70,8 +73,9 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
   const [targets, setTargets] = useState<AnnotationTargets | null>(null);
   const [error, setError] = useState<string | null>(null);
   // the dimensions on the sheet depend on the view/dimension settings, not on the annotations
+  // (the process steers the datum suggestion; other note fields do not affect the lookup)
   const planKey = JSON.stringify({ ...settings, manufacturing: null, title_block: null, engineering_information: null,
-    drawing_kind: null });
+    drawing_kind: null, general_notes: settings.general_notes.process });
   useEffect(() => {
     let live = true;
     // incomplete rows being edited must not affect (or invalidate) the target lookup
@@ -90,6 +94,9 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
   const setTb = (patch: Partial<TitleBlock>) => onChange({ ...settings, title_block: { ...tb, ...patch } });
   const setInfo = (k: keyof EngineeringInformation, v: string) =>
     onChange({ ...settings, engineering_information: { ...info, [k]: engField(v) } });
+  const g = settings.general_notes;
+  const setG = (patch: Partial<GeneralNotes>) => onChange({ ...settings, general_notes: { ...g, ...patch } });
+  const asme = settings.drawing_standard === "ASME";
   const letters = m.datums.map((d) => d.letter);
   const freeLetter = DATUM_LETTERS.find((l) => !letters.includes(l)) ?? "A";
 
@@ -167,7 +174,50 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
         </label>
       </Section>
 
+      <Section title="Drawing notes (defaults)">
+        <label className="flex items-center gap-1.5 text-sm">
+          <input type="checkbox" checked={g.enabled} onChange={(e) => setG({ enabled: e.target.checked })}
+            data-testid="notes-enabled" />
+          print the 15 standard notes (anything not entered prints as [PLACEHOLDER])
+        </label>
+        <label className="grid grid-cols-[110px_1fr] items-center gap-1 text-sm">
+          <span className="text-slate-600">Process</span>
+          <select className={small} value={g.process} onChange={(e) => setG({ process: e.target.value as GeneralNotes["process"] })}>
+            {PROCESSES.map((p) => <option key={p} value={p}>{p.replaceAll("_", " ").toLowerCase()}</option>)}
+          </select>
+        </label>
+        <Text label="General geo. tol." value={g.general_geometric_tolerance}
+          onChange={(v) => setG({ general_geometric_tolerance: v || null })} />
+        <Text label="Edge break" value={g.edge_break} onChange={(v) => setG({ edge_break: v || null })} />
+        <Text label="Masked surfaces" value={g.masked_surfaces} onChange={(v) => setG({ masked_surfaces: v || null })} />
+        <Text label="Thread class" value={g.thread_class} onChange={(v) => setG({ thread_class: v || null })} />
+        <Text label="Process sequence" value={g.process_sequence} onChange={(v) => setG({ process_sequence: v || null })} />
+        <Text label="Model revision" value={g.model_revision} onChange={(v) => setG({ model_revision: v || null })} />
+        <Text label="Inspection" value={info.inspection_requirements.value}
+          onChange={(v) => setInfo("inspection_requirements", v)} />
+        <Text label="Marking" value={g.marking} onChange={(v) => setG({ marking: v || null })} />
+        <label className="flex items-center gap-1.5 text-sm">
+          <input type="checkbox" checked={g.supplier_bullets} onChange={(e) => setG({ supplier_bullets: e.target.checked })} />
+          “What the supplier must not assume”
+        </label>
+      </Section>
+
       <Section title="Datums" count={m.datums.length}>
+        {targets && targets.datum_suggestion.length > 0 && (
+          <div className="space-y-1 rounded border border-blue-200 bg-blue-50 p-1.5 text-xs" data-testid="datum-suggestion">
+            <p className="font-medium">Suggested scheme (datum rules 1, 2, 4, 5, 7) - not applied until you confirm</p>
+            {targets.datum_suggestion.map((d) => (
+              <p key={d.letter}><b>{d.letter}</b> = {d.feature}<span className="text-slate-600"> - {d.reasons.join("; ")}</span></p>
+            ))}
+            <ul className="list-disc pl-4 text-amber-800">
+              {targets.datum_cautions.map((c) => <li key={c}>{c}</li>)}
+            </ul>
+            <button type="button" className="rounded bg-blue-600 px-2 py-0.5 text-white" data-testid="apply-datums"
+              onClick={() => setM({ datums: targets.datum_suggestion.map((d) => ({ letter: d.letter, target: d.target })) })}>
+              Apply suggested datums
+            </button>
+          </div>
+        )}
         {m.datums.map((d, i) => (
           <div key={i} className="flex items-center gap-1">
             <select className={small} value={d.letter}
@@ -218,12 +268,23 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
                     <select key={k} className={small} value={f.datums[k]?.letter ?? ""}
                       onChange={(e) => {
                         const next: DatumReference[] = [...f.datums];
-                        if (e.target.value) next[k] = { letter: e.target.value, material_condition: null };
+                        if (e.target.value) next[k] = { letter: e.target.value, material_condition: f.datums[k]?.material_condition ?? null };
                         else next.splice(k);
                         set({ datums: next.filter(Boolean) });
                       }}>
                       <option value="">—</option>
                       {letters.map((l) => <option key={l}>{l}</option>)}
+                    </select>
+                  ))}
+                  {f.datums.map((r, k) => (
+                    // rule 6: a datum feature of size applies at RMB unless a gauge/fixture pin contacts it
+                    <select key={`mc${k}`} className={small} value={r.material_condition ?? ""}
+                      title={`datum ${r.letter} boundary (datum feature of size only)`}
+                      onChange={(e) => set({ datums: replace(f.datums, k, { ...r,
+                        material_condition: (e.target.value || null) as DatumReference["material_condition"] }) })}>
+                      <option value="">{r.letter} {asme ? "RMB" : "—"}</option>
+                      <option value="MMC">{r.letter} Ⓜ {asme ? "MMB" : "MMR"}</option>
+                      <option value="LMC">{r.letter} Ⓛ {asme ? "LMB" : "LMR"}</option>
                     </select>
                   ))}
                   {NEEDS_DATUM.includes(f.characteristic) && f.datums.length === 0 &&

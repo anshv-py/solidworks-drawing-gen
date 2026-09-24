@@ -76,6 +76,61 @@ Each candidate copies its value from a named GeometryIR field (`source`):
 - Values are printed with the selected decimal places *including trailing zeros* (`150.00`,
   `8X Ø8.00 THRU EQ SP`, `0.80 X 25°`), matching the references. `trailing_zeros=false` turns this off.
 
+### Default drawing notes (on by default)
+`DrawingSettings.general_notes` (`enabled=true`). `drawing_compiler/notes.py` assembles the notes
+deterministically, in this fixed order:
+1. Standard, units, projection and "DO NOT SCALE DRAWING".
+2. General linear (and angular) tolerance.
+3. General geometric tolerance.
+4. Datum reference frame, naming each datum's real feature from GeometryIR (e.g.
+   `A = PLANAR FACE -Z (Z = 0.00); B = Ø45.00 BOSS AXIS`).
+5. Envelope statement (ASME Rule #1; datum features of size at RMB unless MMB/LMB is shown) or
+   independency statement (ISO 8015).
+6. Datum feature form refinement, with the limit it must be tighter than.
+7. Surface finish default plus a pointer to the specific symbols.
+8. Deburr / edge break.
+9. Material, and "NO SUBSTITUTION WITHOUT WRITTEN APPROVAL".
+10. Heat treatment, coating and masked surfaces.
+11. Thread class.
+12. Process and machining vs HT/coating sequence.
+13. Drawing governs the 3D model (file name and revision).
+14. Inspection / documentation.
+15. Marking / traceability.
+
+The user's own notes follow as 16, 17, … Then come "WHAT THE SUPPLIER MUST NOT ASSUME" (4 bullets)
+and a one-line summary of the controlling standard and default tolerances.
+
+Rules for the notes:
+- Every value comes from the user's settings or from GeometryIR. Anything missing prints as a
+  `[PLACEHOLDER]`, and QA-NOTE-001 lists the placeholders.
+- User values print exactly as entered.
+- Text is 2.5 mm. The block is either one 180 mm column above the title block (as in the
+  references) or a two-column band above it. The compiler picks the arrangement that allows the
+  larger view scale; ties go to the single column.
+- If the notes cannot fit (e.g. a crowded A4), layout fails with a message that says so. The
+  notes are never shrunk below 2.5 mm or dropped.
+- A pictorial view that does not fit in the projection grid floats to free space. It may drop one
+  ISO scale step, and is then labelled `SCALE 1:n`.
+
+### Datum-scheme rules (`drawing_planner/datum_rules.py`)
+- **Checked by QA (reported, never auto-corrected):**
+  - R3: every referenced datum feature has its own form control (flatness / cylindricity),
+    tighter than every tolerance referencing it.
+  - R7: no sheet-edge datums for sheet metal. Machined features or datum targets are required
+    for cast, forged, welded and moulded parts.
+  - R8: one datum per feature, and no self-referencing frames.
+  - R9: every datum on the drawing is referenced.
+  - A tolerance zone below 0.01 mm is flagged as not verifiable with standard shop equipment.
+- **Suggested, applied only when the user clicks "Apply suggested datums":** rules 1, 2, 4, 5 and 7.
+  - Primary: a continuous planar face perpendicular to the part's axes, with area only as a
+    tie-breaker. A long turned part uses its journal axis instead.
+  - Secondary: the pilot boss on the main axis before a bore, and a bore before the outer diameter.
+  - Tertiary: an off-axis hole for clocking, or a perpendicular face.
+  - Sheet metal: a face plus two holes.
+  - The suggestion carries its reasons and cautions (function, probe and clamp access, machined
+    features), because geometry cannot reveal them.
+- In ASME mode the UI labels datum modifiers RMB/MMB/LMB (ASME Y14.5-2018 terms).
+
 ### Manufacturing annotations (user-supplied only)
 `DrawingSettings.manufacturing` (schema: `drawing_schema/pmi.py`) carries datums, GD&T feature
 control frames, dimension tolerances (±, deviation, limits), thread callouts, inspection

@@ -55,6 +55,7 @@ from drawing_schema.compiled import (
     ToleranceText,
 )
 from drawing_schema.frames import Frame, dot, view_frame
+from drawing_compiler.notes import build_notes
 from drawing_schema.pmi import FeatureControlFrame, ToleranceKind
 from geometry_schema import FeatureType, GeometryIR, SurfaceType
 
@@ -72,8 +73,9 @@ FRAME_H = 7.0
 DATUM_BOX = 6.0
 DATUM_DROP = 5.0  # leader between datum triangle and box
 FACE_OFFSET = 6.0
-NOTE_LINE = 5.0
-NOTE_TEXT_H = 3.0
+PICT_LABEL_SPACE = 7.0  # 'SCALE 1:5' under a pictorial view drawn at its own scale
+NOTE_LINE = 3.8  # 2.5 mm text (legible on A3) at 1.5x pitch
+NOTE_TEXT_H = 2.5
 SF_HEIGHT = 11.0  # ISO 1302 symbol (long leg 10 mm) + clearance
 TIP_FRACTIONS = (0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9, 0.03, 0.97)
 
@@ -114,6 +116,18 @@ def _segment_boxes(a, b, size: float = 2.0) -> list[Rect]:
         x, y = a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n
         out.append(Rect(x0=x - 0.3, y0=y - 0.3, x1=x + 0.3, y1=y + 0.3))
     return out
+
+
+def _wrap(text: str, first: str, rest: str, width: float = TITLE_W) -> list[str]:
+    """Word-wrap a note to a notes column of the given width (2.5 mm text)."""
+    max_chars = int((width - 6.0) / (CHAR_W * NOTE_TEXT_H))
+    out, cur = [], first
+    for w in text.split(" "):
+        if len(cur) + len(w) > max_chars and cur.strip() not in ("", first.strip()):
+            out.append(cur.rstrip())
+            cur = rest
+        cur += w + " "
+    return out + [cur.rstrip()]
 
 
 class LayoutError(Exception):
@@ -279,13 +293,6 @@ class Compiler:
         tb_w = min(TITLE_W, self.frame_rect.w)
         self.title_rect = Rect(x0=self.frame_rect.x1 - tb_w, y0=self.frame_rect.y0,
                                x1=self.frame_rect.x1, y1=self.frame_rect.y0 + TITLE_H)
-        self.sheet_notes = self._sheet_notes()
-        n_lines = len(self.sheet_notes)
-        self.notes_rect = None
-        if n_lines:
-            # "Note:" header + numbered lines
-            self.notes_rect = Rect(x0=self.title_rect.x0, y0=self.title_rect.y1 + 1.0,
-                                   x1=self.title_rect.x1, y1=self.title_rect.y1 + 3.0 + (n_lines + 1) * NOTE_LINE)
         self.revision_rows = [[r.revision, r.description, r.date, r.approved_by] for r in self.m.revisions]
         self.revision_rect = None
         if self.revision_rows:
@@ -294,12 +301,10 @@ class Compiler:
                                       x1=self.frame_rect.x1, y1=self.frame_rect.y1)
         self.area = Rect(x0=self.frame_rect.x0 + 4, y0=self.frame_rect.y0 + 4,
                          x1=self.frame_rect.x1 - 4, y1=self.frame_rect.y1 - 4)
-        low = self.notes_rect or self.title_rect
-        self.obstacles = [Rect(x0=self.title_rect.x0 - 3, y0=self.frame_rect.y0, x1=self.frame_rect.x1,
-                               y1=low.y1 + 3)]
-        if self.revision_rect:
-            self.obstacles.append(Rect(x0=self.revision_rect.x0 - 3, y0=self.revision_rect.y0 - 3,
-                                       x1=self.frame_rect.x1, y1=self.frame_rect.y1))
+        self.notes_variants = ["column", "band"] if self._sheet_note_texts() else ["column"]
+        if not self._set_notes(self.notes_variants[0]):
+            self._set_notes("band")
+        self.pict_scale: tuple[str, float] | None = None
         self.views = self._views()
 
     # ------------------------------------------------------------------ formatting helpers
@@ -349,21 +354,58 @@ class Compiler:
         tol = self._tolerance(cand)
         return TEXT_H if tol is None or tol.kind == "SYMMETRIC" else 2 * TOL_H + 0.5
 
-    def _sheet_notes(self) -> list[str]:
-        lines = ["ALL DIMENSIONS ARE IN MM"]  # a fact of this drawing, not a requirement
-        lines += [" ".join(n.split()) for n in self.m.notes if n.strip()]
-        max_chars = int((TITLE_W - 8.0) / (CHAR_W * NOTE_TEXT_H))
-        out: list[str] = []
-        for i, t in enumerate(lines, 1):
-            prefix = f"{i}) "
-            words, cur = t.split(" "), prefix
-            for w in words:
-                if len(cur) + len(w) + 1 > max_chars and cur.strip() not in ("", prefix.strip()):
-                    out.append(cur.rstrip())
-                    cur = "   "
-                cur += w + " "
-            out.append(cur.rstrip())
+    def _sheet_note_texts(self) -> list[tuple[str, str, str]]:
+        """(text, first-line prefix, continuation prefix) for every note, bullet and the summary."""
+        if self.plan.general_notes.enabled:
+            notes, bullets, summary = build_notes(self.plan, self.ir)
+        else:
+            notes = ["ALL DIMENSIONS ARE IN MM"] + [n.strip() for n in self.m.notes if n.strip()]
+            bullets, summary = [], ""
+        out = [(" ".join(t.split()), f"{i}) ", "    ") for i, t in enumerate(notes, 1)]
+        if bullets:
+            out.append(("WHAT THE SUPPLIER MUST NOT ASSUME:", "", ""))
+            out += [(b, "- ", "   ") for b in bullets]
+        if summary:
+            out.append((summary, "", "  "))
         return out
+
+    def _note_blocks(self, width: float) -> list[list[str]]:
+        return [_wrap(t, a, b, width) for t, a, b in self._sheet_note_texts()]
+
+    def _set_notes(self, variant: str) -> bool:
+        """Place the notes block. 'column' (as in the references): one 180 mm column directly above
+        the title block. 'band': two columns side by side, about half as tall, for parts whose views
+        need the width. -> False if the notes do not fit on the sheet."""
+        self.notes_variant = variant
+        self.notes_split = None
+        top_free = (self.revision_rect.y0 - 3 if self.revision_rect else self.frame_rect.y1)
+        blocks = self._note_blocks(self.title_rect.w if variant == "column" else
+                                   min(2 * TITLE_W, self.frame_rect.w) / 2)
+        lines = [ln for b in blocks for ln in b]
+        self.sheet_notes = lines
+        self.notes_rect = None
+        tr, fr = self.title_rect, self.frame_rect
+        self.obstacles = []
+        if not lines:
+            self.obstacles.append(Rect(x0=tr.x0 - 3, y0=fr.y0, x1=fr.x1, y1=tr.y1 + 3))
+        elif variant == "column":
+            self.notes_rect = Rect(x0=tr.x0, y0=tr.y1 + 1.0, x1=tr.x1,
+                                   y1=tr.y1 + 3.0 + (len(lines) + 1) * NOTE_LINE)
+            self.obstacles.append(Rect(x0=tr.x0 - 3, y0=fr.y0, x1=fr.x1, y1=self.notes_rect.y1 + 3))
+        else:
+            sizes = [len(b) for b in blocks]
+            total = sum(sizes)
+            k = min(range(1, len(blocks) + 1), key=lambda k: (max(sum(sizes[:k]), total - sum(sizes[:k])), -k))
+            self.notes_split = sum(sizes[:k])
+            rows = max(self.notes_split, total - self.notes_split)
+            width = min(2 * TITLE_W, fr.w)
+            self.notes_rect = Rect(x0=fr.x1 - width, y0=tr.y1 + 1.0, x1=fr.x1,
+                                   y1=tr.y1 + 3.0 + (rows + 1) * NOTE_LINE)
+            self.obstacles.append(Rect(x0=self.notes_rect.x0 - 3, y0=fr.y0, x1=fr.x1, y1=self.notes_rect.y1 + 3))
+        if self.revision_rect:
+            self.obstacles.append(Rect(x0=self.revision_rect.x0 - 3, y0=self.revision_rect.y0 - 3,
+                                       x1=fr.x1, y1=fr.y1))
+        return self.notes_rect is None or self.notes_rect.y1 <= top_free
 
     # ------------------------------------------------------------------ views & assignment
     def _views(self) -> list[_ViewCtx]:
@@ -566,6 +608,7 @@ class Compiler:
                 span = (min(b1, b2) * s, max(b1, b2) * s)
             sides[side].append((c, span, horizontal))
         v.tiers, v.margins, v.side_of, v.tier_off = {}, {}, {}, {}
+        overhang = {"top": 0.0, "bottom": 0.0, "left": 0.0, "right": 0.0}
         for side, items in sides.items():
             tiers: list[list[tuple[float, float]]] = []
             extra: list[float] = []
@@ -589,12 +632,21 @@ class Compiler:
                     extra.append(ext)
                     v.tiers[c.id] = len(tiers) - 1
                 v.side_of[c.id] = side
+                # text longer than its dimension overhangs the view along the dimension line
+                if horizontal:
+                    overhang["left"] = max(overhang["left"], u0 - occ[0])
+                    overhang["right"] = max(overhang["right"], occ[1] - u1)
+                else:
+                    overhang["bottom"] = max(overhang["bottom"], w0 - occ[0])
+                    overhang["top"] = max(overhang["top"], occ[1] - w1)
             offs, off = [], FIRST_TIER
             for k in range(len(tiers)):
                 offs.append(off)
                 off += self.opt.tier_gap + extra[k]
             v.tier_off[side] = offs
             v.margins[side] = 0.0 if not tiers else offs[-1] + extra[-1] + TEXT_H + 2
+        for side, o in overhang.items():
+            v.margins[side] = max(v.margins[side], o)
         v.tier_margin = dict(v.margins)        # face annotation groups sit outside the tiers on the side their face normal points to
         v.group_side, v.group_levels = {}, {}
         per_side: dict[str, list[float]] = {}
@@ -623,18 +675,70 @@ class Compiler:
         if v.pictorial:
             v.margins = {"top": 2.0, "bottom": 2.0, "left": 2.0, "right": 2.0}
 
+    def _vs(self, v: _ViewCtx, s: float) -> float:
+        """Scale factor of a view: pictorial views may use their own (smaller) ISO scale."""
+        return self.pict_scale[1] if v.pictorial and self.pict_scale else s
+
     def _extent(self, v: _ViewCtx, s: float) -> tuple[float, float, float, float]:
         """Distances from the view centre to its envelope edges: (left, right, down, up)."""
-        u0, u1, w0, w1 = (x * s for x in v.half)
+        vs = self._vs(v, s)
+        u0, u1, w0, w1 = (x * vs for x in v.half)
         m = v.margins
-        return -u0 + m["left"], u1 + m["right"], -w0 + m["bottom"], w1 + m["top"]
+        label = PICT_LABEL_SPACE if v.pictorial and self.pict_scale and vs != s else 0.0
+        return -u0 + m["left"], u1 + m["right"], -w0 + m["bottom"] + label, w1 + m["top"]
 
     def _layout(self, s: float) -> dict[str, tuple[float, float]] | None:
-        grid = _FIRST if self.plan.projection_method == ProjectionMethod.FIRST_ANGLE else _THIRD
-        ortho = [v for v in self.views if not v.pictorial]
-        pict = [v for v in self.views if v.pictorial]
+        """Views on the projection grid. The pictorial view first takes a free grid cell (as in the
+        references); if that does not fit, it floats to any free area (it needs no alignment)."""
         for v in self.views:
             self._plan_view(v, s)
+        pict = [v for v in self.views if v.pictorial]
+        for pos, _ in self._grid_positions(s, self.views, limit=1):
+            return pos
+        if not pict:
+            return None
+        ortho = [v for v in self.views if not v.pictorial]
+        for pos, envs in self._grid_positions(s, ortho, limit=40):
+            placed = list(envs)
+            ok = True
+            for v in pict:
+                spot = self._free_spot(self._extent(v, s), placed)
+                if spot is None:
+                    ok = False
+                    break
+                pos[v.id], env = spot
+                placed.append(env)
+            if ok:
+                return pos
+        return None
+
+    def _free_spot(self, ext, placed: list[Rect], step: float = 4.0):
+        """Most clear position for a free-floating view envelope -> ((cx, cy), envelope) or None."""
+        le, ri, do, up = ext
+        a = self.area
+        best = None
+        blockers = self.obstacles + [Rect(x0=p.x0 - VIEW_GAP, y0=p.y0 - VIEW_GAP, x1=p.x1 + VIEW_GAP,
+                                          y1=p.y1 + VIEW_GAP) for p in placed]
+        nx = int(max(0.0, a.w - le - ri) / step) + 1
+        ny = int(max(0.0, a.h - do - up) / step) + 1
+        for i in range(nx):
+            for j in range(ny):
+                cx, cy = a.x0 + le + i * step, a.y1 - up - j * step
+                env = Rect(x0=cx - le, y0=cy - do, x1=cx + ri, y1=cy + up)
+                if not env.inside(a) or any(env.intersects(o) for o in blockers):
+                    continue
+                gaps = [env.x0 - a.x0, a.x1 - env.x1, env.y0 - a.y0, a.y1 - env.y1]
+                gaps += [max(o.x0 - env.x1, env.x0 - o.x1, o.y0 - env.y1, env.y0 - o.y1) for o in blockers]
+                score = (round(min(gaps), 3), -j, -i)
+                if best is None or score > best[0]:
+                    best = (score, (cx, cy), env)
+        return (best[1], best[2]) if best else None
+
+    def _grid_positions(self, s: float, views: list[_ViewCtx], limit: int):
+        """Valid placements of the view grid, preferred first: -> [(positions, envelopes)]."""
+        grid = _FIRST if self.plan.projection_method == ProjectionMethod.FIRST_ANGLE else _THIRD
+        ortho = [v for v in views if not v.pictorial]
+        pict = [v for v in views if v.pictorial]
         for v in ortho:
             v.cell = grid[v.orientation]
         used = {v.cell for v in ortho}
@@ -646,18 +750,18 @@ class Compiler:
             free.sort(key=lambda rc: (rc[0] != rows[0], rc[0], -rc[1]))
             v.cell = free[0] if free else (rows[0], cols[-1] + 1)
             used.add(v.cell)
-        rows = sorted({v.cell[0] for v in self.views})
-        cols = sorted({v.cell[1] for v in self.views})
-        ext = {v.id: self._extent(v, s) for v in self.views}
-        left = {c: max(ext[v.id][0] for v in self.views if v.cell[1] == c) for c in cols}
-        right = {c: max(ext[v.id][1] for v in self.views if v.cell[1] == c) for c in cols}
-        down = {r: max(ext[v.id][2] for v in self.views if v.cell[0] == r) for r in rows}
-        up = {r: max(ext[v.id][3] for v in self.views if v.cell[0] == r) for r in rows}
+        rows = sorted({v.cell[0] for v in views})
+        cols = sorted({v.cell[1] for v in views})
+        ext = {v.id: self._extent(v, s) for v in views}
+        left = {c: max(ext[v.id][0] for v in views if v.cell[1] == c) for c in cols}
+        right = {c: max(ext[v.id][1] for v in views if v.cell[1] == c) for c in cols}
+        down = {r: max(ext[v.id][2] for v in views if v.cell[0] == r) for r in rows}
+        up = {r: max(ext[v.id][3] for v in views if v.cell[0] == r) for r in rows}
         total_w = sum(left[c] + right[c] for c in cols) + VIEW_GAP * (len(cols) - 1)
         total_h = sum(up[r] + down[r] for r in rows) + VIEW_GAP * (len(rows) - 1)
-        if total_w > self.area.w or total_h > self.area.h:
-            return None
-        # relative positions, origin = top-left of the grid
+        a = self.area
+        if total_w > a.w or total_h > a.h:
+            return []
         rel_x, x = {}, 0.0
         for c in cols:
             rel_x[c] = x + left[c]
@@ -666,42 +770,93 @@ class Compiler:
         for r in rows:
             rel_y[r] = y - up[r]
             y -= up[r] + down[r] + VIEW_GAP
-        a = self.area
-        anchors = [  # (x0, y_top) candidates: centred, top-left, top-right, centred above the title block
-            (a.x0 + (a.w - total_w) / 2, a.y1 - (a.h - total_h) / 2),
-            (a.x0, a.y1),
-            (a.x1 - total_w, a.y1),
-        ]
-        low = max(o.y1 for o in self.obstacles[:1])
-        above_h = a.y1 - low
+        inner = Rect(x0=a.x0 - 1e-6, y0=a.y0 - 1e-6, x1=a.x1 + 1e-6, y1=a.y1 + 1e-6)
+
+        def envelopes(ax: float, ay: float) -> list[Rect] | None:
+            out = []
+            for v in views:
+                le, ri, do, upx = ext[v.id]
+                cx, cy = ax + rel_x[v.cell[1]], ay + rel_y[v.cell[0]]
+                env = Rect(x0=cx - le, y0=cy - do, x1=cx + ri, y1=cy + upx)
+                if not env.inside(inner) or any(env.intersects(o) for o in self.obstacles):
+                    return None
+                out.append(env)
+            return out
+
+        def result(ax: float, ay: float, envs):
+            return {v.id: (ax + rel_x[v.cell[1]], ay + rel_y[v.cell[0]]) for v in views}, envs
+
+        out = []
+        anchors = [  # centred, top-left, top-right, centred above the title block
+            (a.x0 + (a.w - total_w) / 2, a.y1 - (a.h - total_h) / 2), (a.x0, a.y1), (a.x1 - total_w, a.y1)]
+        above_h = a.y1 - self.obstacles[0].y1
         if total_h <= above_h:
             anchors.append((a.x0 + (a.w - total_w) / 2, a.y1 - (above_h - total_h) / 2))
         for ax, ay in anchors:
-            pos = {v.id: (ax + rel_x[v.cell[1]], ay + rel_y[v.cell[0]]) for v in self.views}
-            ok = True
-            for v in self.views:
-                le, ri, do, upx = ext[v.id]
-                cx, cy = pos[v.id]
-                env = Rect(x0=cx - le, y0=cy - do, x1=cx + ri, y1=cy + upx)
-                if not env.inside(Rect(x0=a.x0 - 1e-6, y0=a.y0 - 1e-6, x1=a.x1 + 1e-6, y1=a.y1 + 1e-6)) or any(
-                        env.intersects(o) for o in self.obstacles):
-                    ok = False
-                    break
-            if ok:
-                return pos
-        return None
+            envs = envelopes(ax, ay)
+            if envs is not None:
+                out.append(result(ax, ay, envs))
+                if len(out) >= limit:
+                    return out
+        # sweep the free area and rank by clearance to the frame and to the title block / notes / revisions
+        scored = []
+        step = 4.0
+        for i in range(int(max(0.0, a.w - total_w) / step) + 1):
+            for j in range(int(max(0.0, a.h - total_h) / step) + 1):
+                ax, ay = a.x0 + i * step, a.y1 - j * step
+                envs = envelopes(ax, ay)
+                if envs is None:
+                    continue
+                box = envs[0]
+                for e in envs[1:]:
+                    box = box.union(e)
+                gaps = [box.x0 - a.x0, a.x1 - box.x1, box.y0 - a.y0, a.y1 - box.y1]
+                gaps += [max(o.x0 - box.x1, box.x0 - o.x1, o.y0 - box.y1, box.y0 - o.y1, 0.0)
+                         for o in self.obstacles]
+                scored.append(((round(min(gaps), 3), -i, -j), ax, ay, envs))
+        scored.sort(key=lambda t: t[0], reverse=True)
+        out += [result(ax, ay, envs) for _, ax, ay, envs in scored[: max(0, limit - len(out))]]
+        return out
 
     # ------------------------------------------------------------------ compile
     def compile(self) -> CompiledDrawing:
         scales = list(ISO_5455_SCALES)  # large -> small
         if self.opt.max_scale:
             scales = scales[scales.index(self.opt.max_scale):]
+        found = []  # (scale index, variant, scale, s, positions, pictorial scale)
+        for variant in self.notes_variants:
+            if not self._set_notes(variant):
+                continue
+            hit = self._search(scales)
+            if hit is not None:
+                found.append((ISO_5455_SCALES.index(hit[0]), self.notes_variants.index(variant), variant, *hit))
+        if found:
+            _, _, variant, sc, s, pos, pict = min(found, key=lambda t: (t[0], t[1]))
+            self._set_notes(variant)
+            self.pict_scale = pict
+            self._layout(s)  # restore per-view margins for this scale
+            return self._emit(sc, s, pos)
+        hint = ""
+        if self.sheet_notes and self.plan.general_notes.enabled:
+            hint = (f" (with the {len(self.sheet_notes)}-line notes block above the title block - use a larger "
+                    "sheet or turn off the default notes)")
+        raise LayoutError("the views do not fit on the selected sheet at any ISO 5455 scale" + hint)
+
+    def _search(self, scales: list[str]):
+        has_pict = any(v.pictorial for v in self.views)
         for sc in scales:
             s = scale_factor(sc)
-            pos = self._layout(s)
-            if pos is not None:
-                return self._emit(sc, s, pos)
-        raise LayoutError("the views do not fit on the selected sheet at any ISO 5455 scale")
+            i = ISO_5455_SCALES.index(sc)
+            # the undimensioned pictorial view may drop one ISO step (labelled) before the whole sheet does
+            for k in ((0, 1) if has_pict else (0,)):
+                if i + k >= len(ISO_5455_SCALES):
+                    break
+                p_sc = ISO_5455_SCALES[i + k]
+                self.pict_scale = (p_sc, scale_factor(p_sc)) if k else None
+                pos = self._layout(s)
+                if pos is not None:
+                    return sc, s, pos, self.pict_scale
+        return None
 
     def _sheet(self, v: _ViewCtx, s: float, c: tuple[float, float], p) -> tuple[float, float]:
         a, b = self._uv(v, p)
@@ -711,12 +866,15 @@ class Compiler:
         views, dims, anns, pmi = [], [], [], []
         for v in self.views:
             c = pos[v.id]
-            u0, u1, w0, w1 = (x * s for x in v.half)
+            vs = self._vs(v, s)
+            u0, u1, w0, w1 = (x * vs for x in v.half)
             outline = Rect(x0=c[0] + u0, y0=c[1] + w0, x1=c[0] + u1, y1=c[1] + w1)
+            own = v.pictorial and self.pict_scale is not None
             views.append(CompiledView(
                 id=v.id, orientation=v.orientation, pictorial=v.pictorial, eye=v.frame.eye, x_axis=v.frame.x,
-                y_axis=v.frame.y, scale=sc, scale_factor=s, model_center=self.center, sheet_center=c,
-                outline=outline, display_style=v.style, label=None,
+                y_axis=v.frame.y, scale=self.pict_scale[0] if own else sc, scale_factor=vs, model_center=self.center,
+                sheet_center=c, outline=outline, display_style=v.style,
+                label=f"SCALE {self.pict_scale[0]}" if own else None,
             ))
             if v.pictorial:
                 continue
@@ -737,7 +895,7 @@ class Compiler:
             frame=self.frame_rect, title_block=self.title_rect, scale=sc,
             views=views, dimensions=dims, annotations=anns, pmi=pmi,
             title_fields=self._title_fields(sc),
-            zones=self.zones, sheet_notes=self.sheet_notes, notes_rect=self.notes_rect,
+            zones=self.zones, sheet_notes=self.sheet_notes, notes_rect=self.notes_rect, notes_split=self.notes_split,
             revision_rows=self.revision_rows, revision_rect=self.revision_rect,
             notes=list(self.opt.notes)
             + [u.message for u in self.plan.uncertainties if "omitted: redundant" not in u.message],

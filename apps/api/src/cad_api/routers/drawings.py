@@ -20,6 +20,7 @@ from cad_api.schemas import (
     AnnotationFace,
     AnnotationFeature,
     AnnotationTargets,
+    SuggestedDatum,
     DrawingAccepted,
     DrawingDefaults,
     DrawingOut,
@@ -137,7 +138,16 @@ def annotation_targets(
              for f in ir.faces if f.surface_type == SurfaceType.PLANE]
     feats = [AnnotationFeature(id=f.id, type=f.type.value, diameter=getattr(f, "diameter", None))
              for f in ir.features]
-    return AnnotationTargets(dimensions=dims, planar_faces=faces, features=feats)
+    from drawing_compiler.notes import describe_target
+    from drawing_planner.datum_rules import suggest_datums
+
+    suggestion, cautions = suggest_datums(ir, body.settings.general_notes.process)
+    return AnnotationTargets(
+        dimensions=dims, planar_faces=faces, features=feats,
+        datum_suggestion=[SuggestedDatum(letter=d.letter, target=d.target, feature=describe_target(ir, d.target),
+                                         reasons=d.reasons) for d in suggestion],
+        datum_cautions=cautions,
+    )
 
 
 def get_drawing_job(session: Session, drawing_id: str, principal: Principal) -> Job:
