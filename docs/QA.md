@@ -11,7 +11,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | Check | Severity | What |
 |---|---|---|
 | QA-SHEET-001/002 | CRITICAL | view geometry / dimensions inside the frame |
-| QA-SHEET-003 | CRITICAL | nothing in the title-block/notes strip |
+| QA-SHEET-003 | CRITICAL | no view, dimension or annotation touches the title block, `Note:` block or revision table |
 | QA-VIEW-001 | CRITICAL | views do not overlap |
 | QA-VIEW-002 | CRITICAL | OCCT-drawn view extent == GeometryIR extent (catches wrong orientation or geometry) |
 | QA-VIEW-003 | CRITICAL | placement matches first/third-angle projection |
@@ -26,7 +26,10 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-ANN-001 | MAJOR | every hole has a center mark in its circular view |
 | QA-ANN-003 | MAJOR | every hole has a callout |
 | QA-TXT-001 | MAJOR | text height ≥ 2.5 mm |
-| QA-TB-001 | CRITICAL | no engineering data in the title block without a source |
+| QA-TB-001 | CRITICAL | every engineering value in the title block (material, tolerances, finish, edge note) was supplied by the user |
+| QA-PMI-001 | CRITICAL / MAJOR | every user annotation was placed (UNPLACED → critical); crowded placement → major, repair `REDUCE_SCALE` |
+| QA-PMI-002 | CRITICAL | each datum is shown exactly once. Frame count, datum references, tolerances, inspection marks and finish symbols all match what the user supplied |
+| QA-PMI-003 | MAJOR | frames, datum symbols and finish symbols don't overlap dimension text, each other or other views |
 | QA-REF-001 | CRITICAL | every dimension references a known candidate |
 
 `POST /api/drawings/{id}/validate` re-runs the checks on the stored drawing (pure Python).

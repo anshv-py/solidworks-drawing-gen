@@ -52,6 +52,7 @@ name = "cad-api"
 version = "0.1.0"
 source = { editable = "apps/api" }
 dependencies = [
+    { name = "drawing-planner" },
     { name = "drawing-qa" },
     { name = "drawing-schema" },
     { name = "fastapi" },
@@ -67,6 +68,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "drawing-planner", editable = "services/drawing-planner" },
     { name = "drawing-qa", editable = "services/drawing-qa" },
     { name = "drawing-schema", editable = "packages/drawing-schema" },
     { name = "fastapi", specifier = ">=0.115" },

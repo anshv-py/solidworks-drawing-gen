@@ -99,3 +99,30 @@ class DrawingOut(BaseModel):
     downloads: list[str]
     unavailable_formats: dict[str, str]
     qa: QaReport | None
+
+
+class AnnotationDimension(BaseModel):
+    id: str
+    text: str
+    kind: str
+
+
+class AnnotationFace(BaseModel):
+    id: str
+    normal: tuple[float, float, float] | None
+    area: float
+    centroid: tuple[float, float, float]
+
+
+class AnnotationFeature(BaseModel):
+    id: str
+    type: str
+    diameter: float | None = None
+
+
+class AnnotationTargets(BaseModel):
+    """Ids a user annotation may reference (all from GeometryIR / the deterministic plan)."""
+
+    dimensions: list[AnnotationDimension]
+    planar_faces: list[AnnotationFace]
+    features: list[AnnotationFeature]

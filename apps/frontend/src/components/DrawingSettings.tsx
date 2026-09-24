@@ -82,7 +82,8 @@ export default function DrawingSettings({ defaults, settings, onChange, canGener
         ))}
       </fieldset>
       <p className="rounded bg-slate-50 p-2 text-xs text-slate-600">
-        Drawing type: <b>{settings.drawing_kind}</b>. Material, tolerances, GD&amp;T, datums and finish stay
+        Drawing type: <b>{settings.drawing_kind}</b>. Material, tolerances, GD&amp;T, datums and finish are
+        printed only when you enter them under <i>Manufacturing information</i>; otherwise they stay
         <b> unspecified</b> and are never invented.
       </p>
       <button type="button" disabled={!canGenerate || busy} onClick={onGenerate} title={disabledReason}

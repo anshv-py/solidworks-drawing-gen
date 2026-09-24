@@ -12,6 +12,10 @@ export type Feature = boolean;
 export type Holes = boolean;
 export type Overall = boolean;
 export type Radii = boolean;
+/**
+ * 8.00 rather than 8 (SolidWorks-style)
+ */
+export type TrailingZeros = boolean;
 export type DrawingKind = "GEOMETRY" | "MANUFACTURING";
 export type DrawingStandard = "ISO" | "ASME";
 /**
@@ -23,7 +27,96 @@ export type DrawingStandard = "ISO" | "ASME";
 export type InfoSource = "USER" | "CAD_MODEL";
 export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
+export type Letter = string;
+export type FaceId = string | null;
+export type FeatureId = string | null;
+export type Datums = Datum[];
+/**
+ * print the standard edge note (user choice)
+ */
+export type DeburrBreakSharpEdges = boolean;
+export type Text = string;
+export type FeatureNotes = FeatureNote[];
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "GdtCharacteristic".
+ */
+export type GdtCharacteristic =
+  | "STRAIGHTNESS"
+  | "FLATNESS"
+  | "CIRCULARITY"
+  | "CYLINDRICITY"
+  | "PROFILE_OF_A_LINE"
+  | "PROFILE_OF_A_SURFACE"
+  | "ANGULARITY"
+  | "PERPENDICULARITY"
+  | "PARALLELISM"
+  | "POSITION"
+  | "CONCENTRICITY"
+  | "SYMMETRY"
+  | "CIRCULAR_RUNOUT"
+  | "TOTAL_RUNOUT";
+export type Letter1 = string;
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "MaterialCondition".
+ */
+export type MaterialCondition = "MMC" | "LMC";
+/**
+ * @maxItems 3
+ */
+export type Datums1 = DatumReference[];
+export type DiameterZone = boolean;
+/**
+ * tolerance zone size, mm
+ */
+export type Tolerance = number;
+export type Frames = FeatureControlFrame[];
+/**
+ * candidate ids marked for inspection
+ */
+export type InspectionDimensions = string[];
+/**
+ * @maxItems 12
+ */
+export type Notes = string[];
+export type ApprovedBy = string;
+export type Date = string;
+export type Description = string;
+export type Revision = string;
+/**
+ * @maxItems 12
+ */
+export type Revisions = RevisionEntry[];
+export type RaUm = number;
+export type SurfaceFinishMarks = SurfaceFinishMark[];
+/**
+ * thread depth; required for blind holes
+ */
+export type Depth = number | null;
+/**
+ * e.g. M8x1.25-6H (as specified by the user)
+ */
+export type Designation = string;
+export type FeatureId1 = string;
+export type Threads = ThreadCallout[];
+export type CandidateId = string;
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "ToleranceKind".
+ */
+export type ToleranceKind = "SYMMETRIC" | "DEVIATION" | "LIMITS";
+/**
+ * DEVIATION/LIMITS: lower deviation (signed)
+ */
+export type Lower = number;
+/**
+ * SYMMETRIC: the ± value; DEVIATION/LIMITS: upper deviation
+ */
+export type Upper = number;
+export type Tolerances = DimensionTolerance[];
 export type DisplayStyle = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
+export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 export type ViewOrientation =
   "FRONT" | "BACK" | "TOP" | "BOTTOM" | "LEFT" | "RIGHT" | "ISOMETRIC" | "DIMETRIC" | "TRIMETRIC";
 /**
@@ -36,11 +129,26 @@ export type ProjectedViews = ViewOrientation1[];
 export type ProjectionMethod = "FIRST_ANGLE" | "THIRD_ANGLE";
 export type SheetOrientation = "LANDSCAPE" | "PORTRAIT";
 export type SheetSize = "A0" | "A1" | "A2" | "A3" | "A4";
+export type ApprovedBy1 = string | null;
+export type ApprovedDate = string | null;
+export type CheckedBy = string | null;
+export type CheckedDate = string | null;
+export type DrawingNumber = string | null;
 export type DrawnBy = string | null;
+export type DrawnDate = string | null;
+export type MfgBy = string | null;
+export type MfgDate = string | null;
 export type Organization = string | null;
 export type PartNumber = string | null;
-export type Revision = string | null;
+export type QaBy = string | null;
+export type QaDate = string | null;
+export type Quantity = string | null;
+export type Revision1 = string | null;
 export type Title = string | null;
+/**
+ * as stated by the user, e.g. '475 g'
+ */
+export type Weight = string | null;
 /**
  * Which model axis points up in the drawing views.
  *
@@ -52,7 +160,7 @@ export type ViewFrame = "Z_UP" | "Y_UP";
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "DisplayStyle".
  */
-export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
+export type DisplayStyle2 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "DrawingKind".
@@ -95,7 +203,9 @@ export interface DrawingSettings {
   drawing_kind: DrawingKind;
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
+  manufacturing: ManufacturingAnnotations;
   orthographic_display_style: DisplayStyle;
+  pictorial_style: DisplayStyle1;
   primary_view: ViewOrientation;
   projected_views: ProjectedViews;
   projection_method: ProjectionMethod;
@@ -117,14 +227,17 @@ export interface DimensionPreferences {
   holes: Holes;
   overall: Overall;
   radii: Radii;
+  trailing_zeros: TrailingZeros;
 }
 export interface EngineeringInformation {
+  angular_tolerance: EngineeringField;
   coating: EngineeringField;
   datum_scheme: EngineeringField;
   gdt: EngineeringField;
   general_tolerance: EngineeringField;
   heat_treatment: EngineeringField;
   inspection_requirements: EngineeringField;
+  linear_tolerance: EngineeringField;
   manufacturing_process: EngineeringField;
   material: EngineeringField;
   surface_finish: EngineeringField;
@@ -138,16 +251,126 @@ export interface EngineeringField {
   status: Status;
   value: Value;
 }
+export interface ManufacturingAnnotations {
+  datums: Datums;
+  deburr_break_sharp_edges: DeburrBreakSharpEdges;
+  feature_notes: FeatureNotes;
+  frames: Frames;
+  inspection_dimensions: InspectionDimensions;
+  notes: Notes;
+  revisions: Revisions;
+  surface_finish_marks: SurfaceFinishMarks;
+  threads: Threads;
+  tolerances: Tolerances;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "Datum".
+ */
+export interface Datum {
+  letter: Letter;
+  target: Target;
+}
+/**
+ * A GeometryIR feature (hole, boss, pattern, slot, pocket …) or a single face.
+ *
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "Target".
+ */
+export interface Target {
+  face_id: FaceId;
+  feature_id: FeatureId;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "FeatureNote".
+ */
+export interface FeatureNote {
+  target: Target;
+  text: Text;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "FeatureControlFrame".
+ */
+export interface FeatureControlFrame {
+  characteristic: GdtCharacteristic;
+  datums: Datums1;
+  diameter_zone: DiameterZone;
+  material_condition: MaterialCondition | null;
+  target: Target;
+  tolerance: Tolerance;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "DatumReference".
+ */
+export interface DatumReference {
+  letter: Letter1;
+  material_condition: MaterialCondition | null;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "RevisionEntry".
+ */
+export interface RevisionEntry {
+  approved_by: ApprovedBy;
+  date: Date;
+  description: Description;
+  revision: Revision;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "SurfaceFinishMark".
+ */
+export interface SurfaceFinishMark {
+  ra_um: RaUm;
+  target: Target;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "ThreadCallout".
+ */
+export interface ThreadCallout {
+  depth: Depth;
+  designation: Designation;
+  feature_id: FeatureId1;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "DimensionTolerance".
+ */
+export interface DimensionTolerance {
+  candidate_id: CandidateId;
+  kind: ToleranceKind;
+  lower: Lower;
+  upper: Upper;
+}
 export interface Sheet {
   orientation: SheetOrientation;
   size: SheetSize;
 }
+/**
+ * Identification data - all user-supplied (never generated).
+ */
 export interface TitleBlock {
+  approved_by: ApprovedBy1;
+  approved_date: ApprovedDate;
+  checked_by: CheckedBy;
+  checked_date: CheckedDate;
+  drawing_number: DrawingNumber;
   drawn_by: DrawnBy;
+  drawn_date: DrawnDate;
+  mfg_by: MfgBy;
+  mfg_date: MfgDate;
   organization: Organization;
   part_number: PartNumber;
-  revision: Revision;
+  qa_by: QaBy;
+  qa_date: QaDate;
+  quantity: Quantity;
+  revision: Revision1;
   title: Title;
+  weight: Weight;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
@@ -171,21 +394,40 @@ export interface DimensionPreferences1 {
   holes: Holes;
   overall: Overall;
   radii: Radii;
+  trailing_zeros: TrailingZeros;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "EngineeringInformation".
  */
 export interface EngineeringInformation1 {
+  angular_tolerance: EngineeringField;
   coating: EngineeringField;
   datum_scheme: EngineeringField;
   gdt: EngineeringField;
   general_tolerance: EngineeringField;
   heat_treatment: EngineeringField;
   inspection_requirements: EngineeringField;
+  linear_tolerance: EngineeringField;
   manufacturing_process: EngineeringField;
   material: EngineeringField;
   surface_finish: EngineeringField;
+}
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "ManufacturingAnnotations".
+ */
+export interface ManufacturingAnnotations1 {
+  datums: Datums;
+  deburr_break_sharp_edges: DeburrBreakSharpEdges;
+  feature_notes: FeatureNotes;
+  frames: Frames;
+  inspection_dimensions: InspectionDimensions;
+  notes: Notes;
+  revisions: Revisions;
+  surface_finish_marks: SurfaceFinishMarks;
+  threads: Threads;
+  tolerances: Tolerances;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
@@ -196,13 +438,27 @@ export interface Sheet1 {
   size: SheetSize;
 }
 /**
+ * Identification data - all user-supplied (never generated).
+ *
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "TitleBlock".
  */
 export interface TitleBlock1 {
+  approved_by: ApprovedBy1;
+  approved_date: ApprovedDate;
+  checked_by: CheckedBy;
+  checked_date: CheckedDate;
+  drawing_number: DrawingNumber;
   drawn_by: DrawnBy;
+  drawn_date: DrawnDate;
+  mfg_by: MfgBy;
+  mfg_date: MfgDate;
   organization: Organization;
   part_number: PartNumber;
-  revision: Revision;
+  qa_by: QaBy;
+  qa_date: QaDate;
+  quantity: Quantity;
+  revision: Revision1;
   title: Title;
+  weight: Weight;
 }

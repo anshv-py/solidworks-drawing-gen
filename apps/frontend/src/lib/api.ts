@@ -1,6 +1,7 @@
 import type { GeometryIR } from "../generated/geometry-ir";
 import type { DrawingSettings } from "../generated/drawing-settings";
 import type { QaReport } from "../generated/qa-report";
+import type { AnnotationTargets } from "./pmi";
 
 export interface ModelOut {
   id: string;
@@ -70,11 +71,21 @@ export class ApiProblem extends Error {
 
 export async function parseProblem(res: Response): Promise<ApiProblem> {
   try {
-    const body = (await res.json()) as { code?: string; detail?: string };
-    return new ApiProblem(res.status, body.code ?? `HTTP_${res.status}`, body.detail ?? res.statusText);
+    const body = (await res.json()) as { code?: string; detail?: unknown };
+    return new ApiProblem(res.status, body.code ?? `HTTP_${res.status}`, problemText(body.detail) || res.statusText);
   } catch {
     return new ApiProblem(res.status, `HTTP_${res.status}`, res.statusText);
   }
+}
+
+/** FastAPI validation errors carry a list of {loc, msg}; show them as readable text. */
+export function problemText(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d: { loc?: unknown[]; msg?: string }) =>
+      `${(d.loc ?? []).filter((x) => x !== "body").join(".")}: ${d.msg ?? ""}`).join("; ");
+  }
+  return detail == null ? "" : JSON.stringify(detail);
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -98,6 +109,12 @@ export const api = {
   drawingDefaults: () => request<DrawingDefaults>("/api/drawings/defaults"),
   generateDrawing: (modelId: string, settings: DrawingSettings) =>
     request<{ drawing_id: string; job: JobOut }>("/api/drawings/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model_id: modelId, settings }),
+    }),
+  annotationTargets: (modelId: string, settings: DrawingSettings) =>
+    request<AnnotationTargets>("/api/drawings/annotation-targets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ model_id: modelId, settings }),

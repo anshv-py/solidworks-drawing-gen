@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import DrawingResult from "./components/DrawingResult";
 import DrawingSettings from "./components/DrawingSettings";
+import ManufacturingForm, { cleanManufacturing } from "./components/ManufacturingForm";
 import FeatureTable from "./components/FeatureTable";
 import GeometrySummary from "./components/GeometrySummary";
 import JobProgress from "./components/JobProgress";
@@ -72,7 +73,7 @@ export default function App() {
     if (!model || !settings) return;
     setError(null); setDrawing(null);
     try {
-      const r = await api.generateDrawing(model.id, settings);
+      const r = await api.generateDrawing(model.id, { ...settings, manufacturing: cleanManufacturing(settings.manufacturing) });
       setDrawingJobId(r.drawing_id);
     } catch (e) {
       setError(errorText(e));
@@ -105,6 +106,9 @@ export default function App() {
               disabledReason={stl ? "Drawings need a STEP model (STL meshes are not supported yet)"
                 : ir ? undefined : "Upload and analyze a model first"}
             />
+          )}
+          {defaults && settings && model && ir && !stl && (
+            <ManufacturingForm modelId={model.id} settings={settings} onChange={setSettings} />
           )}
           {drawingJob && <JobProgress job={drawingJob} />}
         </aside>

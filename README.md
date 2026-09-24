@@ -7,8 +7,9 @@ removal, then checked by deterministic QA. **No LLM is used and no paid service 
 Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 
 > **Status: milestones 1-2 done.** Upload → OCCT analysis → GeometryIR → features → 3D preview →
-> **drawing generation** (views, dimensions, hole callouts, center marks, title block) → QA →
-> PDF/DXF/SVG download. Sections/detail views and the SolidWorks worker (SLDDRW/DWG) are next.
+> **drawing generation** (views, dimensions, hole callouts, center marks, shaded isometric,
+> SolidWorks-style title block with zone grid) → **user-supplied GD&T, datums, tolerances, surface
+> finish, notes and revisions** → QA → PDF/DXF/SVG download. Sections/detail views and the SolidWorks worker (SLDDRW/DWG) are next.
 > See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ![Generated drawing of the flange test part](docs/images/drawing-flange.png)
@@ -25,7 +26,8 @@ Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 | Stable IDs | content-hash IDs for faces/edges/features, identical across re-analysis |
 | API | upload (validated, size-limited, sniffed), async analysis jobs with progress, GeometryIR, preview mesh |
 | Drawing generation | deterministic plan (views, dimension candidates from GeometryIR, redundancy removal), ISO/ASME, first/third angle, A0-A4, ISO 5455 scale, OCCT hidden-line removal, hole callouts / PCD / radii / chamfers, center marks & centerlines, title block with UNSPECIFIED engineering data |
-| QA | 18 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3); critical issues block export |
+| Manufacturing annotations | entered by the user, never generated: datums, feature control frames (14 characteristics, Ø, MMC/LMC), ±/deviation/limit tolerances, threads, inspection ovals, ISO 1302 Ra symbols, feature/sheet notes, revision table; validated against GeometryIR |
+| QA | 21 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3); critical issues block export |
 | Exports | PDF, DXF (real DIMENSION entities), SVG, PNG preview - labelled "not produced by SolidWorks"; DWG/SLDDRW → 501 until the SolidWorks worker exists |
 | UI | upload, progress, geometry summary, feature table, Three.js preview, drawing settings, generate, drawing preview, QA report, downloads, regenerate |
 

@@ -12,17 +12,6 @@ MODELS = ["plate_with_holes", "mounting_plate", "pocketed_block", "bracket", "sh
           "cylindrical_part", "enclosure", "chamfered_block"]
 
 
-@pytest.fixture(scope="module")
-def geometry_files(analyzed, tmp_path_factory):
-    d = tmp_path_factory.mktemp("geo")
-    out = {}
-    for name, (ir, _) in analyzed.items():
-        p = d / f"{name}.json"
-        p.write_text(ir.model_dump_json())
-        out[name] = p
-    return out
-
-
 @pytest.mark.slow
 @pytest.mark.parametrize("name", MODELS)
 def test_generates_and_passes_qa(name, geometry_files, models_dir, tmp_path):

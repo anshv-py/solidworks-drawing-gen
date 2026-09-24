@@ -14,8 +14,12 @@ from sqlalchemy.orm import Session
 
 from cad_api.db import CadModel, Job, JobKind, JobState, ModelStatus
 from cad_api.dependencies import Principal, get_principal, get_runner, get_session, get_storage
-from cad_api.errors import Conflict, NotFound
+from cad_api.errors import ApiError, Conflict, NotFound
 from cad_api.schemas import (
+    AnnotationDimension,
+    AnnotationFace,
+    AnnotationFeature,
+    AnnotationTargets,
     DrawingAccepted,
     DrawingDefaults,
     DrawingOut,
@@ -81,6 +85,7 @@ def _start(session: Session, storage: Storage, runner: JobRunner, principal: Pri
     if model.format != "STEP":
         raise Conflict("drawing generation needs exact B-Rep geometry (STEP); STL is not supported yet",
                        code="STL_NOT_SUPPORTED")
+    _check_annotations(storage, model, settings)
     job = Job(owner_id=principal.id, kind=JobKind.DRAWING, model_id=model.id, state=JobState.QUEUED, message="Queued")
     session.add(job)
     session.flush()
@@ -88,6 +93,51 @@ def _start(session: Session, storage: Storage, runner: JobRunner, principal: Pri
     session.commit()
     runner.submit(job.id)
     return DrawingAccepted(drawing_id=job.id, job_id=job.id, job=JobOut.from_row(job))
+
+
+def _plan(storage: Storage, model: CadModel, settings: DrawingSettings):
+    from drawing_planner import plan_baseline  # pure Python (no OCCT)
+    from geometry_schema import GeometryIR
+
+    ir = GeometryIR.model_validate_json(storage.path("models", model.id, "geometry_ir.json").read_text())
+    return ir, plan_baseline(ir, settings)
+
+
+def _check_annotations(storage: Storage, model: CadModel, settings: DrawingSettings) -> None:
+    """User annotations must match this part; reject before queuing instead of failing later."""
+    if settings.manufacturing.is_empty:
+        return
+    _, planned = _plan(storage, model, settings)
+    if planned.errors:
+        raise ApiError("; ".join(planned.errors), code="PMI_INVALID", status=422)
+
+
+@router.post("/annotation-targets", response_model=AnnotationTargets)
+def annotation_targets(
+    body: GenerateRequest,
+    session: Session = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    principal: Principal = Depends(get_principal),
+) -> AnnotationTargets:
+    """What user annotations can attach to for these settings: the dimensions the planner will
+    place (tolerances / inspection), planar faces (datums, frames, surface finish) and features."""
+    from geometry_schema import SurfaceType
+
+    model = _get_model(session, body.model_id, principal)
+    if model.status != ModelStatus.ANALYZED:
+        raise Conflict(f"model is {model.status}; analyze it first", code="MODEL_NOT_ANALYZED")
+    ir, planned = _plan(storage, model, body.settings.model_copy(update={"manufacturing": type(
+        body.settings.manufacturing)()}))
+    by_id = {c.id: c for c in planned.candidates}
+    dims = [AnnotationDimension(id=s.candidate_id, text=by_id[s.candidate_id].text,
+                                kind=by_id[s.candidate_id].kind.value)
+            for s in planned.plan.dimension_selections if s.candidate_id in by_id]
+    faces = [AnnotationFace(id=f.id, normal=getattr(f.surface, "normal", None), area=round(f.area, 3),
+                            centroid=tuple(round(x, 3) for x in f.centroid))
+             for f in ir.faces if f.surface_type == SurfaceType.PLANE]
+    feats = [AnnotationFeature(id=f.id, type=f.type.value, diameter=getattr(f, "diameter", None))
+             for f in ir.features]
+    return AnnotationTargets(dimensions=dims, planar_faces=faces, features=feats)
 
 
 def get_drawing_job(session: Session, drawing_id: str, principal: Principal) -> Job:
