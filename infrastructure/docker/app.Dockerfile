@@ -27,8 +27,9 @@ COPY --from=frontend /src/dist ./frontend
 
 RUN useradd --system --uid 10001 --home /app cadai && mkdir -p /data && chown cadai /data
 # a host-mounted disk at /data may arrive root-owned: the entrypoint fixes that, then drops to cadai
+# (CRs are stripped in case the script was checked out with Windows line endings)
 COPY infrastructure/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN sed -i 's/$//' /usr/local/bin/entrypoint.sh && chmod 755 /usr/local/bin/entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh && chmod 755 /usr/local/bin/entrypoint.sh
 # /data is the persistent disk: uploads, drawings and the SQLite database (set CADAI_DATABASE_URL
 # to a Postgres URL to use Postgres instead)
 ENV PATH="/app/.venv/bin:$PATH" CADAI_STORAGE_DIR=/data/storage CADAI_DATABASE_URL=sqlite:////data/cadai.db \
