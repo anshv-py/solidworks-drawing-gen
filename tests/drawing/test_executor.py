@@ -42,9 +42,9 @@ def test_dxf_content(geometry_files, models_dir, tmp_path):
     assert doc.header["$INSUNITS"] == 4
     assert {"VISIBLE", "HIDDEN", "CENTER", "DIM", "FRAME", "TITLE"} <= {l.dxf.name for l in doc.layers}
     dims = msp.query("DIMENSION")
-    assert {d.dxf.text for d in dims} >= {"120", "80", "10", "50", "90", "15", "60", "40"}
+    assert {d.dxf.text for d in dims} >= {"120.00", "80.00", "10.00", "50.00", "90.00", "15.00", "60.00", "40.00"}
     texts = {t.dxf.text for t in msp.query("TEXT")}
-    assert "4X Ø8 THRU" in texts
+    assert "4X Ø8.00 THRU" in texts
     assert any("NOT PRODUCED BY SOLIDWORKS" in t for t in texts)
     assert len(msp.query("LINE[layer=='HIDDEN']") ) > 0  # hidden lines are drawn in orthographic views
 

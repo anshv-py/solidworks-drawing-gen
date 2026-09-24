@@ -16,8 +16,33 @@ from ezdxf.addons.drawing.config import (  # noqa: E402
     LineweightPolicy,
 )
 from ezdxf.addons.drawing.matplotlib import MatplotlibBackend  # noqa: E402
+from ezdxf.npshapes import to_matplotlib_path  # noqa: E402
+from matplotlib.patches import PathPatch  # noqa: E402
 
 MM_PER_INCH = 25.4
+
+
+class _Backend(MatplotlibBackend):
+    """Fills glyph outlines with their native (non-zero) winding.
+
+    The stock backend re-orients contours with a nesting heuristic (``detect_holes=True``),
+    which fills glyphs whose contours cross - e.g. the diameter sign Ø is drawn as a solid disc.
+    TrueType outlines already carry correct winding, so no hole detection is needed for text;
+    hatches and SOLIDs are unaffected.
+    """
+
+    def draw_filled_paths(self, paths, properties) -> None:
+        try:
+            patch = PathPatch(to_matplotlib_path(paths, detect_holes=False), color=properties.color,
+                              linewidth=0, fill=True, zorder=self._get_z())
+        except ValueError:
+            return
+        self.ax.add_patch(patch)
+
+    def draw_filled_polygon(self, points, properties) -> None:
+        # a hairline of the fill colour closes the anti-aliasing seams between shading triangles
+        self.ax.fill(*zip(*((p.x, p.y) for p in points.vertices())), color=properties.color,
+                     linewidth=0.15, zorder=self._get_z())
 
 
 def render(dxf_path, sheet_w: float, sheet_h: float, outputs: dict[str, str], png_dpi: int = 150) -> None:
@@ -29,13 +54,13 @@ def render(dxf_path, sheet_w: float, sheet_h: float, outputs: dict[str, str], pn
     pt_per_mm = 72.0 / MM_PER_INCH  # the matplotlib backend draws DXF lineweights (mm) as points
     cfg = Configuration(
         background_policy=BackgroundPolicy.WHITE,
-        color_policy=ColorPolicy.BLACK,
+        color_policy=ColorPolicy.COLOR,  # lines are ACI 7 (black on white); shading keeps its greys
         lineweight_policy=LineweightPolicy.ABSOLUTE,
         lineweight_scaling=pt_per_mm,
         min_lineweight=0.13 * pt_per_mm,
     )
     # adjust_figure=False: keep the true sheet size (the backend would otherwise refit the figure)
-    Frontend(RenderContext(doc), MatplotlibBackend(ax, adjust_figure=False), config=cfg).draw_layout(doc.modelspace(), finalize=True)
+    Frontend(RenderContext(doc), _Backend(ax, adjust_figure=False), config=cfg).draw_layout(doc.modelspace(), finalize=True)
     ax.set_xlim(0, sheet_w)
     ax.set_ylim(0, sheet_h)
     ax.set_aspect("equal")

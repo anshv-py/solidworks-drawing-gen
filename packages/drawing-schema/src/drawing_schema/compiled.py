@@ -73,6 +73,31 @@ class CompiledView(StrictModel):
     label: str | None = None
 
 
+class FrameCell(StrictModel):
+    """One compartment of a feature control frame."""
+
+    symbol: str | None = Field(default=None, description="GD&T characteristic name (drawn as a vector symbol)")
+    text: str | None = None
+    diameter: bool = False  # Ø prefix
+    modifier: str | None = Field(default=None, description="MMC / LMC (drawn as a circled M / L)")
+    width: float
+
+
+class FrameSpec(StrictModel):
+    cells: list[FrameCell]
+    height: float = 7.0
+
+    @property
+    def width(self) -> float:
+        return sum(c.width for c in self.cells)
+
+
+class ToleranceText(StrictModel):
+    kind: str  # SYMMETRIC | DEVIATION | LIMITS
+    upper: str
+    lower: str = ""
+
+
 class DimensionOpKind(StrEnum):
     LINEAR = "LINEAR"
     LEADER_NOTE = "LEADER_NOTE"
@@ -99,6 +124,37 @@ class DimensionOp(StrictModel):
     text_height: float = 3.5
     text_bbox: Rect
     feature_ids: list[str] = Field(default_factory=list)
+    # user-supplied manufacturing annotations attached to this dimension / callout
+    tolerance: ToleranceText | None = None
+    inspection: bool = False
+    frames: list[FrameSpec] = Field(default_factory=list)
+    frames_origin: Point2 | None = Field(default=None, description="top-left corner of the first frame")
+    datum: str | None = None
+    datum_box: Rect | None = None
+    datum_line: list[Point2] = Field(default_factory=list, description="triangle base centre first, box last")
+    extra_bbox: Rect | None = Field(default=None, description="area used by frames / datum symbol")
+
+
+class PmiKind(StrEnum):
+    FRAME_GROUP = "FRAME_GROUP"  # leader-directed feature control frame(s) and/or datum symbol on a face
+    SURFACE_FINISH = "SURFACE_FINISH"
+
+
+class PmiOp(StrictModel):
+    id: str
+    view_id: str
+    kind: PmiKind
+    tip: Point2 = Field(description="point on the face edge")
+    direction: Point2 = Field(description="unit outward direction (sheet)")
+    leader: list[Point2] = Field(default_factory=list)
+    arrow: bool = True  # frames: arrowhead on the face; datum only: filled datum triangle
+    frames: list[FrameSpec] = Field(default_factory=list)
+    frames_origin: Point2 | None = None
+    datum: str | None = None
+    datum_box: Rect | None = None
+    text: str | None = None
+    bbox: Rect
+    target: str
 
 
 class AnnotationKind(StrEnum):
@@ -139,5 +195,11 @@ class CompiledDrawing(StrictModel):
     dimensions: list[DimensionOp]
     annotations: list[AnnotationOp]
     title_fields: list[TitleBlockField]
-    notes: list[str] = Field(default_factory=list)
+    pmi: list[PmiOp] = Field(default_factory=list)
+    zones: tuple[int, int] = Field(default=(8, 6), description="ISO 5457 grid: columns, rows")
+    sheet_notes: list[str] = Field(default_factory=list, description="numbered notes printed above the title block")
+    notes_rect: Rect | None = None
+    revision_rows: list[list[str]] = Field(default_factory=list)
+    revision_rect: Rect | None = None
+    notes: list[str] = Field(default_factory=list, description="compiler notes (not printed)")
     dropped_candidates: list[str] = Field(default_factory=list, description="not placed (reason in notes)")

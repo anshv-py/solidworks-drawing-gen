@@ -19,7 +19,9 @@ from drawing_schema import (
     TitleBlock,
     ViewFrame,
     ViewOrientation,
+    missing_manufacturing_information,
 )
+from drawing_schema.pmi import ManufacturingAnnotations
 from shared_types import StrictModel
 
 
@@ -38,6 +40,8 @@ class DrawingSettings(StrictModel):
     annotations: AnnotationPreferences = AnnotationPreferences()
     title_block: TitleBlock = TitleBlock()
     engineering_information: EngineeringInformation = EngineeringInformation()
+    manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
+    pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
 
     @field_validator("projected_views")
     @classmethod
@@ -51,8 +55,7 @@ class DrawingSettings(StrictModel):
     @model_validator(mode="after")
     def _manufacturing_requires_information(self) -> Self:
         if self.drawing_kind == DrawingKind.MANUFACTURING:
-            missing = [n for n in ("material", "general_tolerance")
-                       if getattr(self.engineering_information, n).status != "SPECIFIED"]
+            missing = missing_manufacturing_information(self.engineering_information)
             if missing:
                 raise ValueError("a MANUFACTURING drawing requires supplied engineering information: "
                                  + ", ".join(missing))

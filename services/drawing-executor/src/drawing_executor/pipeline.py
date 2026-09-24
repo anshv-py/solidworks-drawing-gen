@@ -23,7 +23,7 @@ from geometry_schema import GeometryIR
 from geometry_service.step_analysis import read_step
 
 from drawing_executor.dxf_writer import write_dxf
-from drawing_executor.hlr import hidden_line_removal
+from drawing_executor.hlr import hidden_line_removal, shaded_facets
 from drawing_executor.render import render
 from drawing_executor.sheet import snap_extension, to_sheet
 
@@ -77,6 +77,9 @@ def generate(
 
     report("PLANNING", "Selecting views and dimensions", 5)
     planned = plan_baseline(ir, settings, filename=filename)
+    if planned.errors:
+        # user annotations that do not match this part are rejected, never silently dropped
+        raise DrawingFailed("PMI_INVALID", "; ".join(planned.errors))
     (out_dir / "plan.json").write_text(planned.plan.model_dump_json(indent=2))
     (out_dir / "candidates.json").write_text(
         json.dumps([c.model_dump(mode="json") for c in planned.candidates], indent=1)
@@ -101,6 +104,7 @@ def generate(
             if key not in hlr_cache:
                 hl = hidden_line_removal(shape, v.model_center, v.eye, v.x_axis,
                                          with_hidden=v.display_style == "HIDDEN_LINES_VISIBLE")
+                # (shaded views: the faces hide what is behind them, so only visible edges are drawn)
                 hlr_cache[key] = (hl.visible, hl.hidden)
             vis, hid = hlr_cache[key]
             lines[v.id] = {"visible": to_sheet(vis, v), "hidden": to_sheet(hid, v)}
@@ -132,7 +136,13 @@ def generate(
     report("EXPORTING", "Writing DXF and rendering PDF/SVG/PNG", 85)
     gen = generator_id()
     dxf = out_dir / "drawing.dxf"
-    write_dxf(compiled, rendered.lines, rendered.snapped, dxf, gen)
+    shading = {}
+    for v in compiled.views:
+        if v.display_style == "SHADED_WITH_EDGES":
+            s, (cx, cy) = v.scale_factor, v.sheet_center
+            shading[v.id] = [([(cx + x * s, cy + y * s) for x, y in f.points], f.shade)
+                             for f in shaded_facets(shape, v.model_center, v.eye, v.x_axis)]
+    write_dxf(compiled, rendered.lines, rendered.snapped, dxf, gen, shading)
     artifacts: dict[str, str] = {}
     if qa.passed:
         render(dxf, compiled.sheet_w, compiled.sheet_h,
