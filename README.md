@@ -1,0 +1,1 @@
+# solidworks-drawing-gen
