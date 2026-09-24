@@ -24,8 +24,7 @@ services:
       CADAI_CORS_ORIGINS: '["http://localhost:8080"]'
       CADAI_MAX_UPLOAD_MB: ${CADAI_MAX_UPLOAD_MB:-100}
       CADAI_SOLIDWORKS_MODE: ${CADAI_SOLIDWORKS_MODE:-mock}
-      CADAI_LLM_MODEL: ${CADAI_LLM_MODEL:-deepseek-ai/DeepSeek-V4-Pro}
-      CADAI_HF_TOKEN: ${CADAI_HF_TOKEN:-}
+      CADAI_LLM_BACKEND: ${CADAI_LLM_BACKEND:-none}
     volumes: [storage:/data]
     depends_on:
       postgres: { condition: service_healthy }

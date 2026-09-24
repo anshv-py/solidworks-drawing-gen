@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "QaIssue": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Rect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "entity_refs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entity Refs",
+          "type": "array"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "repair": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "repair action the compiler understands",
+          "title": "Repair"
+        },
+        "severity": {
+          "$ref": "#/$defs/QaSeverity"
+        }
+      },
+      "required": [
+        "check_id",
+        "severity",
+        "message",
+        "entity_refs",
+        "bbox",
+        "repair"
+      ],
+      "title": "QaIssue",
+      "type": "object"
+    },
+    "QaSeverity": {
+      "enum": [
+        "CRITICAL",
+        "MAJOR",
+        "MINOR"
+      ],
+      "title": "QaSeverity",
+      "type": "string"
+    },
+    "Rect": {
+      "additionalProperties": false,
+      "properties": {
+        "x0": {
+          "title": "X0",
+          "type": "number"
+        },
+        "x1": {
+          "title": "X1",
+          "type": "number"
+        },
+        "y0": {
+          "title": "Y0",
+          "type": "number"
+        },
+        "y1": {
+          "title": "Y1",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "title": "Rect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checks_run": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Checks Run",
+      "type": "array"
+    },
+    "critical": {
+      "title": "Critical",
+      "type": "integer"
+    },
+    "issues": {
+      "items": {
+        "$ref": "#/$defs/QaIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "iteration": {
+      "title": "Iteration",
+      "type": "integer"
+    },
+    "major": {
+      "title": "Major",
+      "type": "integer"
+    },
+    "minor": {
+      "title": "Minor",
+      "type": "integer"
+    },
+    "passed": {
+      "description": "no CRITICAL issues",
+      "title": "Passed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "iteration",
+    "passed",
+    "critical",
+    "major",
+    "minor",
+    "checks_run",
+    "issues"
+  ],
+  "title": "QaReport",
+  "type": "object"
+}

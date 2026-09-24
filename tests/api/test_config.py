@@ -4,10 +4,9 @@ from pydantic import ValidationError
 from cad_api.config import Settings
 
 
-def test_planning_llm_defaults():
+def test_no_llm_by_default():
     s = Settings(_env_file=None)
-    assert s.llm_model == "deepseek-ai/DeepSeek-V4-Pro"
-    assert s.llm_backend == "transformers"
+    assert s.llm_backend == "none"  # drawing generation is deterministic
     assert s.llm_trust_remote_code is False  # never run repo code unless explicitly enabled
 
 

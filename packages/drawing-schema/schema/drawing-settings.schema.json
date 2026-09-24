@@ -1,0 +1,495 @@
+{
+  "$defs": {
+    "AnnotationPreferences": {
+      "additionalProperties": false,
+      "properties": {
+        "center_marks": {
+          "default": true,
+          "title": "Center Marks",
+          "type": "boolean"
+        },
+        "centerlines": {
+          "default": true,
+          "title": "Centerlines",
+          "type": "boolean"
+        },
+        "hole_callouts": {
+          "default": true,
+          "title": "Hole Callouts",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "center_marks",
+        "centerlines",
+        "hole_callouts"
+      ],
+      "title": "AnnotationPreferences",
+      "type": "object"
+    },
+    "DimensionPreferences": {
+      "additionalProperties": false,
+      "properties": {
+        "angles": {
+          "default": true,
+          "title": "Angles",
+          "type": "boolean"
+        },
+        "decimal_places": {
+          "default": 2,
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Decimal Places",
+          "type": "integer"
+        },
+        "depths": {
+          "default": true,
+          "title": "Depths",
+          "type": "boolean"
+        },
+        "diameters": {
+          "default": true,
+          "title": "Diameters",
+          "type": "boolean"
+        },
+        "feature": {
+          "default": true,
+          "title": "Feature",
+          "type": "boolean"
+        },
+        "holes": {
+          "default": true,
+          "title": "Holes",
+          "type": "boolean"
+        },
+        "overall": {
+          "default": true,
+          "title": "Overall",
+          "type": "boolean"
+        },
+        "radii": {
+          "default": true,
+          "title": "Radii",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "overall",
+        "feature",
+        "holes",
+        "radii",
+        "diameters",
+        "angles",
+        "depths",
+        "decimal_places"
+      ],
+      "title": "DimensionPreferences",
+      "type": "object"
+    },
+    "DisplayStyle": {
+      "enum": [
+        "HIDDEN_LINES_REMOVED",
+        "HIDDEN_LINES_VISIBLE",
+        "SHADED_WITH_EDGES"
+      ],
+      "title": "DisplayStyle",
+      "type": "string"
+    },
+    "DrawingKind": {
+      "enum": [
+        "GEOMETRY",
+        "MANUFACTURING"
+      ],
+      "title": "DrawingKind",
+      "type": "string"
+    },
+    "DrawingStandard": {
+      "enum": [
+        "ISO",
+        "ASME"
+      ],
+      "title": "DrawingStandard",
+      "type": "string"
+    },
+    "EngineeringField": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/InfoSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "default": "UNSPECIFIED",
+          "enum": [
+            "SPECIFIED",
+            "UNSPECIFIED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "status",
+        "value",
+        "source"
+      ],
+      "title": "EngineeringField",
+      "type": "object"
+    },
+    "EngineeringInformation": {
+      "additionalProperties": false,
+      "properties": {
+        "coating": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "datum_scheme": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "gdt": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "general_tolerance": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "heat_treatment": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "inspection_requirements": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "manufacturing_process": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "material": {
+          "$ref": "#/$defs/EngineeringField"
+        },
+        "surface_finish": {
+          "$ref": "#/$defs/EngineeringField"
+        }
+      },
+      "required": [
+        "material",
+        "general_tolerance",
+        "gdt",
+        "datum_scheme",
+        "surface_finish",
+        "heat_treatment",
+        "coating",
+        "inspection_requirements",
+        "manufacturing_process"
+      ],
+      "title": "EngineeringInformation",
+      "type": "object"
+    },
+    "InfoSource": {
+      "description": "Where a piece of engineering information came from.",
+      "enum": [
+        "USER",
+        "CAD_MODEL"
+      ],
+      "title": "InfoSource",
+      "type": "string"
+    },
+    "ProjectionMethod": {
+      "enum": [
+        "FIRST_ANGLE",
+        "THIRD_ANGLE"
+      ],
+      "title": "ProjectionMethod",
+      "type": "string"
+    },
+    "Sheet": {
+      "additionalProperties": false,
+      "properties": {
+        "orientation": {
+          "$ref": "#/$defs/SheetOrientation",
+          "default": "LANDSCAPE"
+        },
+        "size": {
+          "$ref": "#/$defs/SheetSize",
+          "default": "A3"
+        }
+      },
+      "required": [
+        "size",
+        "orientation"
+      ],
+      "title": "Sheet",
+      "type": "object"
+    },
+    "SheetOrientation": {
+      "enum": [
+        "LANDSCAPE",
+        "PORTRAIT"
+      ],
+      "title": "SheetOrientation",
+      "type": "string"
+    },
+    "SheetSize": {
+      "enum": [
+        "A0",
+        "A1",
+        "A2",
+        "A3",
+        "A4"
+      ],
+      "title": "SheetSize",
+      "type": "string"
+    },
+    "TitleBlock": {
+      "additionalProperties": false,
+      "properties": {
+        "drawn_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drawn By"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "part_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Number"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        }
+      },
+      "required": [
+        "title",
+        "part_number",
+        "revision",
+        "drawn_by",
+        "organization"
+      ],
+      "title": "TitleBlock",
+      "type": "object"
+    },
+    "ViewFrame": {
+      "description": "Which model axis points up in the drawing views.\n\nZ_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).\nY_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).",
+      "enum": [
+        "Z_UP",
+        "Y_UP"
+      ],
+      "title": "ViewFrame",
+      "type": "string"
+    },
+    "ViewOrientation": {
+      "enum": [
+        "FRONT",
+        "BACK",
+        "TOP",
+        "BOTTOM",
+        "LEFT",
+        "RIGHT",
+        "ISOMETRIC",
+        "DIMETRIC",
+        "TRIMETRIC"
+      ],
+      "title": "ViewOrientation",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "annotations": {
+      "$ref": "#/$defs/AnnotationPreferences",
+      "default": {
+        "center_marks": true,
+        "centerlines": true,
+        "hole_callouts": true
+      }
+    },
+    "dimensions": {
+      "$ref": "#/$defs/DimensionPreferences",
+      "default": {
+        "angles": true,
+        "decimal_places": 2,
+        "depths": true,
+        "diameters": true,
+        "feature": true,
+        "holes": true,
+        "overall": true,
+        "radii": true
+      }
+    },
+    "drawing_kind": {
+      "$ref": "#/$defs/DrawingKind",
+      "default": "GEOMETRY"
+    },
+    "drawing_standard": {
+      "$ref": "#/$defs/DrawingStandard",
+      "default": "ISO"
+    },
+    "engineering_information": {
+      "$ref": "#/$defs/EngineeringInformation",
+      "default": {
+        "coating": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "datum_scheme": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "gdt": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "general_tolerance": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "heat_treatment": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "inspection_requirements": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "manufacturing_process": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "material": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        },
+        "surface_finish": {
+          "source": null,
+          "status": "UNSPECIFIED",
+          "value": null
+        }
+      }
+    },
+    "orthographic_display_style": {
+      "$ref": "#/$defs/DisplayStyle",
+      "default": "HIDDEN_LINES_VISIBLE"
+    },
+    "primary_view": {
+      "$ref": "#/$defs/ViewOrientation",
+      "default": "ISOMETRIC"
+    },
+    "projected_views": {
+      "items": {
+        "$ref": "#/$defs/ViewOrientation"
+      },
+      "title": "Projected Views",
+      "type": "array"
+    },
+    "projection_method": {
+      "$ref": "#/$defs/ProjectionMethod",
+      "default": "FIRST_ANGLE"
+    },
+    "sheet": {
+      "$ref": "#/$defs/Sheet",
+      "default": {
+        "orientation": "LANDSCAPE",
+        "size": "A3"
+      }
+    },
+    "title_block": {
+      "$ref": "#/$defs/TitleBlock",
+      "default": {
+        "drawn_by": null,
+        "organization": null,
+        "part_number": null,
+        "revision": null,
+        "title": null
+      }
+    },
+    "view_frame": {
+      "$ref": "#/$defs/ViewFrame",
+      "default": "Z_UP"
+    }
+  },
+  "required": [
+    "drawing_kind",
+    "drawing_standard",
+    "projection_method",
+    "sheet",
+    "view_frame",
+    "primary_view",
+    "projected_views",
+    "orthographic_display_style",
+    "dimensions",
+    "annotations",
+    "title_block",
+    "engineering_information"
+  ],
+  "title": "DrawingSettings",
+  "type": "object"
+}

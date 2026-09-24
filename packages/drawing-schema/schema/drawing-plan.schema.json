@@ -504,6 +504,15 @@
       "title": "TitleBlock",
       "type": "object"
     },
+    "ViewFrame": {
+      "description": "Which model axis points up in the drawing views.\n\nZ_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).\nY_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).",
+      "enum": [
+        "Z_UP",
+        "Y_UP"
+      ],
+      "title": "ViewFrame",
+      "type": "string"
+    },
     "ViewOrientation": {
       "enum": [
         "FRONT",
@@ -654,6 +663,10 @@
     "geometry": {
       "$ref": "#/$defs/GeometryReference"
     },
+    "orthographic_display_style": {
+      "$ref": "#/$defs/DisplayStyle",
+      "default": "HIDDEN_LINES_VISIBLE"
+    },
     "primary_view": {
       "$ref": "#/$defs/ViewSpec",
       "default": {
@@ -731,6 +744,10 @@
       "default": "mm",
       "title": "Units",
       "type": "string"
+    },
+    "view_frame": {
+      "$ref": "#/$defs/ViewFrame",
+      "default": "Z_UP"
     }
   },
   "required": [
@@ -741,6 +758,8 @@
     "projection_method",
     "sheet",
     "units",
+    "view_frame",
+    "orthographic_display_style",
     "primary_view",
     "projected_views",
     "sections",

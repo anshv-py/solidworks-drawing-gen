@@ -8,11 +8,14 @@
 | FastAPI, Starlette, Pydantic, pydantic-settings, SQLAlchemy, Uvicorn | backend | MIT / BSD / MIT | |
 | psycopg 3 | PostgreSQL driver | LGPL-3.0 | dynamic use as a library |
 | NumPy | numerics | BSD-3-Clause | |
+| ezdxf 1.4 | DXF writing + DXF rendering (drawing add-on) | MIT | |
+| matplotlib 3.11 | PDF/SVG/PNG rendering backend | matplotlib licence (PSF-based, BSD-compatible) | |
 | React, Vite, Tailwind CSS, three.js, Vitest, json-schema-to-typescript | frontend | MIT | |
 | Playwright (dev only) | browser e2e | Apache-2.0 | |
 | SolidWorks API | drawing generation (planned) | proprietary (Dassault Systèmes) | requires licensed seats on worker hosts |
-| DeepSeek-V4-Pro weights (`deepseek-ai/DeepSeek-V4-Pro`) | planning LLM (planned) | MIT | ~865 GB FP4/FP8 checkpoint; pin a Hub revision |
-| Hugging Face transformers | LLM runtime (planned) | Apache-2.0 | `trust_remote_code` only with a pinned revision |
+| (optional) DeepSeek-V4-Pro / Hugging Face transformers | LLM hook - **not used** (`CADAI_LLM_BACKEND=none`) | MIT / Apache-2.0 | see DRAWING_ENGINE.md |
+
+Rejected: LibreDWG (GPL-3.0, incompatible with a proprietary product) and PyMuPDF (AGPL-3.0).
 
 ## Reference repositories (not used as dependencies)
 | Repo | Licence | Decision |

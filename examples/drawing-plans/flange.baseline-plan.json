@@ -12,6 +12,8 @@
     "orientation": "LANDSCAPE"
   },
   "units": "mm",
+  "view_frame": "Z_UP",
+  "orthographic_display_style": "HIDDEN_LINES_VISIBLE",
   "primary_view": {
     "id": "V-PRIMARY",
     "orientation": "ISOMETRIC",
@@ -36,7 +38,36 @@
     "depths": true,
     "decimal_places": 2
   },
-  "dimension_selections": [],
+  "dimension_selections": [
+    {
+      "candidate_id": "DIM-CALLOUT-HOLE-d848bf30",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-CALLOUT-PAT-a7e2aef1",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-PCD-PAT-a7e2aef1",
+      "view_id": "V-TOP"
+    },
+    {
+      "candidate_id": "DIM-OVERALL-Z",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-DIA-BOSS-5fbe5cac",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-DIA-BOSS-94d6a2c1",
+      "view_id": "V-FRONT"
+    },
+    {
+      "candidate_id": "DIM-HEIGHT-BOSS-5fbe5cac",
+      "view_id": "V-FRONT"
+    }
+  ],
   "annotations": {
     "center_marks": true,
     "centerlines": true,
@@ -90,12 +121,19 @@
     }
   },
   "title_block": {
-    "title": null,
+    "title": "flange",
     "part_number": null,
     "revision": null,
     "drawn_by": null,
     "organization": null
   },
-  "uncertainties": [],
-  "rationale": null
+  "uncertainties": [
+    {
+      "message": "DIM-HEIGHT-BOSS-94d6a2c1 (10) omitted: redundant with a higher-priority dimension",
+      "related_ids": [
+        "BOSS-94d6a2c1"
+      ]
+    }
+  ],
+  "rationale": "deterministic baseline planner v1 (no LLM): GeometryIR candidates, chain-redundancy removal, true-size view assignment"
 }

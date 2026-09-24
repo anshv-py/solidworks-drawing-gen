@@ -19,7 +19,8 @@ uv run pytest                    # all Python tests (geometry, schemas, API, int
 uv run pytest -m "not slow"      # skip the full HTTP pipeline over all fixtures
 cd apps/frontend
 npm run typecheck && npm test && npm run build
-npm run e2e -- ../../examples/models/flange.step /tmp/shot.png   # browser check, servers running
+npm run e2e -- ../../examples/models/flange.step /tmp/shot.png           # upload + 3D preview
+npm run e2e:drawing -- ../../examples/models/flange.step /tmp/draw.png  # + generate drawing, QA, PDF
 ```
 Playwright is pinned to 1.56.1 to match the preinstalled Chromium in the dev container;
 set `CHROMIUM_PATH` if your browser lives elsewhere.

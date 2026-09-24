@@ -1,9 +1,9 @@
 [project]
 name = "drawing-qa"
 version = "0.1.0"
-description = "Drawing QA - not implemented yet"
+description = "Deterministic drawing QA and repair actions"
 requires-python = ">=3.12"
-dependencies = ["drawing-schema", "geometry-schema"]
+dependencies = ["drawing-schema", "geometry-schema", "drawing-planner"]
 
 [build-system]
 requires = ["hatchling>=1.25"]
@@ -15,3 +15,4 @@ packages = ["src/drawing_qa"]
 [tool.uv.sources]
 geometry-schema = { workspace = true }
 drawing-schema = { workspace = true }
+drawing-planner = { workspace = true }

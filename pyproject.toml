@@ -12,6 +12,7 @@ dependencies = [
     "drawing-planner",
     "drawing-compiler",
     "drawing-qa",
+    "drawing-executor",
 ]
 
 [dependency-groups]
@@ -32,6 +33,7 @@ shared-types = { workspace = true }
 drawing-planner = { workspace = true }
 drawing-compiler = { workspace = true }
 drawing-qa = { workspace = true }
+drawing-executor = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

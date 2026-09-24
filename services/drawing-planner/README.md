@@ -1,3 +1,4 @@
-# drawing-planner
+# drawing_planner
 
-Not implemented yet - see the module docstring and docs/ROADMAP.md.
+Deterministic planner: GeometryIR + DrawingSettings -> dimension candidates -> DrawingPlan (no LLM).
+See docs/DRAWING_ENGINE.md.

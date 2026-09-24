@@ -1,5 +1,6 @@
 import type { GeometryIR } from "../generated/geometry-ir";
-import type { DrawingPlan } from "../generated/drawing-plan";
+import type { DrawingSettings } from "../generated/drawing-settings";
+import type { QaReport } from "../generated/qa-report";
 
 export interface ModelOut {
   id: string;
@@ -23,6 +24,9 @@ export interface JobOut {
   progress: number;
   message: string | null;
   error: { code: string; message: string } | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
 }
 
 export interface PreviewMesh {
@@ -35,8 +39,22 @@ export interface PreviewMesh {
 }
 
 export interface DrawingDefaults {
-  plan: DrawingPlan;
+  settings: DrawingSettings;
   options: Record<string, string[]>;
+}
+
+export interface DrawingOut {
+  id: string;
+  model_id: string;
+  job: JobOut;
+  settings: DrawingSettings;
+  passed: boolean | null;
+  scale: string | null;
+  generator: string | null;
+  solidworks: boolean;
+  downloads: string[];
+  unavailable_formats: Record<string, string>;
+  qa: QaReport | null;
 }
 
 /** RFC 9457 problem details returned by the API. */
@@ -78,6 +96,16 @@ export const api = {
   geometry: (modelId: string) => request<GeometryIR>(`/api/models/${modelId}/geometry`),
   previewMesh: (modelId: string) => request<PreviewMesh>(`/api/models/${modelId}/preview-mesh`),
   drawingDefaults: () => request<DrawingDefaults>("/api/drawings/defaults"),
+  generateDrawing: (modelId: string, settings: DrawingSettings) =>
+    request<{ drawing_id: string; job: JobOut }>("/api/drawings/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model_id: modelId, settings }),
+    }),
+  drawing: (drawingId: string) => request<DrawingOut>(`/api/drawings/${drawingId}`),
 };
 
 export const TERMINAL: JobState[] = ["COMPLETED", "FAILED"];
+
+export const previewUrl = (jobId: string, bust = ""): string => `/api/jobs/${jobId}/preview${bust ? `?v=${bust}` : ""}`;
+export const downloadUrl = (jobId: string, fmt: string): string => `/api/jobs/${jobId}/download/${fmt}`;

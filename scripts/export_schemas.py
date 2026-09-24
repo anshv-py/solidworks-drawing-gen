@@ -11,12 +11,16 @@ import sys
 from pathlib import Path
 
 from drawing_schema import DrawingPlan
+from drawing_schema.qa import QaReport
+from drawing_schema.settings import DrawingSettings
 from geometry_schema import GeometryIR
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = {
     ROOT / "packages/geometry-schema/schema/geometry-ir.schema.json": GeometryIR,
     ROOT / "packages/drawing-schema/schema/drawing-plan.schema.json": DrawingPlan,
+    ROOT / "packages/drawing-schema/schema/drawing-settings.schema.json": DrawingSettings,
+    ROOT / "packages/drawing-schema/schema/qa-report.schema.json": QaReport,
 }
 
 
