@@ -30,6 +30,9 @@ const LABELS: Record<string, string> = {
   Y_UP: "Y up (SolidWorks)",
   HIDDEN_LINES_VISIBLE: "hidden lines shown",
   HIDDEN_LINES_REMOVED: "hidden lines removed",
+  AUTO: "auto",
+  ISO_5455: "ISO 5455 only (1:1, 1:2, 1:5…)",
+  INTERMEDIATE: "ISO + intermediate (1:1.5, 1:2.5, 1:3…)",
 };
 
 export default function DrawingSettings({ defaults, settings, onChange, canGenerate, busy, onGenerate, disabledReason }: Props) {
@@ -52,6 +55,21 @@ export default function DrawingSettings({ defaults, settings, onChange, canGener
         onChange={(v) => set({ sheet: { ...settings.sheet, size: v as Settings["sheet"]["size"] } })} />
       <Select label="Orientation" value={settings.sheet.orientation} options={o.sheet_orientation ?? []}
         onChange={(v) => set({ sheet: { ...settings.sheet, orientation: v as Settings["sheet"]["orientation"] } })} />
+      <Select label="Scale series" value={settings.sheet.scale_system} options={o.scale_system ?? []}
+        testId="scale-system"
+        onChange={(v) => {
+          const system = v as Settings["sheet"]["scale_system"];
+          const allowed = (system === "ISO_5455" ? o.iso_scale : o.scale) ?? [];
+          const keep = (x: string) => (allowed.includes(x) ? x : "AUTO");
+          set({ sheet: { ...settings.sheet, scale_system: system, scale: keep(settings.sheet.scale),
+            pictorial_scale: keep(settings.sheet.pictorial_scale) } });
+        }} />
+      <Select label="Scale" value={settings.sheet.scale} testId="scale"
+        options={(settings.sheet.scale_system === "ISO_5455" ? o.iso_scale : o.scale) ?? ["AUTO"]}
+        onChange={(v) => set({ sheet: { ...settings.sheet, scale: v } })} />
+      <Select label="Isometric scale" value={settings.sheet.pictorial_scale} testId="pictorial-scale"
+        options={(settings.sheet.scale_system === "ISO_5455" ? o.iso_scale : o.scale) ?? ["AUTO"]}
+        onChange={(v) => set({ sheet: { ...settings.sheet, pictorial_scale: v } })} />
       <Select label="Orthographic views" value={settings.orthographic_display_style}
         options={["HIDDEN_LINES_VISIBLE", "HIDDEN_LINES_REMOVED"]}
         onChange={(v) => set({ orthographic_display_style: v as Settings["orthographic_display_style"] })} />

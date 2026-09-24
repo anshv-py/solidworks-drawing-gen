@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-from drawing_schema import ISO_5455_SCALES, DrawingPlan, ProjectionMethod, ViewOrientation
+from drawing_schema import DRAWING_SCALES, ISO_5455_SCALES, DrawingPlan, ProjectionMethod, ViewOrientation
 from drawing_schema.candidates import CandidateKind, CandidateRole, DimensionCandidate
 from drawing_schema.compiled import AnnotationKind, CompiledDrawing, DimensionOpKind, Rect
 from drawing_schema.qa import QaIssue, QaReport, QaSeverity
@@ -154,8 +154,11 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
                       f"{v.id} is not placed per {cd.projection_method.value} projection relative to FRONT", [v.id])
     R.check("QA-VIEW-004")
     for v in cd.views:
-        if v.scale not in ISO_5455_SCALES:
-            R.add("QA-VIEW-004", QaSeverity.MAJOR, f"{v.id} scale {v.scale} is not an ISO 5455 scale", [v.id])
+        if v.scale not in DRAWING_SCALES:
+            R.add("QA-VIEW-004", QaSeverity.MAJOR, f"{v.id} scale {v.scale} is not a supported drawing scale", [v.id])
+        elif v.scale not in ISO_5455_SCALES:
+            R.add("QA-VIEW-004", QaSeverity.MINOR, f"{v.id} scale {v.scale} is an intermediate (non-ISO 5455) scale",
+                  [v.id])
     R.check("QA-VIEW-005")
     usable = Rect(x0=cd.frame.x0, y0=cd.title_block.y1, x1=cd.frame.x1, y1=cd.frame.y1)
     filled = sum(b.w * b.h for b in geo_bbox.values() if b is not None)
@@ -320,6 +323,10 @@ def _pmi_checks(R: _Report, plan: DrawingPlan, cd: CompiledDrawing, geo_bbox: di
     for cid in m.inspection_dimensions:
         if cid not in insp:
             R.add("QA-PMI-002", QaSeverity.CRITICAL, f"inspection mark on {cid} is not shown", [cid])
+    basic = {d.id for d in cd.dimensions if d.basic}
+    for cid in m.basic_dimensions:
+        if cid not in basic:
+            R.add("QA-PMI-002", QaSeverity.CRITICAL, f"basic (TED) frame on {cid} is not shown", [cid])
     marks = sum(1 for p in cd.pmi if p.kind == "SURFACE_FINISH")
     if marks != len(m.surface_finish_marks):
         R.add("QA-PMI-002", QaSeverity.CRITICAL,

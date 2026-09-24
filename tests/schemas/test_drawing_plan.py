@@ -63,8 +63,8 @@ def test_unknown_view_reference_rejected():
         DrawingPlan.model_validate(data)
 
 
-@pytest.mark.parametrize("scale", ["1:3", "1.5:1", "abc", "3:7"])
-def test_non_iso_scales_rejected(scale):
+@pytest.mark.parametrize("scale", ["1:7", "2.5:1", "abc", "3:7"])
+def test_unsupported_scales_rejected(scale):
     with pytest.raises(ValidationError):
         ViewSpec(id="V", orientation="FRONT", scale=scale)
 

@@ -15,9 +15,10 @@ from importlib import metadata
 from pathlib import Path
 
 from drawing_compiler import CompileOptions, LayoutError, compile_drawing
+from drawing_compiler.compiler import scale_factor
 from drawing_planner import plan_baseline
 from drawing_qa import INCREASE_TIER_GAP, REDUCE_SCALE, Rendered, validate
-from drawing_schema import ISO_5455_SCALES
+from drawing_schema import PlanUncertainty, scale_series
 from drawing_schema.settings import DrawingSettings
 from geometry_schema import GeometryIR
 from geometry_service.step_analysis import read_step
@@ -80,6 +81,19 @@ def generate(
     if planned.errors:
         # user annotations that do not match this part are rejected, never silently dropped
         raise DrawingFailed("PMI_INVALID", "; ".join(planned.errors))
+    defaults_applied = settings.default_gdt and not (settings.manufacturing.datums or settings.manufacturing.frames) \
+        and bool(planned.plan.manufacturing.datums or planned.plan.manufacturing.frames)
+    if defaults_applied and settings.sheet.scale == "AUTO":
+        # the default datums / GD&T must never be the reason a drawing cannot be made: if their
+        # annotations do not fit the sheet at any scale, plan again without them and say so. (With a
+        # scale the user chose they are kept: the layout error then names the largest scale that fits.)
+        try:
+            compile_drawing(planned.plan, planned.candidates, ir, CompileOptions(generated_on=generated_on))
+        except LayoutError:
+            planned = plan_baseline(ir, settings.model_copy(update={"default_gdt": False}), filename=filename)
+            planned.plan = planned.plan.model_copy(update={"uncertainties": [*planned.plan.uncertainties, PlanUncertainty(
+                message="default datums / GD&T omitted: their annotations do not fit on the selected sheet "
+                        "(choose a larger sheet to include them)")]})
     (out_dir / "plan.json").write_text(planned.plan.model_dump_json(indent=2))
     (out_dir / "candidates.json").write_text(
         json.dumps([c.model_dump(mode="json") for c in planned.candidates], indent=1)
@@ -122,10 +136,15 @@ def generate(
         if not repairs or iteration > max_retries:
             break
         if REDUCE_SCALE in repairs:
-            idx = ISO_5455_SCALES.index(compiled.scale)
-            if idx + 1 >= len(ISO_5455_SCALES):
-                break
-            opts.max_scale = ISO_5455_SCALES[idx + 1]
+            if settings.sheet.scale != "AUTO":
+                if repairs == {REDUCE_SCALE}:
+                    break  # a user-chosen scale is never changed; QA reports what does not fit
+            else:
+                smaller = [x for x in scale_series(settings.sheet.scale_system)
+                           if scale_factor(x) < scale_factor(compiled.scale) - 1e-9]
+                if not smaller:
+                    break
+                opts.max_scale = smaller[0]
         if INCREASE_TIER_GAP in repairs:
             opts.tier_gap += 3.0
 

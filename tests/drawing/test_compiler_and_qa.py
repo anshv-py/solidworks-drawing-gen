@@ -3,7 +3,7 @@ import pytest
 from drawing_compiler import CompileOptions, LayoutError, compile_drawing
 from drawing_planner import plan_baseline
 from drawing_qa import Rendered, validate
-from drawing_schema import ISO_5455_SCALES, ProjectionMethod
+from drawing_schema import DRAWING_SCALES, ProjectionMethod
 from drawing_schema.settings import DrawingSettings
 
 
@@ -30,10 +30,10 @@ def test_projection_placement(analyzed, method):
         assert ty > fy and rx > fx
 
 
-def test_scale_is_iso_and_largest_that_fits(analyzed):
+def test_scale_is_largest_drawing_scale_that_fits(analyzed):
     ir, r, cd = compiled(analyzed, "mounting_plate")
-    assert cd.scale in ISO_5455_SCALES
-    bigger = ISO_5455_SCALES[ISO_5455_SCALES.index(cd.scale) - 1]
+    assert cd.scale in DRAWING_SCALES
+    bigger = DRAWING_SCALES[DRAWING_SCALES.index(cd.scale) - 1]
     from drawing_compiler.compiler import Compiler, scale_factor
 
     assert Compiler(r.plan, r.candidates, ir)._layout(scale_factor(bigger)) is None
@@ -50,11 +50,12 @@ def test_sheet_distances_match_values(analyzed):
     for d in cd.dimensions:
         if d.kind == "LINEAR":
             span = abs(d.p2[0] - d.p1[0]) if d.horizontal else abs(d.p2[1] - d.p1[1])
-            assert span / scale[d.view_id] == pytest.approx(d.value, abs=1e-6)
+            # sheet coordinates are rounded to 1e-4 mm; at 1:1.5 that is 1.5e-4 mm in the model
+            assert span / scale[d.view_id] == pytest.approx(d.value, abs=1e-3)
 
 
 def test_title_block_never_invents_engineering_data(analyzed):
-    _, _, cd = compiled(analyzed, "flange")
+    _, _, cd = compiled(analyzed, "flange", default_gdt=False)
     f = {x.label: x.value for x in cd.title_fields}
     assert f["MATERIAL"] == f["GENERAL_TOL"] == f["SURFACE_FINISH"] == f["LINEAR_TOL"] == f["ANGULAR_TOL"] == "UNSPECIFIED"
     assert f["TYPE"] == "GEOMETRY DRAWING" and f["PROJECTION"] == "FIRST ANGLE"
@@ -63,10 +64,12 @@ def test_title_block_never_invents_engineering_data(analyzed):
 
 def test_tiny_sheet_forces_smaller_scale_or_fails(analyzed):
     ir, r, _ = compiled(analyzed, "enclosure")
+    # (the default GD&T does not fit A4 for this part: the pipeline then drops it, see test_pmi_defaults)
     plan = type(r.plan).model_validate({**r.plan.model_dump(), "sheet": {"size": "A4", "orientation": "LANDSCAPE"},
-                                        "general_notes": {"enabled": False}})
+                                        "general_notes": {"enabled": False},
+                                        "manufacturing": {}, "engineering_information": {}})
     cd = compile_drawing(plan, r.candidates, ir)
-    assert ISO_5455_SCALES.index(cd.scale) >= ISO_5455_SCALES.index("1:2")
+    assert DRAWING_SCALES.index(cd.scale) >= DRAWING_SCALES.index("1:2")
     with pytest.raises(LayoutError):
         compile_drawing(plan, r.candidates, ir, CompileOptions(max_scale="1:1000", tier_gap=400))
 

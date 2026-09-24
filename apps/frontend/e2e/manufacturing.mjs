@@ -22,8 +22,7 @@ await page.fill('[data-testid="general-tol"]', "ISO 2768-mK");
 await form.locator("summary", { hasText: "Drawing notes" }).click();
 if (!(await page.isChecked('[data-testid="notes-enabled"]'))) throw new Error("default notes should be on");
 await form.locator("summary", { hasText: "Datums" }).click();
-await page.waitForSelector('[data-testid="datum-suggestion"]', { timeout: 30_000 });
-const suggestion = await page.locator('[data-testid="datum-suggestion"]').innerText();
+if (!(await page.isChecked('[data-testid="default-gdt"]'))) throw new Error("default GD&T should be on");
 await form.getByRole("button", { name: "+ datum" }).click();
 const datumTarget = form.locator("details", { hasText: "Datums" }).locator("select").nth(1);
 const faceOption = await datumTarget.locator("option").nth(1).getAttribute("value");
@@ -43,5 +42,5 @@ await page.waitForFunction(() => {
 const status = await page.locator('[data-testid="drawing-result"] span').first().innerText();
 await page.screenshot({ path: shot, fullPage: false });
 await browser.close();
-console.log(JSON.stringify({ status, suggestion: suggestion.split("\n").slice(0, 4), pageErrors: errors }, null, 1));
+console.log(JSON.stringify({ status, pageErrors: errors }, null, 1));
 if (errors.length || !status.includes("passed")) process.exit(1);

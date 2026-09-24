@@ -43,6 +43,11 @@ class DrawingSettings(StrictModel):
     manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
     general_notes: GeneralNotes = GeneralNotes()
     pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
+    default_gdt: bool = Field(
+        default=True,
+        description="when no datums / GD&T are supplied, apply the default datum reference frame and ISO 2768-mK "
+        "derived GD&T (drawing_planner.gdt_defaults)",
+    )
 
     @field_validator("projected_views")
     @classmethod

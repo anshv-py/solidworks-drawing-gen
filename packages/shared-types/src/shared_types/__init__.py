@@ -57,6 +57,7 @@ class InfoSource(StrEnum):
 
     USER = "USER"
     CAD_MODEL = "CAD_MODEL"
+    DEFAULT = "DEFAULT"  # a documented default rule set (e.g. ISO 2768-mK), applied deterministically
 
 
 class Diagnostic(StrictModel):

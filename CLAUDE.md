@@ -45,7 +45,9 @@ ANGLE**, sheet **A3 LANDSCAPE**, units **mm**.
 geometry · numerical dimensions · material · general tolerance · GD&T ·
 datum scheme · surface finish · heat treatment · coating · inspection
 requirements · manufacturing process. Use only GeometryIR and explicit user
-metadata; otherwise mark `UNSPECIFIED`. Distinguish a **GEOMETRY DRAWING**
+metadata; otherwise mark `UNSPECIFIED`. Sole exception (owner's decision): the default datum
+scheme + GD&T of `drawing_planner/gdt_defaults.py`, derived from a declared ISO 2768-mK and
+labelled `source=DEFAULT`, applied only when the user supplied none (`default_gdt`, switchable). Distinguish a **GEOMETRY DRAWING**
 (default) from a **MANUFACTURING DRAWING** (only with supplied information).
 
 STEP gets the strongest guarantees (exact B-Rep). STL is tessellated: all

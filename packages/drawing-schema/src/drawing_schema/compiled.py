@@ -127,6 +127,7 @@ class DimensionOp(StrictModel):
     # user-supplied manufacturing annotations attached to this dimension / callout
     tolerance: ToleranceText | None = None
     inspection: bool = False
+    basic: bool = Field(default=False, description="theoretically exact dimension (framed)")
     frames: list[FrameSpec] = Field(default_factory=list)
     frames_origin: Point2 | None = Field(default=None, description="top-left corner of the first frame")
     datum: str | None = None

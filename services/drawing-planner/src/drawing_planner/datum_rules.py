@@ -1,7 +1,8 @@
 """Datum-scheme rules: checks on the user's scheme, and a suggestion the user must confirm.
 
 Checks (reported by QA, never auto-corrected):
-  R3  datum features carry their own form control, tighter than what references them
+  R3  datum features carry their own form (or orientation-to-other-datums) control, tighter than
+      what references them
   R7  process-specific datum features (no raw sheet edges; machined features on castings/weldments)
   R8  one datum, one job; no self-referencing frames
   R9  every datum on the drawing is referenced
@@ -30,6 +31,7 @@ from geometry_schema import FeatureType, GeometryIR, SurfaceType
 MIN_SHOP_TOLERANCE = 0.01  # mm total zone: below this, verification needs special gauging / a CMM
 PLANAR_FORM = {GdtCharacteristic.FLATNESS, GdtCharacteristic.STRAIGHTNESS}
 SIZE_FORM = {GdtCharacteristic.CYLINDRICITY, GdtCharacteristic.CIRCULARITY, GdtCharacteristic.STRAIGHTNESS}
+ORIENTATION = {GdtCharacteristic.PERPENDICULARITY, GdtCharacteristic.PARALLELISM, GdtCharacteristic.ANGULARITY}
 RAW_PROCESSES = {ManufacturingProcess.CASTING, ManufacturingProcess.FORGING, ManufacturingProcess.WELDMENT,
                  ManufacturingProcess.MOULDED}
 
@@ -90,7 +92,11 @@ def check_datum_scheme(ir: GeometryIR, m: ManufacturingAnnotations,
             continue
         feat = features.get(d.target.feature_id) if d.target.feature_id else None
         allowed = SIZE_FORM if feat is not None else PLANAR_FORM
-        own = [f for f in m.frames if f.target == d.target and not f.datums and f.characteristic in allowed]
+        # own control: a form tolerance, or an orientation tolerance to other datums (ISO 1101 / Y14.5:
+        # an orientation zone also limits the feature's form)
+        own = [f for f in m.frames if f.target == d.target and (
+            (not f.datums and f.characteristic in allowed)
+            or (f.characteristic in ORIENTATION and f.datums and all(r.letter != d.letter for r in f.datums)))]
         refs = [f.tolerance for f in m.frames if any(r.letter == d.letter for r in f.datums)]
         what = "cylindricity" if feat is not None else "flatness"
         if not own:

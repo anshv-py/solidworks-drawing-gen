@@ -46,6 +46,9 @@ __all__ = [
     "PlanUncertainty",
     "GeometryReference",
     "ISO_5455_SCALES",
+    "DRAWING_SCALES",
+    "ScaleSystem",
+    "scale_series",
     "default_plan",
 ]
 
@@ -88,15 +91,6 @@ class SheetOrientation(StrEnum):
     PORTRAIT = "PORTRAIT"
 
 
-class Sheet(StrictModel):
-    size: SheetSize = SheetSize.A3
-    orientation: SheetOrientation = SheetOrientation.LANDSCAPE
-
-    def dimensions_mm(self) -> tuple[float, float]:
-        w, h = SHEET_SIZES_MM[self.size]
-        return (w, h) if self.orientation == SheetOrientation.LANDSCAPE else (h, w)
-
-
 class ViewOrientation(StrEnum):
     FRONT = "FRONT"
     BACK = "BACK"
@@ -116,18 +110,52 @@ ISO_5455_SCALES: tuple[str, ...] = (
     "50:1", "20:1", "10:1", "5:1", "2:1", "1:1",
     "1:2", "1:5", "1:10", "1:20", "1:50", "1:100", "1:200", "1:500", "1:1000",
 )
-_SCALE_RE = re.compile(r"^\d+:\d+$")
+# Scales the layout may use, large -> small: ISO 5455 plus the common intermediate steps (so views can
+# fill the sheet between 1:1 and 1:2 etc.). A non-ISO scale is reported by QA (MINOR), not rejected.
+DRAWING_SCALES: tuple[str, ...] = (
+    "50:1", "20:1", "10:1", "5:1", "4:1", "3:1", "2:1", "1.5:1", "1:1",
+    "1:1.5", "1:2", "1:2.5", "1:3", "1:4", "1:5", "1:7.5", "1:10", "1:15", "1:20", "1:25", "1:50",
+    "1:100", "1:200", "1:500", "1:1000",
+)
+_SCALE_RE = re.compile(r"^\d+(\.\d+)?:\d+(\.\d+)?$")
 
 
 def _check_scale(value: str) -> str:
     if value == "AUTO":
         return value
-    if not _SCALE_RE.match(value) or value not in ISO_5455_SCALES:
-        raise ValueError(f"scale must be 'AUTO' or an ISO 5455 scale {ISO_5455_SCALES}, got {value!r}")
+    if not _SCALE_RE.match(value) or value not in DRAWING_SCALES:
+        raise ValueError(f"scale must be 'AUTO' or one of {DRAWING_SCALES}, got {value!r}")
     return value
 
 
 Scale = Annotated[str, AfterValidator(_check_scale)]
+
+
+class ScaleSystem(StrEnum):
+    """Scales the layout may choose from when the scale is AUTO."""
+
+    ISO_5455 = "ISO_5455"  # preferred scales only (1:1, 1:2, 1:5, 1:10 ...)
+    INTERMEDIATE = "INTERMEDIATE"  # ISO 5455 plus the common intermediate steps (1:1.5, 1:2.5, 1:3, 1:4 ...)
+
+
+def scale_series(system: "ScaleSystem") -> tuple[str, ...]:
+    """Scales of a system, large -> small."""
+    return ISO_5455_SCALES if system == ScaleSystem.ISO_5455 else DRAWING_SCALES
+
+
+class Sheet(StrictModel):
+    size: SheetSize = SheetSize.A3
+    orientation: SheetOrientation = SheetOrientation.LANDSCAPE
+    scale: Scale = Field(default="AUTO", description="scale of the orthographic views; AUTO = the largest "
+                         "scale of scale_system at which the layout fits")
+    pictorial_scale: Scale = Field(default="AUTO", description="scale of the isometric view; AUTO = the "
+                                   "smallest scale that draws it larger than the orthographic views")
+    scale_system: ScaleSystem = Field(default=ScaleSystem.INTERMEDIATE,
+                                      description="scales AUTO chooses from (a chosen scale may be any supported one)")
+
+    def dimensions_mm(self) -> tuple[float, float]:
+        w, h = SHEET_SIZES_MM[self.size]
+        return (w, h) if self.orientation == SheetOrientation.LANDSCAPE else (h, w)
 
 
 class ViewFrame(StrEnum):

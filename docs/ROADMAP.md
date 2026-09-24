@@ -6,6 +6,7 @@
 | 1 | STEP/STL → OCCT → GeometryIR → features → API → 3D preview | ✅ done, tested |
 | 2 | Dimension candidates + deterministic planner + compiler + open-source executor (PDF/DXF/SVG) + deterministic QA/repair + API/UI | ✅ done, tested (no LLM) |
 | 2b | User-supplied GD&T, datums, tolerances, threads, finish, notes, revisions; SolidWorks-style sheet format (zones, title block, notes, revision table); shaded isometric | ✅ done, tested |
+| 2c | Default datums + ISO 2768-mK GD&T applied directly (reference-generator conventions), boxed TEDs, concise notes, user-selectable scales (sheet, isometric, ISO 5455 / intermediate series), isometric fixed top-right | ✅ done, tested |
 | 3 | **Section & detail views** (turned parts, internal features) | ⏭ next |
 | 4 | Better annotation layout (leader routing around geometry, ordinate dims option) | planned |
 | 5 | Job system hardening: RQ runner, SSE progress, Alembic migrations, auth | planned |
