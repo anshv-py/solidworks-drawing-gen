@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseProblem } from "./api";
+import { ApiProblem, isGone, parseProblem } from "./api";
 
 describe("parseProblem", () => {
   it("reads RFC 9457 problem details", async () => {
@@ -19,5 +19,13 @@ describe("problemText", () => {
     expect(problemText([{ loc: ["body", "settings", "manufacturing"], msg: "bad target" }]))
       .toBe("settings.manufacturing: bad target");
     expect(problemText("plain")).toBe("plain");
+  });
+});
+
+describe("isGone", () => {
+  it("recognises only 404 problems (the server lost the model / job)", () => {
+    expect(isGone(new ApiProblem(404, "NOT_FOUND", "model x not found"))).toBe(true);
+    expect(isGone(new ApiProblem(422, "VALIDATION_ERROR", "bad"))).toBe(false);
+    expect(isGone(new Error("network"))).toBe(false);
   });
 });

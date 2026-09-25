@@ -69,6 +69,10 @@ export class ApiProblem extends Error {
   }
 }
 
+/** The server no longer has this model / job / drawing - e.g. a host without a persistent disk
+ * restarted and lost its data. */
+export const isGone = (e: unknown): boolean => e instanceof ApiProblem && e.status === 404;
+
 export async function parseProblem(res: Response): Promise<ApiProblem> {
   try {
     const body = (await res.json()) as { code?: string; detail?: unknown };

@@ -23,7 +23,7 @@ from drawing_schema.settings import DrawingSettings
 from geometry_schema import GeometryIR
 from geometry_service.step_analysis import read_step
 
-from drawing_executor.dxf_writer import write_dxf
+from drawing_executor.dxf_writer import FONT, text_font_available, write_dxf
 from drawing_executor.hlr import hidden_line_removal, shaded_facets
 from drawing_executor.render import render
 from drawing_executor.sheet import snap_extension, to_sheet
@@ -153,6 +153,9 @@ def generate(
     (out_dir / "rendered.json").write_text(json.dumps({"lines": rendered.lines, "snapped": rendered.snapped}))
     (out_dir / "qa_report.json").write_text(qa.model_dump_json(indent=2))
     report("EXPORTING", "Writing DXF and rendering PDF/SVG/PNG", 85)
+    if not text_font_available():
+        raise DrawingFailed("FONT_MISSING", "no TrueType font is installed, so the drawing text cannot be rendered "
+                            f"(install {FONT}, e.g. the fonts-liberation package)")
     gen = generator_id()
     dxf = out_dir / "drawing.dxf"
     shading = {}

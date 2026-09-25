@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import DrawingResult from "./components/DrawingResult";
 import DrawingSettings from "./components/DrawingSettings";
 import ManufacturingForm, { cleanManufacturing } from "./components/ManufacturingForm";
@@ -13,6 +13,7 @@ import {
   ApiProblem,
   TERMINAL,
   api,
+  isGone,
   type DrawingDefaults,
   type DrawingOut,
   type ModelOut,
@@ -27,6 +28,9 @@ const errorText = (e: unknown) => (e instanceof ApiProblem ? `${e.code}: ${e.mes
 
 export default function App() {
   const [model, setModel] = useState<ModelOut | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const recovering = useRef<Promise<ModelOut> | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [ir, setIr] = useState<GeometryIR | null>(null);
   const [mesh, setMesh] = useState<PreviewMesh | null>(null);
@@ -57,8 +61,8 @@ export default function App() {
   }, [drawingJobId, drawingJob]);
 
   const onFile = async (file: File) => {
-    setError(null); setIr(null); setMesh(null); setSelected(null); setJobId(null);
-    setDrawingJobId(null); setDrawing(null); setTab("model");
+    setError(null); setNotice(null); setIr(null); setMesh(null); setSelected(null); setJobId(null);
+    setDrawingJobId(null); setDrawing(null); setTab("model"); setFile(file);
     try {
       const m = await api.upload(file);
       setModel(m);
@@ -69,11 +73,45 @@ export default function App() {
     }
   };
 
+  /** The server lost the model (a host without persistent storage restarted): upload the same file
+   * again and wait for its analysis. Face / feature ids are deterministic, so annotations stay valid. */
+  const recoverModel = (): Promise<ModelOut> => {
+    if (!file) return Promise.reject(new Error("the server lost the model - please upload it again"));
+    recovering.current ??= (async () => {
+      setNotice("The server restarted and lost the uploaded model - uploading it again…");
+      try {
+        const m = await api.upload(file);
+        const { job_id } = await api.analyze(m.id);
+        for (;;) {
+          const j = await api.job(job_id);
+          if (j.state === "FAILED") throw new Error(j.error?.message ?? "analysis failed");
+          if (j.state === "COMPLETED") break;
+          await new Promise((r) => setTimeout(r, 500));
+        }
+        setModel(m);
+        return m;
+      } finally {
+        setNotice(null);
+        recovering.current = null;
+      }
+    })();
+    return recovering.current;
+  };
+
+  const onModelLost = () => { recoverModel().catch((e: unknown) => setError(errorText(e))); };
+
   const onGenerate = async () => {
     if (!model || !settings) return;
     setError(null); setDrawing(null);
+    const body = { ...settings, manufacturing: cleanManufacturing(settings.manufacturing) };
     try {
-      const r = await api.generateDrawing(model.id, { ...settings, manufacturing: cleanManufacturing(settings.manufacturing) });
+      let r;
+      try {
+        r = await api.generateDrawing(model.id, body);
+      } catch (e) {
+        if (!isGone(e)) throw e;
+        r = await api.generateDrawing((await recoverModel()).id, body);
+      }
       setDrawingJobId(r.drawing_id);
     } catch (e) {
       setError(errorText(e));
@@ -97,6 +135,7 @@ export default function App() {
         <aside className="space-y-3 overflow-y-auto">
           <UploadPanel disabled={busy || drawingBusy} onFile={onFile} />
           {error && <p className="rounded bg-red-50 p-2 text-sm text-red-700" data-testid="error">{error}</p>}
+          {notice && <p className="rounded bg-blue-50 p-2 text-sm text-blue-800" data-testid="notice">{notice}</p>}
           {job && <JobProgress job={job} />}
           {ir && <GeometrySummary ir={ir} />}
           {defaults && settings && (
@@ -108,7 +147,7 @@ export default function App() {
             />
           )}
           {defaults && settings && model && ir && !stl && (
-            <ManufacturingForm modelId={model.id} settings={settings} onChange={setSettings} />
+            <ManufacturingForm modelId={model.id} settings={settings} onChange={setSettings} onModelLost={onModelLost} />
           )}
           {drawingJob && <JobProgress job={drawingJob} />}
         </aside>

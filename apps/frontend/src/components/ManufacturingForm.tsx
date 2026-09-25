@@ -7,7 +7,7 @@ import type {
   ManufacturingAnnotations,
   TitleBlock,
 } from "../generated/drawing-settings";
-import { api } from "../lib/api";
+import { api, isGone } from "../lib/api";
 import {
   type AnnotationTargets,
   DATUM_LETTERS,
@@ -25,6 +25,8 @@ interface Props {
   modelId: string;
   settings: Settings;
   onChange: (s: Settings) => void;
+  /** called when the server no longer has the model (it restarted without persistent storage) */
+  onModelLost?: () => void;
 }
 
 const PROCESSES: GeneralNotes["process"][] = ["UNSPECIFIED", "CNC_MACHINED", "SHEET_METAL", "CASTING", "FORGING",
@@ -69,7 +71,7 @@ function Add({ onClick, children, disabled }: { onClick: () => void; children: R
   );
 }
 
-export default function ManufacturingForm({ modelId, settings, onChange }: Props) {
+export default function ManufacturingForm({ modelId, settings, onChange, onModelLost }: Props) {
   const [targets, setTargets] = useState<AnnotationTargets | null>(null);
   const [error, setError] = useState<string | null>(null);
   // the dimensions on the sheet depend on the view/dimension settings, not on the annotations
@@ -82,7 +84,11 @@ export default function ManufacturingForm({ modelId, settings, onChange }: Props
     // (drawing kind / engineering data do not change which dimensions are placed)
     api.annotationTargets(modelId, { ...settings, drawing_kind: "GEOMETRY", manufacturing: EMPTY })
       .then((t) => { if (live) { setTargets(t); setError(null); } })
-      .catch((e: Error) => { if (live) setError(e.message); });
+      .catch((e: Error) => {
+        if (!live) return;
+        if (isGone(e) && onModelLost) onModelLost(); // the server lost the model: the app re-uploads it
+        else setError(e.message);
+      });
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId, planKey]);
