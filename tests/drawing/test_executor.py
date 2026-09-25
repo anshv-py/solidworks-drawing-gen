@@ -66,3 +66,18 @@ def test_hlr_front_view_of_bracket_shows_wall_in_front(geometry_files, models_di
     compiled = json.loads((tmp_path / "compiled.json").read_text())
     front = next(v for v in compiled["views"] if v["orientation"] == "FRONT")
     assert front["outline"]["y1"] - front["outline"]["y0"] == pytest.approx(60 * front["scale_factor"])
+
+
+def test_missing_font_fails_loudly_instead_of_blank_text(geometry_files, models_dir, tmp_path, monkeypatch):
+    """A host without any TrueType font (e.g. a slim Linux image) must not produce drawings whose
+    text is silently blank."""
+    import pytest
+    from ezdxf.fonts import fonts
+
+    from drawing_executor import dxf_writer
+    from drawing_executor.pipeline import DrawingFailed
+
+    monkeypatch.setattr(dxf_writer, "_font", lambda h: fonts.MonospaceFont(h))
+    with pytest.raises(DrawingFailed, match="no TrueType font"):
+        generate(geometry_files["flange"], models_dir / "flange.step", DrawingSettings(), tmp_path)
+    assert not (tmp_path / "drawing.pdf").exists()

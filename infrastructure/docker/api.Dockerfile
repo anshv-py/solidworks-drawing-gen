@@ -1,9 +1,11 @@
 # CAD Drawing AI API + geometry service (OCCT runs in subprocesses of this image).
 FROM python:3.12-slim-bookworm AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy UV_COMPILE_BYTECODE=1
-# Runtime libraries needed by the OCCT/VTK wheels (cadquery-ocp).
+# Runtime libraries needed by the OCCT/VTK wheels (cadquery-ocp), and the TrueType fonts the drawing
+# text is rendered with (Liberation Sans; DejaVu as fallback) - the slim image has no fonts at all.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends libgl1 libglu1-mesa libxrender1 libxext6 libx11-6 libgomp1 \
+    fonts-liberation fonts-dejavu-core \
  && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv==0.8.17
 

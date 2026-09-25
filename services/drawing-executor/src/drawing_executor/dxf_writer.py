@@ -63,6 +63,12 @@ def _font(h: float):
     return fonts.make_font(FONT, h)
 
 
+def text_font_available() -> bool:
+    """False when ezdxf found no TrueType font at all: it then falls back to a metrics-only
+    placeholder and every text on the sheet is silently left blank (e.g. a slim Linux image)."""
+    return not isinstance(_font(1.0), fonts.MonospaceFont)
+
+
 def text_w(text: str, h: float) -> float:
     return _font(round(h, 3)).text_width(text) if text else 0.0
 

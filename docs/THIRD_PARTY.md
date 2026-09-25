@@ -9,7 +9,8 @@
 | psycopg 3 | PostgreSQL driver | LGPL-3.0 | dynamic use as a library |
 | NumPy | numerics | BSD-3-Clause | |
 | ezdxf 1.4 | DXF writing + DXF rendering (drawing add-on) | MIT | |
-| Liberation Sans (font) | drawing text (referenced by name; used if installed, not redistributed) | SIL OFL 1.1 | ezdxf falls back to another installed font |
+| Liberation Sans (font, Debian `fonts-liberation`) | drawing text; installed in the Docker images | SIL OFL 1.1 | without any TrueType font the text would be blank: generation then fails with `FONT_MISSING` |
+| DejaVu Sans (font, Debian `fonts-dejavu-core`) | fallback font in the Docker images | Bitstream Vera licence (permissive) | |
 | matplotlib 3.11 | PDF/SVG/PNG rendering backend | matplotlib licence (PSF-based, BSD-compatible) | |
 | React, Vite, Tailwind CSS, three.js, Vitest, json-schema-to-typescript | frontend | MIT | |
 | Playwright (dev only) | browser e2e | Apache-2.0 | |
