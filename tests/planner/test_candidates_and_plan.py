@@ -8,7 +8,7 @@ from drawing_schema.candidates import CandidateKind, CandidateRole
 from drawing_schema.settings import DrawingSettings
 
 MODELS = ["plate_with_holes", "mounting_plate", "pocketed_block", "bracket", "shaft", "flange",
-          "cylindrical_part", "enclosure", "chamfered_block"]
+          "cylindrical_part", "enclosure", "chamfered_block", "keyed_shaft", "seal_cover"]
 
 
 def texts(cands):

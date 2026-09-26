@@ -147,6 +147,11 @@ class _Inferer:
                 continue
             h = self.features[p.member_feature_ids[0]]
             match = cl.match(h.diameter) if h.through else None  # a bolt passes through a clearance hole
+            tap = None if match else self.tap_drill(h)
+            if tap:
+                self.add(Target(feature_id=p.id), FeatureRole.TAPPED_HOLE, tap[1],
+                         f"{p.count}X {self.hole_text(h)} pattern", tap[0])
+                continue
             if match:
                 self.add(Target(feature_id=p.id), FeatureRole.CLEARANCE_HOLES, 0.8,
                          f"{p.count}X {self.hole_text(h)} pattern",
@@ -164,6 +169,11 @@ class _Inferer:
             by_dia.setdefault(round(h.diameter, 3), []).append(h)
         for dia, group in sorted(by_dia.items()):
             match = cl.match(dia) if all(h.through for h in group) else None
+            taps = [(h, self.tap_drill(h)) for h in group] if not match else []
+            if taps and all(t for _, t in taps):
+                for h, (reasons, conf) in sorted(taps, key=lambda x: x[0].id):
+                    self.add(Target(feature_id=h.id), FeatureRole.TAPPED_HOLE, conf, self.hole_text(h), reasons)
+                continue
             if match:
                 for h in sorted(group, key=lambda h: h.id):
                     self.add(Target(feature_id=h.id), FeatureRole.CLEARANCE_HOLES, 0.6 if len(group) > 1 else 0.5,
@@ -178,6 +188,51 @@ class _Inferer:
                     self.add(Target(feature_id=h.id), FeatureRole.DOWEL_HOLE, 0.4, self.hole_text(h),
                              [f"Ø{dia:g} is a standard dowel-pin diameter (ISO 2338 / ISO 8734) and not a clearance "
                               "size", f"{len(group)} such hole(s), deep enough to hold a pin"])
+
+    def tap_drill(self, h):
+        """(reasons, confidence) when ``h`` is modelled at the tap drill of a coarse metric thread and is deep
+        enough to engage it (STEP carries no threads: a tapped hole arrives as its drilled core)."""
+        t = self.inf.tapped_holes
+        m = t.match(h.diameter)
+        if m is None or h.depth < t.min_engagement_ratio * m[1] - 1e-6:
+            return None
+        reasons = [f"Ø{h.diameter:g} is the tap drill of {m[0]}x{m[2]:g} (ISO 261 / ISO 2306)",
+                   f"{'through' if h.through else 'blind'} hole {h.depth:g} deep (engagement >= "
+                   f"{t.min_engagement_ratio:g} x {m[1]:g})"]
+        return reasons, (0.45 if h.through else 0.6)
+
+    def special(self) -> None:
+        """Keyways (a pocket cut into a turned diameter) and O-ring face grooves (+ their sealing face)."""
+        bosses = [b for b in self.ir.features if b.type == FeatureType.BOSS]
+        for pk in sorted((f for f in self.ir.features if f.type == FeatureType.POCKET), key=lambda f: f.id):
+            if pk.id in self.taken:
+                continue
+            for b in bosses:
+                a = b.axis.direction
+                if abs(_dot(pk.floor_normal, a)) > 1e-6 or abs(abs(_dot(pk.length_direction, a)) - 1) > 1e-6:
+                    continue
+                rel = [pk.center[i] - b.axis.origin[i] for i in range(3)]
+                along = _dot(rel, a)
+                radial = math.sqrt(max(0.0, _dot(rel, rel) - along * along))
+                if radial < b.diameter / 2 and -1e-6 <= along <= b.height + 1e-6 and pk.width < b.diameter / 2:
+                    self.add(Target(feature_id=pk.id), FeatureRole.KEYWAY, 0.7,
+                             f"{pk.length:g} x {pk.width:g} x {pk.depth:g} key seat",
+                             [f"flat-bottomed slot along the Ø{b.diameter:g} axis, cut into its surface (a key seat)"])
+                    break
+        for gv in sorted((f for f in self.ir.features if f.type == FeatureType.GROOVE), key=lambda f: f.id):
+            self.add(Target(feature_id=gv.id), FeatureRole.SEAL_GROOVE, 0.6,
+                     f"Ø{gv.inner_diameter:g}-Ø{gv.outer_diameter:g} x {gv.depth:g} face groove",
+                     ["annular groove of rectangular section in a flat face - an O-ring gland"])
+            # the face the groove opens into seals against the mating part (EX 6: datum A)
+            level = gv.axis.origin
+            faces = [f for f in self.planes if abs(abs(_dot(f.surface.normal, gv.axis.direction)) - 1) < 1e-6
+                     and abs(_dot([f.centroid[i] - level[i] for i in range(3)], gv.axis.direction)) < 1e-4]
+            if faces:
+                face = max(faces, key=lambda f: (round(f.area, 3), f.id))
+                self.out = [a for a in self.out if a.role != FeatureRole.MOUNTING_FACE and a.target.ref != face.id]
+                self.add(Target(face_id=face.id), FeatureRole.SEALING_FACE, 0.6, f"planar face {face.id}",
+                         [f"the face the Ø{gv.outer_diameter:g} O-ring groove opens into - it seals against the "
+                          "mating part"])
 
     # ------------------------------------------------------------------ families
     def prismatic(self) -> None:
@@ -299,6 +354,10 @@ def _check_override(ir: GeometryIR, o: RoleOverride) -> str | None:
     if r in (FeatureRole.BEARING_BORE, FeatureRole.CENTRAL_BORE, FeatureRole.DOWEL_HOLE, FeatureRole.TAPPED_HOLE,
              FeatureRole.CLEARANCE_HOLES) and f.type not in (FeatureType.HOLE, FeatureType.PATTERN):
         return f"role {r.value} needs a hole or hole pattern"
+    if r == FeatureRole.KEYWAY and f.type not in (FeatureType.POCKET, FeatureType.SLOT):
+        return f"role {r.value} needs a pocket or slot"
+    if r == FeatureRole.SEAL_GROOVE and f.type != FeatureType.GROOVE:
+        return f"role {r.value} needs a groove"
     return None
 
 
@@ -314,6 +373,7 @@ def infer_roles(ir: GeometryIR, rules: RuleSet, overrides: list[RoleOverride] | 
         inf.disc(boss, k)
     else:
         inf.prismatic()
+    inf.special()
     result = RoleResult(family=fam, assignments=inf.out)
     for o in overrides or []:
         err = _check_override(ir, o)

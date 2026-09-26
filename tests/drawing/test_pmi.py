@@ -1,6 +1,8 @@
 """User-supplied manufacturing annotations (GD&T, datums, tolerances, finish): validated against
 GeometryIR, placed without collisions, drawn, and checked by QA. Nothing is generated."""
 
+import json
+
 import ezdxf
 import pytest
 from pydantic import ValidationError
@@ -145,3 +147,14 @@ def test_invalid_annotations_fail_the_job(analyzed, geometry_files, models_dir, 
     with pytest.raises(DrawingFailed) as e:
         generate(geometry_files["flange"], models_dir / "flange.step", s, tmp_path)
     assert e.value.code == "PMI_INVALID"
+
+
+def test_feature_notes_are_leader_notes_not_unknown_dimensions(geometry_files, models_dir, analyzed, tmp_path):
+    """A feature note is drawn as a leader note of its own, and QA accepts it (was QA-REF-001)."""
+    ir, _ = analyzed["plate_with_holes"]
+    face = next(f for f in ir.faces if f.surface_type == "PLANE" and f.surface.normal[2] > 0.99)
+    s = DrawingSettings.model_validate({"view_selection": "MANUAL", "manufacturing": {
+        "feature_notes": [{"target": {"face_id": face.id}, "text": "lapped"}]}})
+    res = generate(geometry_files["plate_with_holes"], models_dir / "plate_with_holes.step", s, tmp_path)
+    qa = json.loads((tmp_path / "qa_report.json").read_text())
+    assert res.passed and not [i for i in qa["issues"] if i["check_id"] == "QA-REF-001"]

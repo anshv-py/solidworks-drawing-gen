@@ -58,10 +58,13 @@ def deviations(size: float, tolerance_class: str) -> tuple[float, float]:
         return it / 2000, -it / 2000
     if letter == "H":
         return it / 1000, 0.0
+    if letter == "N" and grade >= 9:  # ISO 286-1 table 3: ES = 0 above 3 mm (N9 key seats), -4 um up to 3 mm
+        es = -4 if i == 0 else 0
+        return es / 1000, (es - it) / 1000
     hole = letter.isupper()
     shaft = letter.lower()
     if hole:
-        raise UnsupportedFit(f"hole class {tolerance_class} is not tabulated here (only H and JS)")
+        raise UnsupportedFit(f"hole class {tolerance_class} is not tabulated here (only H, JS and N9+)")
     if shaft in _ES:
         es = _ES[shaft][i]
         return es / 1000, (es - it) / 1000

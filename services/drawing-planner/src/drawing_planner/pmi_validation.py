@@ -15,7 +15,7 @@ from drawing_schema.pmi import (
 )
 from geometry_schema import FeatureType, GeometryIR, SurfaceType
 
-SIZE_FEATURES = {FeatureType.HOLE, FeatureType.BOSS, FeatureType.SLOT, FeatureType.PATTERN}
+SIZE_FEATURES = {FeatureType.HOLE, FeatureType.BOSS, FeatureType.SLOT, FeatureType.PATTERN, FeatureType.POCKET}
 AXIS_FEATURES = {FeatureType.HOLE, FeatureType.BOSS, FeatureType.PATTERN}
 _METRIC = re.compile(r"^\s*M\s*(\d+(?:\.\d+)?)", re.IGNORECASE)
 

@@ -390,6 +390,8 @@
         "CLEARANCE_HOLES",
         "DOWEL_HOLE",
         "TAPPED_HOLE",
+        "KEYWAY",
+        "SEAL_GROOVE",
         "NONE"
       ],
       "title": "FeatureRole",
@@ -901,12 +903,18 @@
         "feature_id": {
           "title": "Feature Id",
           "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/InfoSource",
+          "default": "USER",
+          "description": "DEFAULT: derived by the rule set from an assumed tapped hole (thread depth of a blind hole assumed)"
         }
       },
       "required": [
         "feature_id",
         "designation",
-        "depth"
+        "depth",
+        "source"
       ],
       "title": "ThreadCallout",
       "type": "object"

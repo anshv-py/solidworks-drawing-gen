@@ -328,7 +328,7 @@ export type MemberFeatureIds = string[];
  * This interface was referenced by `GeometryIR`'s JSON-Schema
  * via the `definition` "FeatureType".
  */
-export type FeatureType = "HOLE" | "BOSS" | "POCKET" | "SLOT" | "FILLET" | "CHAMFER" | "PATTERN";
+export type FeatureType = "HOLE" | "BOSS" | "POCKET" | "SLOT" | "FILLET" | "CHAMFER" | "PATTERN" | "GROOVE";
 export type Notes6 = string[];
 /**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
@@ -338,8 +338,27 @@ export type PatternType = "CIRCULAR" | "LINEAR" | "RECTANGULAR";
 export type PitchCircleDiameter = number | null;
 export type Pitches = number[];
 export type Type6 = "PATTERN";
+export type Confidence7 = number;
+export type Depth4 = number;
+export type EdgeIds8 = string[];
+export type FaceIds9 = string[];
+export type FloorFaceId1 = string;
+export type Id10 = string;
+export type InnerDiameter = number;
+export type Kind6 = "FACE";
+export type Notes7 = string[];
+export type OuterDiameter = number;
+export type Type7 = "GROOVE";
+export type Width2 = number;
 export type Features = (
-  HoleFeature | BossFeature | PocketFeature | SlotFeature | FilletFeature | ChamferFeature | PatternFeature
+  | HoleFeature
+  | BossFeature
+  | PocketFeature
+  | SlotFeature
+  | FilletFeature
+  | ChamferFeature
+  | PatternFeature
+  | GrooveFeature
 )[];
 /**
  * @minItems 3
@@ -400,7 +419,7 @@ export type Triangles = number | null;
 export type Vertices = number;
 export type Angle = "deg";
 export type Length3 = "mm";
-export type Id10 = string;
+export type Id11 = string;
 export type Index2 = number;
 /**
  * @minItems 3
@@ -786,6 +805,36 @@ export interface PatternFeature {
   type: Type6;
 }
 /**
+ * Annular groove of rectangular section cut into a planar face (O-ring face gland): a convex inner
+ * wall and a concave outer wall, coaxial and equally deep, joined by a planar annular floor.
+ *
+ * This interface was referenced by `GeometryIR`'s JSON-Schema
+ * via the `definition` "GrooveFeature".
+ */
+export interface GrooveFeature {
+  axis: Axis3;
+  confidence: Confidence7;
+  depth: Depth4;
+  edge_ids: EdgeIds8;
+  face_ids: FaceIds9;
+  floor_face_id: FloorFaceId1;
+  id: Id10;
+  inner_diameter: InnerDiameter;
+  kind: Kind6;
+  notes: Notes7;
+  outer_diameter: OuterDiameter;
+  provenance: Provenance;
+  type: Type7;
+  width: Width2;
+}
+/**
+ * origin = centre of the opening (face level), direction into the material
+ */
+export interface Axis3 {
+  direction: Direction;
+  origin: Origin1;
+}
+/**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
  * via the `definition` "PrincipalAxis".
  */
@@ -839,7 +888,7 @@ export interface Units {
  * via the `definition` "Vertex".
  */
 export interface Vertex {
-  id: Id10;
+  id: Id11;
   index: Index2;
   point: Point;
 }

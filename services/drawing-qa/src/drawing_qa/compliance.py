@@ -129,14 +129,18 @@ def build_compliance(plan: DrawingPlan, ir: GeometryIR, candidates: list[Dimensi
         for a in tapped:
             if a.target.ref not in threads:
                 problems.append(f"{a.description}: tapped hole without a thread callout")
+        assumed = []
         for fid, t in threads.items():
             if not FULL_THREAD.match(t.designation):
                 problems.append(f"{t.designation}: not a full designation (e.g. M8x1.25-6H)")
+            if t.source.value == "DEFAULT":
+                assumed.append(f"{t.designation}" + (f" depth {t.depth:g} assumed (drill depth - 3 x pitch)"
+                                                     if t.depth else " THRU") + " - rule-set default, confirm")
             h = feats.get(fid)
             if h is not None and getattr(h, "through", True) is False and t.depth is None:
                 problems.append(f"{t.designation}: blind thread without a depth")
         items.append(_item(7, "Every thread fully designated (standard, size, pitch, class, depth)", blockers,
-                           S.FAIL if problems else S.PASS, problems))
+                           S.FAIL if problems else S.PASS, problems + assumed))
 
     # 8 functional features explicitly toleranced
     tol_cands = {t.candidate_id for t in m.tolerances}

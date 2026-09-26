@@ -60,6 +60,8 @@
         "CLEARANCE_HOLES",
         "DOWEL_HOLE",
         "TAPPED_HOLE",
+        "KEYWAY",
+        "SEAL_GROOVE",
         "NONE"
       ],
       "title": "FeatureRole",

@@ -231,6 +231,13 @@ class _Builder:
                     candidate_id=cand.id, kind=ToleranceKind.DEVIATION,
                     upper=t.size_tolerance.upper, lower=t.size_tolerance.lower))
                 self.toleranced.add(cand.id)
+        if t.depth_tolerance:
+            dc = next((c for c in self.placed if c.id == f"DIM-DEPTH-{target.ref}"), None)
+            if dc is not None and dc.id not in self.toleranced:
+                self.out.tolerances.append(DimensionTolerance(
+                    candidate_id=dc.id, kind=ToleranceKind.DEVIATION,
+                    upper=t.depth_tolerance.upper, lower=t.depth_tolerance.lower))
+                self.toleranced.add(dc.id)
         if t.finish_ra:
             self.out.finish_marks.append(SurfaceFinishMark(target=target, ra_um=t.finish_ra))
         if t.note:
@@ -281,6 +288,18 @@ class _Builder:
             if ted_ids & set(c.feature_ids) and (c.role in (CandidateRole.LOCATION, CandidateRole.PITCH)
                                                  or c.kind == CandidateKind.PCD):
                 self.out.basic_dimensions.append(c.id)
+
+    def special_roles(self) -> None:
+        """Keyways (EX 3 F5: N9 width, depth +0.1/0, position to A) and O-ring grooves (EX 6 F2: depth
+        +0.05/0, profile of a surface to A|B, Ra 1.6) - whatever the part family."""
+        for role, size_cid in ((R.KEYWAY, "DIM-W-{}"), (R.SEAL_GROOVE, None)):
+            for ref in self.with_role(role):
+                t = Target(feature_id=ref)
+                cand = next((c for c in self.placed if size_cid and c.id == size_cid.format(ref)), None)
+                if not any(ref in c.feature_ids for c in self.placed):
+                    continue  # not on the drawing
+                self.rule_frames(role, t, 0.0)
+                self.rule_extras(role, t, cand)
 
     def prune_unreferenced(self) -> None:
         """Rule 9: a datum no frame references is dropped, with the orientation control that only
@@ -541,6 +560,9 @@ def default_gdt(ir: GeometryIR, placed: list[DimensionCandidate], frames: list[F
         b.rotational(boss, k)
     else:
         b.prismatic()
+    if b.roles:
+        b.special_roles()
+        b.refine_datum_features()
     return b.out
 
 

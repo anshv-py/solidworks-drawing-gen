@@ -27,6 +27,8 @@ class FeatureRole(StrEnum):
     CLEARANCE_HOLES = "CLEARANCE_HOLES"  # bolt clearance holes (a pattern or a group)
     DOWEL_HOLE = "DOWEL_HOLE"  # locating pin hole
     TAPPED_HOLE = "TAPPED_HOLE"  # threaded hole
+    KEYWAY = "KEYWAY"  # key seat milled into a shaft / boss
+    SEAL_GROOVE = "SEAL_GROOVE"  # O-ring gland
     NONE = "NONE"  # no functional role: general tolerances only
 
 

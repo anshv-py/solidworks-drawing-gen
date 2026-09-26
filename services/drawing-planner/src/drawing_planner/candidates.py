@@ -84,9 +84,11 @@ def hole_text(h: HoleFeature, n: int, dp: int, equally_spaced: bool = False, thr
     def fmt(v: float, d: int) -> str:  # noqa: F811 - bind the trailing-zero preference
         return _fmt(v, d, tz)
 
-    if thread is not None:  # user-specified thread designation replaces the drilled Ø
+    if thread is not None:  # the thread designation replaces the drilled Ø
         depth = "THRU" if h.through else f"DEPTH {fmt(thread.depth, dp)}"
         t = f"{_prefix(n)}{thread.designation} {depth}"
+        if not h.through and thread.depth is not None and thread.depth < h.depth - 1e-6:
+            t += f"\nDRILL Ø{fmt(h.diameter, dp)} DEPTH {fmt(h.depth, dp)}"
     else:
         t = f"{_prefix(n)}Ø{fmt(h.diameter, dp)} " + ("THRU" if h.through else f"DEPTH {fmt(h.depth, dp)}")
     if h.counterbore:
@@ -315,6 +317,28 @@ class _Builder:
             corner = _add(_add(pk.center, _scale(u, -pk.length / 2)), _scale(v, -pk.width / 2))
             self._locate(corner, n, pk.id, pk.id, [pk.id], target="FACE")
 
+    def grooves(self) -> None:
+        """Face groove (O-ring gland): outer and inner Ø where the walls show side-on, and its depth."""
+        for gv in [f for f in self.ir.features if f.type == FeatureType.GROOVE]:
+            d = gv.axis.direction
+            mid = _add(gv.axis.origin, _scale(d, gv.depth / 2))
+            for tag, dia in (("OD", gv.outer_diameter), ("ID", gv.inner_diameter)):
+                self.add(
+                    id=f"DIM-G{tag}-{gv.id}", kind=CandidateKind.DIAMETER, role=CandidateRole.SIZE, value=dia,
+                    text=f"Ø{self.f(dia)}", source=f"{gv.id}.{'outer' if tag == 'OD' else 'inner'}_diameter",
+                    view_rule=ViewRule.ACROSS_AXIS, priority=P_DIAMETER, center=mid, axis=d, radius=dia / 2,
+                    feature_ids=[gv.id],
+                )
+            # on the outer wall, along the first principal direction square to the axis
+            k = next(i for i in range(3) if abs(d[i]) < 0.5)
+            perp = tuple(1.0 if i == k else 0.0 for i in range(3))
+            p1 = _add(gv.axis.origin, _scale(perp, gv.outer_diameter / 2))
+            self.add(
+                id=f"DIM-DEPTH-{gv.id}", kind=CandidateKind.LINEAR, role=CandidateRole.DEPTH, value=gv.depth,
+                text=self.f(gv.depth), source=f"{gv.id}.depth", view_rule=ViewRule.IN_PLANE, priority=P_DEPTH,
+                p1=p1, p2=_add(p1, _scale(d, gv.depth)), direction=d, feature_ids=[gv.id],
+            )
+
     def slots(self) -> None:
         for s in [f for f in self.ir.features if f.type == FeatureType.SLOT]:
             s: SlotFeature
@@ -398,6 +422,7 @@ def generate_candidates(ir: GeometryIR, decimal_places: int = 2, trailing_zeros:
     b.holes()
     b.bosses_()
     b.pockets()
+    b.grooves()
     b.slots()
     b.fillets()
     b.chamfers()

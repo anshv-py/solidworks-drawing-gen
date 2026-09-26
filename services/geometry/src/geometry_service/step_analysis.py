@@ -43,6 +43,7 @@ from geometry_service.errors import CadImportError
 from geometry_service.features.blends import recognize_chamfers, recognize_fillets
 from geometry_service.features.context import RecognitionContext, Tolerances
 from geometry_service.features.cylindrical import group_cylinders, recognize_bosses, recognize_holes
+from geometry_service.features.grooves import recognize_face_grooves
 from geometry_service.features.patterns import recognize_hole_patterns
 from geometry_service.features.prismatic import recognize_pockets, recognize_slots
 from geometry_service.occt import geom as g
@@ -53,7 +54,7 @@ from geometry_service.occt.topology import TopologyIndex
 
 Progress = Callable[[str, float], None]
 
-RECOGNIZERS = ["HOLE", "BOSS", "SLOT", "POCKET", "FILLET", "CHAMFER", "PATTERN(HOLE)"]
+RECOGNIZERS = ["HOLE", "BOSS", "SLOT", "POCKET", "FILLET", "CHAMFER", "PATTERN(HOLE)", "GROOVE(FACE)"]
 NOT_RECOGNIZED = ["THREAD (not representable in plain B-Rep; needs PMI/user input)", "BOSS (non-cylindrical)"]
 
 
@@ -252,6 +253,7 @@ def analyze_step(
     features: list = []
     if topo.solids:
         groups = group_cylinders(ctx)
+        grooves, groups = recognize_face_grooves(ctx, groups)
         holes = recognize_holes(ctx, groups)
         slots = recognize_slots(ctx, groups)
         bosses = recognize_bosses(ctx, groups)
@@ -259,7 +261,7 @@ def analyze_step(
         chamfers = recognize_chamfers(ctx)
         pockets = recognize_pockets(ctx)
         patterns = recognize_hole_patterns(ctx, holes, bosses)
-        features = [*holes, *slots, *bosses, *pockets, *fillets, *chamfers, *patterns]
+        features = [*holes, *slots, *bosses, *pockets, *fillets, *chamfers, *patterns, *grooves]
         features.sort(key=lambda f: (f.type.value, f.id))
         unknown = sum(1 for c in convexity if c == Convexity.UNKNOWN)
         if unknown:

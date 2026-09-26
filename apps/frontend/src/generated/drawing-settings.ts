@@ -45,6 +45,8 @@ export type FeatureRole =
   | "CLEARANCE_HOLES"
   | "DOWEL_HOLE"
   | "TAPPED_HOLE"
+  | "KEYWAY"
+  | "SEAL_GROOVE"
   | "NONE";
 export type FaceId = string | null;
 export type FeatureId = string | null;
@@ -147,6 +149,10 @@ export type Depth = number | null;
  */
 export type Designation = string;
 export type FeatureId1 = string;
+/**
+ * Where a piece of engineering information came from.
+ */
+export type InfoSource1 = "USER" | "CAD_MODEL" | "DEFAULT";
 export type Threads = ThreadCallout[];
 export type CandidateId = string;
 /**
@@ -466,6 +472,7 @@ export interface ThreadCallout {
   depth: Depth;
   designation: Designation;
   feature_id: FeatureId1;
+  source: InfoSource1;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema

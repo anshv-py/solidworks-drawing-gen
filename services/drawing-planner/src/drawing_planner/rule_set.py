@@ -105,11 +105,32 @@ class ShaftInference(_M):
     length_to_diameter_ge: float
 
 
+class TappedInference(_M):
+    match_tolerance_mm: float
+    min_engagement_ratio: float
+    coarse: dict[str, list[float]]
+
+    def match(self, diameter: float) -> tuple[str, float, float] | None:
+        """(size, nominal, pitch) of the coarse thread whose tap drill is ``diameter``."""
+        for size, (pitch, drill) in self.coarse.items():
+            if abs(drill - diameter) <= self.match_tolerance_mm + 1e-9:
+                return size, float(size[1:]), pitch
+        return None
+
+    def nominal(self, diameter: float) -> tuple[str, float, float] | None:
+        """(size, nominal, pitch) of a hole modelled at the thread's nominal diameter."""
+        for size, (pitch, _) in self.coarse.items():
+            if abs(float(size[1:]) - diameter) <= self.match_tolerance_mm + 1e-9:
+                return size, float(size[1:]), pitch
+        return None
+
+
 class Inference(_M):
     bearing_bore: BearingBoreInference
     clearance_holes: ClearanceInference
     dowel_holes: DowelInference
     shaft: ShaftInference
+    tapped_holes: TappedInference
 
 
 class FrameRule(_M):
@@ -132,9 +153,12 @@ class Treatment(_M):
     fit: str | None = None
     size_tolerance: SizeTolerance | None = None
     frames: list[FrameRule] = Field(default_factory=list)
+    depth_tolerance: SizeTolerance | None = None
     finish_ra: float | None = None
     note: str | None = None
     requires_thread_designation: bool = False
+    thread_class: str | None = None
+    blind_thread_depth: Literal["DRILL_DEPTH_MINUS_3P"] | None = None
 
 
 class Roles(_M):

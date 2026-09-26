@@ -81,6 +81,8 @@ export type FeatureRole =
   | "CLEARANCE_HOLES"
   | "DOWEL_HOLE"
   | "TAPPED_HOLE"
+  | "KEYWAY"
+  | "SEAL_GROOVE"
   | "NONE";
 /**
  * rule-set reference of the treatment, e.g. 'EX 4 F2'
@@ -191,6 +193,10 @@ export type Depth = number | null;
  */
 export type Designation = string;
 export type FeatureId2 = string;
+/**
+ * Where a piece of engineering information came from.
+ */
+export type InfoSource1 = "USER" | "CAD_MODEL" | "DEFAULT";
 export type Threads = ThreadCallout[];
 export type CandidateId1 = string;
 /**
@@ -593,6 +599,7 @@ export interface ThreadCallout {
   depth: Depth;
   designation: Designation;
   feature_id: FeatureId2;
+  source: InfoSource1;
 }
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema

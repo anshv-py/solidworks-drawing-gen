@@ -364,7 +364,7 @@ export default function ManufacturingForm({ modelId, settings, onChange, onModel
             <Remove onClick={() => setM({ threads: m.threads.filter((_, k) => k !== i) })} />
           </div>
         ))}
-        <Add disabled={!targets} onClick={() => setM({ threads: [...m.threads, { feature_id: "", designation: "", depth: null }] })}>
+        <Add disabled={!targets} onClick={() => setM({ threads: [...m.threads, { feature_id: "", designation: "", depth: null, source: "USER" }] })}>
           thread
         </Add>
       </Section>

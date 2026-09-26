@@ -148,3 +148,70 @@ def test_compliance_gate(analyzed):
     ir, p = plan(analyzed, "flange", default_gdt=False)
     c = build_compliance(p.plan, ir, p.candidates, hard_blockers=R.gate.hard_blockers)
     assert {2, 3, 8} <= {i.number for i in c.blocking}
+
+
+def test_n9_key_seat_fit():
+    assert deviations(8, "N9") == pytest.approx((0.0, -0.036))
+    assert deviations(3, "N9") == pytest.approx((-0.004, -0.029))
+
+
+def test_tapped_hole_is_assumed_from_its_tap_drill(analyzed):
+    ir, p = plan(analyzed, "keyed_shaft")
+    tapped = [a for a in p.plan.feature_roles if a.role == FeatureRole.TAPPED_HOLE]
+    assert len(tapped) == 1 and tapped[0].source == RoleSource.INFERRED and "M8x1.25" in tapped[0].reasons[0]
+    [t] = p.plan.manufacturing.threads
+    # owner decision: blind thread depth = drill depth - 3 x pitch, labelled as a default
+    assert (t.designation, t.depth, t.source.value) == ("M8x1.25-6H", pytest.approx(20 - 3 * 1.25), "DEFAULT")
+    callout = next(c for c in p.candidates if c.kind.value == "HOLE_CALLOUT")
+    assert callout.text == "M8x1.25-6H DEPTH 16.25\nDRILL Ø6.80 DEPTH 20.00"
+    c = build_compliance(p.plan, ir, p.candidates, hard_blockers=R.gate.hard_blockers)
+    seven = next(i for i in c.items if i.number == 7)
+    assert seven.status.value == "PASS" and any("assumed" in d for d in seven.details)
+    # the user's own callout wins; the rule-set defaults off -> no thread is derived
+    _, mine = plan(analyzed, "keyed_shaft", manufacturing={"threads": [
+        {"feature_id": t.feature_id, "designation": "M8x1-6H", "depth": 12.0}]})
+    assert [x.designation for x in mine.plan.manufacturing.threads] == ["M8x1-6H"]
+    assert plan(analyzed, "keyed_shaft", default_gdt=False)[1].plan.manufacturing.threads == []
+
+
+def test_blind_small_holes_are_not_clearance_but_tap_drills_need_engagement(analyzed):
+    # enclosure: Ø5 is the M6 tap drill, but a 2 mm wall cannot hold 0.8 x 6 of thread
+    assert all(a.role != FeatureRole.TAPPED_HOLE for a in roles_of(analyzed, "enclosure").assignments)
+
+
+def test_keyway_treatment(analyzed):
+    _, p = plan(analyzed, "keyed_shaft")
+    m = p.plan.manufacturing
+    key = next(a for a in p.plan.feature_roles if a.role == FeatureRole.KEYWAY)
+    fid = key.target.feature_id
+    tol = {t.candidate_id: t for t in m.tolerances}
+    assert tol[f"DIM-W-{fid}"].fit == "N9" and tol[f"DIM-DEPTH-{fid}"].upper == pytest.approx(0.1)
+    pos = next(f for f in m.frames if f.target.feature_id == fid)
+    assert pos.characteristic.value == "POSITION" and pos.material_condition.value == "MMC"
+    assert [d.letter for d in pos.datums] == ["A"]
+
+
+def test_seal_cover_follows_example_d(analyzed):
+    _, p = plan(analyzed, "seal_cover")
+    m = p.plan.manufacturing
+    roles = {a.role for a in p.plan.feature_roles}
+    assert {FeatureRole.SEALING_FACE, FeatureRole.SEAL_GROOVE, FeatureRole.CENTRAL_BORE} <= roles
+    assert FeatureRole.MOUNTING_FACE not in roles  # the sealing face is the seating face
+    datums = {d.letter: d.target for d in m.datums}
+    sealing = next(a for a in p.plan.feature_roles if a.role == FeatureRole.SEALING_FACE)
+    assert datums["A"] == sealing.target  # EX 6: A = sealing face, B = central bore
+    groove = next(a for a in p.plan.feature_roles if a.role == FeatureRole.SEAL_GROOVE).target
+    prof = next(f for f in m.frames if f.target == groove)
+    assert prof.characteristic.value == "PROFILE_OF_A_SURFACE" and [d.letter for d in prof.datums] == ["A", "B"]
+    assert {(x.target.ref, x.ra_um) for x in m.surface_finish_marks} >= {(groove.ref, 1.6), (sealing.target.ref, 0.8)}
+    assert [n.text for n in m.feature_notes] == ["NO RADIAL LAY"]
+    assert p.plan.sections and p.plan.sections[0].plane.through_feature_id  # the groove forces a section
+
+
+def test_section_never_carries_dimensions_of_features_it_hides(analyzed):
+    ir, p = plan(analyzed, "keyed_shaft")
+    [sec] = p.plan.sections
+    key = next(a for a in p.plan.feature_roles if a.role == FeatureRole.KEYWAY).target.feature_id
+    by_id = {c.id: c for c in p.candidates}
+    on_key = [s for s in p.plan.dimension_selections if key in by_id[s.candidate_id].feature_ids]
+    assert on_key and all(s.view_id != sec.id for s in on_key)

@@ -60,10 +60,45 @@ def plan_sections(ir: GeometryIR, views: list[ViewOrientation], pool: list[ViewO
     return [], [], triggers
 
 
+def hidden_in_section(ir: GeometryIR, section: SectionView, frame: Frame) -> set[str]:
+    """Features a full section does not show: those the cutting plane misses. They lie either in the
+    removed half or behind the cut face (a section has no hidden lines), so their dimensions belong in
+    another view. Edge treatments (fillets, chamfers) show in the section outline and are not listed."""
+    point, normal = section_frame(ir, section, frame)
+
+    def side(p) -> float:
+        return sum((p[i] - point[i]) * normal[i] for i in range(3))
+
+    out = set()
+    for f in ir.features:
+        t = f.type.value
+        if t in ("HOLE", "BOSS", "GROOVE"):
+            r = (f.outer_diameter if t == "GROOVE" else f.diameter) / 2
+            a, o = f.axis.direction, f.axis.origin
+            ln = f.depth if t in ("HOLE", "GROOVE") else f.height
+            ends = [o, tuple(o[i] + a[i] * ln for i in range(3))]
+            # the cylinder's extent along the normal: axis ends +/- r * |sin(axis, normal)|
+            s = r * max(0.0, 1 - dot(a, normal) ** 2) ** 0.5
+            lo, hi = min(side(e) for e in ends) - s, max(side(e) for e in ends) + s
+        elif t in ("POCKET", "SLOT"):
+            u = f.length_direction
+            n = f.floor_normal if t == "POCKET" else tuple(-x for x in f.depth_direction)
+            v = (n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2], n[0] * u[1] - n[1] * u[0])
+            depth = f.depth or 0.0
+            corners = [tuple(f.center[i] + su * f.length / 2 * u[i] + sv * f.width / 2 * v[i] + sd * depth * n[i]
+                             for i in range(3)) for su in (-1, 1) for sv in (-1, 1) for sd in (0, 1)]
+            lo, hi = min(side(c) for c in corners), max(side(c) for c in corners)
+        else:
+            continue
+        if lo > 1e-6 or hi < -1e-6:
+            out.add(f.id)
+    return out
+
+
 def section_frame(ir: GeometryIR, section: SectionView, frame: Frame) -> tuple[tuple, tuple]:
     """(point on the cutting plane, normal toward the removed half = the section view's eye)."""
     feat = next(f for f in ir.features if f.id == section.plane.through_feature_id)
     return tuple(feat.axis.origin), tuple(frame.eye)
 
 
-__all__ = ["plan_sections", "section_frame"]
+__all__ = ["hidden_in_section", "plan_sections", "section_frame"]

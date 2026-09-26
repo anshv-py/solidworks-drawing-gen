@@ -67,6 +67,7 @@ __all__ = [
     "BossFeature",
     "PocketFeature",
     "SlotFeature",
+    "GrooveFeature",
     "FilletFeature",
     "ChamferFeature",
     "PatternFeature",
@@ -288,6 +289,7 @@ class FeatureType(StrEnum):
     FILLET = "FILLET"
     CHAMFER = "CHAMFER"
     PATTERN = "PATTERN"
+    GROOVE = "GROOVE"
 
 
 class _FeatureBase(StrictModel):
@@ -357,6 +359,20 @@ class SlotFeature(_FeatureBase):
     center: Vec3
 
 
+class GrooveFeature(_FeatureBase):
+    """Annular groove of rectangular section cut into a planar face (O-ring face gland): a convex inner
+    wall and a concave outer wall, coaxial and equally deep, joined by a planar annular floor."""
+
+    type: Literal[FeatureType.GROOVE] = FeatureType.GROOVE
+    kind: Literal["FACE"] = "FACE"
+    axis: Axis = Field(description="origin = centre of the opening (face level), direction into the material")
+    inner_diameter: float
+    outer_diameter: float
+    width: float
+    depth: float
+    floor_face_id: str
+
+
 class FilletFeature(_FeatureBase):
     type: Literal[FeatureType.FILLET] = FeatureType.FILLET
     radius: float
@@ -403,6 +419,7 @@ Feature = Annotated[
         FilletFeature,
         ChamferFeature,
         PatternFeature,
+        GrooveFeature,
     ],
     Field(discriminator="type"),
 ]

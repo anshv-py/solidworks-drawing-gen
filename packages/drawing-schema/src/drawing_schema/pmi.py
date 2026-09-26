@@ -14,7 +14,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
-from shared_types import StrictModel
+from shared_types import InfoSource, StrictModel
 
 # ASME Y14.5 / ISO 5459 practice: I, O and Q are not used as datum letters.
 DATUM_LETTER = r"^[A-HJ-NPR-Z]$"
@@ -137,6 +137,8 @@ class ThreadCallout(StrictModel):
     feature_id: str
     designation: str = Field(min_length=2, max_length=40, description="e.g. M8x1.25-6H (as specified by the user)")
     depth: float | None = Field(default=None, gt=0, description="thread depth; required for blind holes")
+    source: InfoSource = Field(default=InfoSource.USER, description="DEFAULT: derived by the rule set from an "
+                               "assumed tapped hole (thread depth of a blind hole assumed)")
 
 
 class SurfaceFinishMark(StrictModel):

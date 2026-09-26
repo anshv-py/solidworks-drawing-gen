@@ -24,6 +24,8 @@ export type FeatureRole =
   | "CLEARANCE_HOLES"
   | "DOWEL_HOLE"
   | "TAPPED_HOLE"
+  | "KEYWAY"
+  | "SEAL_GROOVE"
   | "NONE";
 /**
  * rule-set reference of the treatment, e.g. 'EX 4 F2'

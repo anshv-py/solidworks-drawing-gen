@@ -50,7 +50,8 @@ from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
 from drawing_planner.roles import infer_roles
 from drawing_planner.rule_set import load_rules
-from drawing_planner.sections import plan_sections
+from drawing_planner.sections import hidden_in_section, plan_sections
+from drawing_planner.threads import default_threads
 from drawing_planner.view_rules import auxiliary_triggers, break_triggers, isometric_triggers, section_triggers
 
 VIEW_PREFERENCE = [
@@ -217,7 +218,13 @@ def plan_baseline(
     ir: GeometryIR, settings: DrawingSettings, *, filename: str | None = None
 ) -> PlanResult:
     dp = settings.dimensions.decimal_places
-    candidates = generate_candidates(ir, dp, settings.dimensions.trailing_zeros, settings.manufacturing.threads)
+    rules = load_rules()
+    roles = infer_roles(ir, rules, settings.feature_roles, settings.manufacturing.threads)
+    rules_mode = settings.view_selection == ViewSelection.RULES
+    threads = list(settings.manufacturing.threads)
+    if rules_mode and settings.default_gdt:  # tapped holes: derived callouts (TAPPED_HOLE treatment)
+        threads += default_threads(ir, roles, rules, threads)
+    candidates = generate_candidates(ir, dp, settings.dimensions.trailing_zeros, threads)
     hole_ids = {f.id for f in ir.features if f.type == FeatureType.HOLE}
     prefs = settings.dimensions.model_dump()
     enabled = [c for c in candidates if prefs.get(_category(c, hole_ids), True)]
@@ -225,9 +232,6 @@ def plan_baseline(
         enabled = [c for c in enabled if c.kind != CandidateKind.HOLE_CALLOUT]
     kept, dropped = remove_redundant(enabled)
 
-    rules = load_rules()
-    roles = infer_roles(ir, rules, settings.feature_roles, settings.manufacturing.threads)
-    rules_mode = settings.view_selection == ViewSelection.RULES
 
     pool = list(settings.projected_views)
     primary_ortho = settings.primary_view not in PICTORIAL
@@ -235,7 +239,8 @@ def plan_baseline(
         pool.insert(0, settings.primary_view)
     frames = {o: view_frame(o, settings.view_frame) for o in pool}
 
-    def assign(views: list[ViewOrientation], skip: set[str]):
+    def assign(views: list[ViewOrientation], skip: set[str], forbid: dict | None = None):
+        """``forbid``: candidate id -> views that must not carry it (a section hiding its feature)."""
         order = [o for o in VIEW_PREFERENCE if o in views]
         feature_view: dict[str, ViewOrientation] = {}
         # pockets / slots: the view looking into their opening shows their outline true size
@@ -255,7 +260,7 @@ def plan_baseline(
         for c in ordered:
             if c.id in skip:
                 continue
-            options = [o for o in order if _compatible(c, frames[o])]
+            options = [o for o in order if _compatible(c, frames[o]) and o not in (forbid or {}).get(c.id, ())]
             if not options:
                 uncertainties.append(
                     PlanUncertainty(
@@ -278,6 +283,7 @@ def plan_baseline(
         return selections, uncertainties
 
     manufacturing, engineering = settings.manufacturing, settings.engineering_information
+    manufacturing = manufacturing.model_copy(update={"threads": threads})
     user_gdt = bool(manufacturing.datums or manufacturing.frames)
     apply_defaults = settings.default_gdt and not user_gdt
     user_tolerances = {t.candidate_id for t in manufacturing.tolerances}
@@ -323,10 +329,25 @@ def plan_baseline(
     sec_triggers = section_triggers(ir, rules) if rules_mode else []
     if sec_triggers:
         sections, extra, sec_triggers = plan_sections(ir, views, pool, frames, sec_triggers)
-        if extra:
+        forbid: dict = {}
+        for sec in sections:
+            hidden = hidden_in_section(ir, sec, frames[sec.replaces])
+            for c in kept:
+                if c.feature_ids and set(c.feature_ids) <= hidden:
+                    forbid.setdefault(c.id, set()).add(sec.replaces)
+        # a dimension only the section could carry: add the pool view that shows it
+        for c in kept:
+            shown = [o for o in views + extra if _compatible(c, frames[o]) and o not in forbid.get(c.id, ())]
+            if c.id in forbid and not shown:
+                more = next((o for o in VIEW_PREFERENCE if o in pool and o not in views + extra
+                             and _compatible(c, frames[o])), None)
+                if more is not None:
+                    extra.append(more)
+        if extra or forbid:
             views = [o for o in VIEW_PREFERENCE if o in views or o in extra]
-            thickness = None  # the added view shows the thickness
-            selections, uncertainties = assign(views, set())
+            if extra:
+                thickness = None  # the added view shows the thickness
+            selections, uncertainties = assign(views, {thickness.id} if thickness else set(), forbid)
 
     for c in dropped:
         uncertainties.append(

@@ -271,6 +271,41 @@ def chamfered_block():
     return s, exp
 
 
+def keyed_shaft():
+    """Shaft with a flat-ended keyway (8 x 4 x 40, EX 3 style) and an M8 tap-drill hole in one end."""
+    s = cyl((0, 0, 0), (0, 0, 1), 12.5, 120.0)
+    s = cut(s, box(-4.0, 8.5, 40.0, 8.0, 5.0, 40.0))  # keyway: width 8 (x), floor at y = 8.5 (depth 4), z 40..80
+    s = cut(s, cyl((0, 0, 120.0 - 20.0), (0, 0, 1), 3.4, 21.0))  # blind d6.8 x 20 at the z = 120 end
+    s = clean(s)
+    exp = {
+        "bbox_size": [25.0, 25.0, 120.0],
+        "holes": [{"diameter": 6.8, "through": False, "depth": 20.0, "count": 1}],
+        "bosses": [{"diameter": 25.0, "count": 1}],
+        "keyways": [{"width": 8.0, "depth": 4.0, "length": 40.0, "count": 1}],
+    }
+    return s, exp
+
+
+def seal_cover():
+    """Cover plate with a face O-ring groove (EX 6 style): groove d42..d48 (mean d45, width 3), depth 2.5."""
+    s = cyl((0, 0, 0), (0, 0, 1), 50.0, 12.0)
+    s = cut(s, cyl((0, 0, -1), (0, 0, 1), 15.0, 14.0))  # central bore d30
+    s = cut(s, cut(cyl((0, 0, 12.0 - 2.5), (0, 0, 1), 24.0, 3.0), cyl((0, 0, 12.0 - 3.0), (0, 0, 1), 21.0, 4.0)))
+    holes = []
+    for k in range(6):
+        a = math.radians(60.0 * k)
+        holes.append(cyl((40.0 * math.cos(a), 40.0 * math.sin(a), -1), (0, 0, 1), 4.5, 14.0))
+    s = clean(cut(s, *holes))
+    exp = {
+        "bbox_size": [100.0, 100.0, 12.0],
+        "holes": [{"diameter": 9.0, "through": True, "count": 6}, {"diameter": 30.0, "through": True, "count": 1}],
+        "grooves": [{"inner_diameter": 42.0, "outer_diameter": 48.0, "width": 3.0, "depth": 2.5, "count": 1}],
+        "patterns": [{"pattern_type": "CIRCULAR", "count": 6, "member_diameter": 9.0, "pitch_circle_diameter": 80.0,
+                      "angular_step_deg": 60.0}],
+    }
+    return s, exp
+
+
 MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "plate_with_holes": plate_with_holes,
     "mounting_plate": mounting_plate,
@@ -281,6 +316,8 @@ MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "cylindrical_part": cylindrical_part,
     "enclosure": enclosure,
     "chamfered_block": chamfered_block,
+    "keyed_shaft": keyed_shaft,
+    "seal_cover": seal_cover,
 }
 
 STL_MODELS = ("plate_with_holes", "flange", "bracket")

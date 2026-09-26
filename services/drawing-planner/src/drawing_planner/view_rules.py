@@ -74,6 +74,11 @@ def section_triggers(ir: GeometryIR, rules: RuleSet) -> list[ViewTrigger]:
                                    message=f"Ø{h.diameter:g} hole with a "
                                            f"{'counterbore' if h.counterbore else 'countersink'}: full section",
                                    feature_ids=[h.id], satisfied=False))
+    for gv in (f for f in ir.features if f.type == FeatureType.GROOVE):
+        out.append(ViewTrigger(kind=K.SECTION, rule="RULES 1.3 (internal groove); EX 6",
+                               message=f"Ø{gv.inner_diameter:g}-Ø{gv.outer_diameter:g} face groove, {gv.depth:g} deep: "
+                                       "its profile is dimensioned in a section",
+                               feature_ids=[gv.id], satisfied=False))
     if t.stepped_coaxial_bores:
         for i, a in enumerate(holes):
             for b in holes[i + 1:]:
@@ -127,6 +132,8 @@ def _feature_size(f) -> float | None:
         return f.radius
     if t == FeatureType.CHAMFER:
         return min(f.distance_1, f.distance_2)
+    if t == FeatureType.GROOVE:
+        return min(f.width, f.depth)
     return None
 
 

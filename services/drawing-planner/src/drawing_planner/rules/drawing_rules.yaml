@@ -85,6 +85,23 @@ roles:
       max_count: 2
     shaft:
       length_to_diameter_ge: 1.5         # shorter turned parts are discs / flanges
+    tapped_holes:
+      # ISO 261 coarse pitch and the usual tap drill (nominal - pitch, ISO 2306): a hole modelled at the tap
+      # drill, deep enough for 0.8 x nominal engagement, is assumed tapped (STEP files carry no threads)
+      match_tolerance_mm: 0.05
+      min_engagement_ratio: 0.8
+      coarse:                            # size: [pitch, tap drill]
+        M3: [0.5, 2.5]
+        M4: [0.7, 3.3]
+        M5: [0.8, 4.2]
+        M6: [1.0, 5.0]
+        M8: [1.25, 6.8]
+        M10: [1.5, 8.5]
+        M12: [1.75, 10.2]
+        M14: [2.0, 12.0]
+        M16: [2.0, 14.0]
+        M20: [2.5, 17.5]
+        M24: [3.0, 21.0]
 
   # RULES 4.4 + EX 7 pattern library; values from the worked examples EX 3-6 where the rules give none.
   # tolerance: a number, or ISO_2768_K = the declared general geometric tolerance class for the feature size
@@ -145,8 +162,24 @@ roles:
     TAPPED_HOLE:
       rule: "RULES 2.2, 4.4; EX 4 F4; EX 7 tapped row"
       requires_thread_designation: true
+      thread_class: 6H                   # ISO 965-1 default class for internal threads
+      # owner decision 2026-09-26: a blind thread's depth is not in the model -> assume drill depth - 3 x pitch
+      blind_thread_depth: DRILL_DEPTH_MINUS_3P
       frames:
         - {characteristic: POSITION, tolerance: 0.3, material_condition: MMC, datums: [A, B], diameter_zone: true}
+
+    KEYWAY:
+      rule: "EX 3 F5; RULES 4.4 keyway row"
+      fit: N9                            # key seat width, ISO 286 (normal fit, EX 3)
+      depth_tolerance: {upper: 0.1, lower: 0.0}
+      frames:
+        - {characteristic: POSITION, tolerance: 0.1, material_condition: MMC, datums: [A]}
+    SEAL_GROOVE:
+      rule: "EX 6 F2; EX 7 O-ring row"
+      depth_tolerance: {upper: 0.05, lower: 0.0}
+      frames:
+        - {characteristic: PROFILE_OF_A_SURFACE, tolerance: 0.05, datums: [A, B]}
+      finish_ra: 1.6
 
 gate:
   # EX 1 gate rule: hard blockers stamp the sheet and block the explicit release step (generation and

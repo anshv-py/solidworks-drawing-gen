@@ -19,6 +19,12 @@ OCCT 8 via `cadquery-ocp` 8.0.1 (Python bindings). Runs only inside the analysis
    (face-centroid reflection about global/principal planes through the bbox centre).
 8. Stable IDs and GeometryIR assembly; preview tessellation (`BRepMesh`, deflection 1e-3 × diagonal).
 
+### Face grooves (`features/grooves.py`)
+Recognized before holes and bosses: a convex full cylinder (inner wall) and a concave full cylinder (outer
+wall) on one axis with the same axial extent, bounding one planar floor square to the axis → `GROOVE`
+(`kind=FACE`, inner / outer Ø, width, depth, axis from the opening into the material). Its faces are
+claimed, so the inner wall is not reported as a short boss.
+
 ### CAD product data (`geometry_service/step_metadata.py` → `GeometryIR.cad_metadata`)
 Read from the STEP file itself (no kernel): `PRODUCT` name / id / description, the version id of
 `PRODUCT_DEFINITION_FORMATION` (revision, ≤ 4 characters), `MATERIAL_DESIGNATION`, and the AP214

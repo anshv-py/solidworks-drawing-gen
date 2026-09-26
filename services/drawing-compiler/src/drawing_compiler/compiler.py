@@ -533,6 +533,8 @@ class Compiler:
                 order = [c for c in dim_view if c == f"DIM-DIA-{feature_id}"]
             elif feat.type in (FeatureType.SLOT, FeatureType.POCKET):
                 order = [c for c in dim_view if c == f"DIM-W-{feature_id}"]
+            elif feat.type == FeatureType.GROOVE:
+                order = [c for c in dim_view if c == f"DIM-GOD-{feature_id}"]
             return sorted(order)[0] if order else None
 
         def face_group(face_id: str) -> _FaceGroup | None:

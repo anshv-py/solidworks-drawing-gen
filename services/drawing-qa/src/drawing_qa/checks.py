@@ -204,6 +204,12 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         c = cands.get(d.id)
         v = views[d.view_id]
         if c is None:
+            # a feature note ("NOTE-k") is a leader note of the plan's k-th feature note, not a dimension
+            k = d.id.removeprefix("NOTE-")
+            notes = plan.manufacturing.feature_notes
+            if d.id.startswith("NOTE-") and k.isdigit() and 1 <= int(k) <= len(notes) \
+                    and d.text == notes[int(k) - 1].text.upper():
+                continue
             R.add("QA-REF-001", QaSeverity.CRITICAL, f"dimension {d.id} does not reference a known candidate", [d.id])
             continue
         if abs(d.value - c.value) > 1e-9 or d.text != c.text:
@@ -237,15 +243,15 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
     if plan.dimensions.overall:
         covered_axes = set()
         for d in cd.dimensions:
-            c = cands[d.id]
-            if c.role == CandidateRole.OVERALL:
+            c = cands.get(d.id)  # (feature notes are leader notes without a candidate)
+            if c is not None and c.role == CandidateRole.OVERALL:
                 covered_axes.add(d.id.rsplit("-", 1)[-1])
         missing = {f"DIM-OVERALL-{a}" for a in "XYZ"} - {f"DIM-OVERALL-{a}" for a in covered_axes}
         for m in sorted(missing):
             if m in cands:
                 R.add("QA-DIM-002", QaSeverity.MAJOR, f"overall dimension {m} is not shown in any selected view", [m])
     if plan.dimensions.holes and plan.annotations.hole_callouts:
-        called = {fid for d in cd.dimensions if cands[d.id].kind == CandidateKind.HOLE_CALLOUT
+        called = {fid for d in cd.dimensions if d.id in cands and cands[d.id].kind == CandidateKind.HOLE_CALLOUT
                   for fid in d.feature_ids}
         for h in ir.features:
             if h.type == FeatureType.HOLE and h.id not in called:

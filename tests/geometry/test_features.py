@@ -134,3 +134,21 @@ def test_threads_are_never_invented(analyzed):
     for ir, _ in analyzed.values():
         assert all(f.type != "THREAD" for f in ir.features)
         assert any("THREAD" in s for s in ir.analysis.not_recognized)
+
+
+def test_face_groove(analyzed, manifest):
+    ir, _ = analyzed["seal_cover"]
+    [exp] = manifest["models"]["seal_cover"]["expected"]["grooves"]
+    [g] = [f for f in ir.features if f.type == "GROOVE"]
+    assert (g.inner_diameter, g.outer_diameter, g.width, g.depth) == pytest.approx(
+        (exp["inner_diameter"], exp["outer_diameter"], exp["width"], exp["depth"]))
+    assert g.axis.direction == pytest.approx((0, 0, -1)) and g.axis.origin[2] == pytest.approx(12.0)
+    # the groove's inner wall is not a short "boss"
+    assert [round(f.diameter, 3) for f in ir.features if f.type == "BOSS"] == [100.0]
+
+
+def test_keyway_is_a_pocket_on_the_shaft(analyzed, manifest):
+    ir, _ = analyzed["keyed_shaft"]
+    [exp] = manifest["models"]["keyed_shaft"]["expected"]["keyways"]
+    [pk] = [f for f in ir.features if f.type == "POCKET"]
+    assert (pk.width, pk.depth, pk.length) == pytest.approx((exp["width"], exp["depth"], exp["length"]))

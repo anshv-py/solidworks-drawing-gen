@@ -934,7 +934,8 @@
         "SLOT",
         "FILLET",
         "CHAMFER",
-        "PATTERN"
+        "PATTERN",
+        "GROOVE"
       ],
       "title": "FeatureType",
       "type": "string"
@@ -1004,6 +1005,100 @@
         "concave"
       ],
       "title": "FilletFeature",
+      "type": "object"
+    },
+    "GrooveFeature": {
+      "additionalProperties": false,
+      "description": "Annular groove of rectangular section cut into a planar face (O-ring face gland): a convex inner\nwall and a concave outer wall, coaxial and equally deep, joined by a planar annular floor.",
+      "properties": {
+        "axis": {
+          "$ref": "#/$defs/Axis",
+          "description": "origin = centre of the opening (face level), direction into the material"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "depth": {
+          "title": "Depth",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "floor_face_id": {
+          "title": "Floor Face Id",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "inner_diameter": {
+          "title": "Inner Diameter",
+          "type": "number"
+        },
+        "kind": {
+          "const": "FACE",
+          "default": "FACE",
+          "title": "Kind",
+          "type": "string"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "outer_diameter": {
+          "title": "Outer Diameter",
+          "type": "number"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "type": {
+          "const": "GROOVE",
+          "default": "GROOVE",
+          "title": "Type",
+          "type": "string"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "kind",
+        "axis",
+        "inner_diameter",
+        "outer_diameter",
+        "width",
+        "depth",
+        "floor_face_id"
+      ],
+      "title": "GrooveFeature",
       "type": "object"
     },
     "HoleFeature": {
@@ -2187,6 +2282,7 @@
             "BOSS": "#/$defs/BossFeature",
             "CHAMFER": "#/$defs/ChamferFeature",
             "FILLET": "#/$defs/FilletFeature",
+            "GROOVE": "#/$defs/GrooveFeature",
             "HOLE": "#/$defs/HoleFeature",
             "PATTERN": "#/$defs/PatternFeature",
             "POCKET": "#/$defs/PocketFeature",
@@ -2215,6 +2311,9 @@
           },
           {
             "$ref": "#/$defs/PatternFeature"
+          },
+          {
+            "$ref": "#/$defs/GrooveFeature"
           }
         ]
       },

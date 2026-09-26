@@ -50,7 +50,8 @@ upload (`DrawingSettings.view_selection=RULES`):
 - functional roles (mounting face, bearing bore / seat, clearance / dowel / tapped hole ...) are
   inferred from geometry, always reported as "assumed role: X - confirm or override", overridable per
   feature id (`feature_roles`); the role's fits (ISO 286 table), GD&T and finish from the rule set apply
-  with `source=DEFAULT`
+  with `source=DEFAULT` (incl. derived thread callouts of assumed tapped holes: blind thread depth =
+  drill depth − 3 × pitch, owner decision 2026-09-26)
 - compliance gate (EX 1): every drawing gets `compliance.json`; failing hard blockers stamp the sheet
   NOT FOR MANUFACTURE and make `POST /api/drawings/{id}/release` refuse - generation and downloads are
   never blocked

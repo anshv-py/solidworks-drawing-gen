@@ -14,11 +14,13 @@ export const ROLE_LABEL: Record<Role, string> = {
   CLEARANCE_HOLES: "Clearance holes",
   DOWEL_HOLE: "Dowel hole",
   TAPPED_HOLE: "Tapped hole",
+  KEYWAY: "Keyway",
+  SEAL_GROOVE: "O-ring groove",
   NONE: "No functional role",
 };
 const FACE_ROLES: Role[] = ["MOUNTING_FACE", "SEALING_FACE", "SHOULDER_FACE", "NONE"];
 const FEATURE_ROLES: Role[] = ["BEARING_BORE", "CENTRAL_BORE", "BEARING_SEAT", "CLEARANCE_HOLES", "DOWEL_HOLE",
-  "TAPPED_HOLE", "NONE"];
+  "TAPPED_HOLE", "KEYWAY", "SEAL_GROOVE", "NONE"];
 
 interface Props {
   roles: RoleAssignment[];
