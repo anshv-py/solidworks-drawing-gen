@@ -8,6 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from drawing_schema.pmi import Target
 from drawing_schema.qa import QaReport
+from drawing_schema.compliance import ComplianceReport
+from drawing_schema.roles import RoleAssignment
 from drawing_schema.settings import DrawingSettings
 
 
@@ -100,6 +102,9 @@ class DrawingOut(BaseModel):
     downloads: list[str]
     unavailable_formats: dict[str, str]
     qa: QaReport | None
+    compliance: ComplianceReport | None = None
+    released: bool = False
+    released_at: str | None = None
 
 
 class AnnotationDimension(BaseModel):
@@ -138,3 +143,7 @@ class AnnotationTargets(BaseModel):
         default_factory=list, description="deterministic proposal (datum rules 1, 2, 4, 5, 7) - applied only "
                                           "when the user confirms it")
     datum_cautions: list[str] = Field(default_factory=list)
+    rule_set: str | None = Field(default=None, description="primary rule set applied by default")
+    roles: list[RoleAssignment] = Field(
+        default_factory=list, description="functional roles (inferred ones are assumptions - confirm or override "
+                                          "them in DrawingSettings.feature_roles)")

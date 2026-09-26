@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import FeatureRoles from "./FeatureRoles";
 import type {
   DatumReference,
   GeneralNotes,
@@ -127,8 +128,8 @@ export default function ManufacturingForm({ modelId, settings, onChange, onModel
     <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm" data-testid="manufacturing-form">
       <p className="font-medium">Manufacturing information</p>
       <p className="text-xs text-slate-600">
-        Everything here is entered by you and printed exactly as entered. Nothing is inferred from the model;
-        blank fields stay <b>UNSPECIFIED</b>.
+        Everything here is entered by you and printed exactly as entered; blank fields stay <b>UNSPECIFIED</b>.
+        Only the feature roles below are guessed from the model - confirm or change them.
       </p>
       {error && <p className="rounded bg-red-50 p-1 text-xs text-red-700">{error}</p>}
       <label className="flex items-center justify-between text-sm">
@@ -142,6 +143,10 @@ export default function ManufacturingForm({ modelId, settings, onChange, onModel
       {settings.drawing_kind === "MANUFACTURING" &&
         <p className="text-xs text-slate-500">A manufacturing drawing needs a material and a general or linear tolerance.</p>}
 
+      <Section title={`Feature roles${targets?.rule_set ? ` (${targets.rule_set})` : ""}`}
+        count={targets?.roles?.filter((a) => a.source === "INFERRED").length}>
+        <FeatureRoles roles={targets?.roles ?? []} settings={settings} onChange={onChange} />
+      </Section>
       <Section title="Title block">
         <Text label="Title" value={tb.title} onChange={(v) => setTb({ title: v || null })} testId="tb-title" />
         <Text label="Drawing no." value={tb.drawing_number} onChange={(v) => setTb({ drawing_number: v || null })} />
@@ -329,7 +334,7 @@ export default function ManufacturingForm({ modelId, settings, onChange, onModel
           );
         })}
         <Add disabled={!targets} onClick={() => setM({ tolerances: [...m.tolerances,
-          { candidate_id: "", kind: "SYMMETRIC", upper: 0.1, lower: 0 }] })}>tolerance</Add>
+          { candidate_id: "", kind: "SYMMETRIC", upper: 0.1, lower: 0, fit: null }] })}>tolerance</Add>
         <p className="pt-1 text-xs text-slate-600">Inspection dimensions (drawn in an oval):</p>
         <div className="max-h-28 overflow-y-auto">
           {targets?.dimensions.map((d) => (

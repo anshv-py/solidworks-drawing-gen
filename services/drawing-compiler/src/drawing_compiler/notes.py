@@ -129,7 +129,7 @@ def _concise_notes(plan: DrawingPlan, ir: GeometryIR) -> list[str]:
         notes.append(f"SURFACE FINISH UNLESS OTHERWISE SPECIFIED: {finish}.")
     if m.deburr_break_sharp_edges or g.edge_break:
         notes.append(f"REMOVE ALL BURRS. BREAK SHARP EDGES {_v(g.edge_break, 'EDGE BREAK VALUE')}.")
-    return notes + [n.strip() for n in m.notes if n.strip()]
+    return notes + list(plan.rule_notes) + [n.strip() for n in m.notes if n.strip()]
 
 
 def build_notes(plan: DrawingPlan, ir: GeometryIR) -> tuple[list[str], list[str], str]:
@@ -184,7 +184,7 @@ def build_notes(plan: DrawingPlan, ir: GeometryIR) -> tuple[list[str], list[str]
         + insp_extra,
         f"MARKING / TRACEABILITY: {_v(g.marking, 'CONTENT, METHOD AND LOCATION')}.",
     ]
-    notes += [n.strip() for n in m.notes if n.strip()]
+    notes += list(plan.rule_notes) + [n.strip() for n in m.notes if n.strip()]
     bullets = list(SUPPLIER_MUST_NOT_ASSUME) if g.supplier_bullets else []
     summary = (f"CONTROLLING STANDARD: {standard} | GENERAL LINEAR TOL: {_v(linear, 'GENERAL LINEAR TOLERANCE')} | "
                f"GENERAL GEOMETRIC TOL: {_v(geo, 'GENERAL GEOMETRIC TOLERANCE')}")

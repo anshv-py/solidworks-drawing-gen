@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from drawing_schema import DrawingPlan
+from drawing_schema.compliance import ComplianceReport
 from drawing_schema.qa import QaReport
 from drawing_schema.settings import DrawingSettings
 from geometry_schema import GeometryIR
@@ -21,6 +22,7 @@ TARGETS = {
     ROOT / "packages/drawing-schema/schema/drawing-plan.schema.json": DrawingPlan,
     ROOT / "packages/drawing-schema/schema/drawing-settings.schema.json": DrawingSettings,
     ROOT / "packages/drawing-schema/schema/qa-report.schema.json": QaReport,
+    ROOT / "packages/drawing-schema/schema/compliance-report.schema.json": ComplianceReport,
 }
 
 

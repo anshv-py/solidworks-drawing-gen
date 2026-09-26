@@ -1,0 +1,156 @@
+# Primary drawing rule set (machine-readable) - the default configuration applied to every upload.
+#
+# Source documents (kept verbatim next to this file, owner-supplied 2026-09-26):
+#   RULES = manufacturing_drawing_rules.md          (view selection, dimensioning, tolerancing, GD&T, finish)
+#   EX    = manufacturing_drawing_reference_examples.md (mandatory minimum, automation, worked examples,
+#                                                        pattern library, QA)
+# Every value the planner applies is read from here and traced to a rule id in the plan and the compliance
+# report. Values are labelled source=DEFAULT on the drawing data; feature roles are *assumed* from geometry
+# and listed as "assumed role: X - confirm or override" (owner decision, see CLAUDE.md).
+
+rule_set:
+  id: CADAI-MFG-RULES
+  version: 1.0.0
+
+defaults:
+  drawing_standard: ISO                 # ISO GPS: ISO 8015 (independency), ISO 1101 (GD&T), ISO 5459 (datums)
+  general_tolerance: ISO 2768-mK        # RULES 3.1 / RULES 7 tolerance_defaults.general_standard
+  default_surface_finish_ra: 3.2        # EX 1 item 3 ("Ra 3.2 unless noted"); RULES 5 general machined surface
+  fit_system: HOLE_BASIS                # RULES 3.3
+  fits:                                 # RULES 7 tolerance_defaults
+    clearance: H7/g6
+    transition: H7/k6
+    interference: H7/s6
+
+views:
+  # RULES 1.1: the minimum number of orthographic views that still shows every planned dimension and
+  # annotation true size. A single view is used only when the part is fully defined by it plus a note
+  # (a flat part whose only missing dimension is its thickness -> "THICKNESS t" note).
+  minimal_orthographic: true
+  single_view_thickness_note: true
+  single_view_max_thickness_ratio: 0.2  # "flat": thickness <= 0.2 x the smaller of the other two envelope sizes
+  # RULES 1.2 / RULES 7 view_rules: an undimensioned pictorial (isometric) only when a trigger fires
+  isometric_triggers:
+    nonorthogonal_face_count_gt: 3      # planar faces not normal to X/Y/Z + free-form faces (fillet/chamfer faces excluded)
+    processes: [CASTING, FORGING, MOULDED]
+    assembly_bodies_gt: 1
+    sheet_metal_bends_gt: 2             # needs sheet-metal recognition (phase 6)
+  # detected and reported now; drawn by later phases (see docs/ROADMAP.md)
+  section_triggers:                     # RULES 1.3
+    blind_hole_depth_to_diameter_gt: 1.5
+    counterbore_or_countersink: true    # stepped bores: full section required
+    stepped_coaxial_bores: true
+  detail_triggers:                      # RULES 1.4
+    # printed size of a feature's smallest dimension ("cannot be legibly placed at the main scale").
+    # RULES 7's "feature.size < 3mm" read as a model size would fire on every small chamfer at 1:1,
+    # so the limit is applied to the printed size instead.
+    feature_size_on_sheet_lt_mm: 1.5
+    tight_tolerance_lt_mm: 0.05
+    tight_tolerance_scale_lt: 0.5       # "drawn smaller than ~1:2"
+  auxiliary_triggers:                   # RULES 1.5
+    feature_axis_not_principal: true
+  break_triggers:                       # RULES 1.6
+    length_to_width_ratio_gt: 6.0
+
+roles:
+  # How roles are guessed from geometry. A guess is never silent: it is listed in the compliance report
+  # with its confidence and reasons, and the user can override it per feature (kept by feature id).
+  inference:
+    bearing_bore:
+      min_diameter_mm: 8.0
+      ratio_to_other_holes: 1.5         # a bore clearly larger than the fastener holes
+    clearance_holes:
+      # ISO 273 clearance holes (fine / medium / coarse) by metric thread size; a hole diameter within
+      # match_tolerance_mm of one of them is a clearance hole for that size
+      match_tolerance_mm: 0.15
+      iso_273:
+        M1.6: [1.7, 1.8, 2.0]
+        M2: [2.2, 2.4, 2.6]
+        M2.5: [2.7, 2.9, 3.1]
+        M3: [3.2, 3.4, 3.6]
+        M4: [4.3, 4.5, 4.8]
+        M5: [5.3, 5.5, 5.8]
+        M6: [6.4, 6.6, 7.0]
+        M8: [8.4, 9.0, 10.0]
+        M10: [10.5, 11.0, 12.0]
+        M12: [13.0, 13.5, 14.5]
+        M14: [15.0, 15.5, 16.5]
+        M16: [17.0, 17.5, 18.5]
+        M20: [21.0, 22.0, 24.0]
+        M24: [25.0, 26.0, 28.0]
+        M30: [31.0, 33.0, 35.0]
+        M36: [37.0, 39.0, 42.0]
+    dowel_holes:
+      diameters_mm: [2, 2.5, 3, 4, 5, 6, 8, 10, 12, 16, 20]   # ISO 2338 / ISO 8734 nominal pin sizes
+      max_count: 2
+    shaft:
+      length_to_diameter_ge: 1.5         # shorter turned parts are discs / flanges
+
+  # RULES 4.4 + EX 7 pattern library; values from the worked examples EX 3-6 where the rules give none.
+  # tolerance: a number, or ISO_2768_K = the declared general geometric tolerance class for the feature size
+  treatments:
+    MOUNTING_FACE:
+      rule: "RULES 4.1, 4.4; EX 7 row 1"
+      datum: A
+      frames:
+        - {characteristic: FLATNESS, tolerance: ISO_2768_K}
+      finish_ra: 1.6                     # EX 4 F1
+    SEALING_FACE:
+      rule: "RULES 4.4, 5; EX 6 F1; EX 7 O-ring row"
+      datum: A
+      frames:
+        - {characteristic: FLATNESS, tolerance: 0.03}
+      finish_ra: 0.8
+      note: NO RADIAL LAY
+    BEARING_BORE:
+      rule: "RULES 3.2, 3.3, 4.4; EX 4 F2; EX 7 bearing-bore row"
+      datum: B
+      fit: H7
+      frames:
+        - {characteristic: CYLINDRICITY, tolerance: 0.01}
+        - {characteristic: PERPENDICULARITY, tolerance: 0.02, datums: [A], diameter_zone: true}
+      finish_ra: 0.8
+    CENTRAL_BORE:
+      rule: "RULES 4.1; EX 6 F3"
+      datum: B
+      fit: H8
+      frames:
+        - {characteristic: PERPENDICULARITY, tolerance: 0.05, datums: [A], diameter_zone: true}
+    BEARING_SEAT:
+      rule: "RULES 3.3, 4.4; EX 3 F1/F3; EX 7 rotating-axis row"
+      datum: A                           # EX 3 uses the common axis A of both seats; a single-feature datum
+      fit: h6                            # (the longer seat) is used until common datums are supported
+      frames:
+        - {characteristic: CYLINDRICITY, tolerance: 0.005}
+        - {characteristic: CIRCULAR_RUNOUT, tolerance: 0.02, datums: [A]}
+      finish_ra: 0.4
+    SHOULDER_FACE:
+      rule: "EX 3 F2"
+      frames:
+        - {characteristic: PERPENDICULARITY, tolerance: 0.02, datums: [A]}
+      finish_ra: 1.6
+    CLEARANCE_HOLES:
+      rule: "RULES 4.3, 4.4; EX 4 F3; EX 7 clearance row"
+      size_tolerance: {upper: 0.2, lower: 0.0}
+      frames:
+        # capped at the floating-fastener limit (hole MMC size - fastener size) so the bolts always assemble
+        - {characteristic: POSITION, tolerance: 0.4, material_condition: MMC, datums: [A, B, C], diameter_zone: true,
+           cap: FLOATING_FASTENER}
+    DOWEL_HOLE:
+      rule: "RULES 4.3, 4.4; EX 4 F6; EX 7 dowel row"
+      datum: C
+      fit: H7
+      frames:
+        - {characteristic: POSITION, tolerance: 0.1, datums: [A, B], diameter_zone: true}
+    TAPPED_HOLE:
+      rule: "RULES 2.2, 4.4; EX 4 F4; EX 7 tapped row"
+      requires_thread_designation: true
+      frames:
+        - {characteristic: POSITION, tolerance: 0.3, material_condition: MMC, datums: [A, B], diameter_zone: true}
+
+gate:
+  # EX 1 gate rule: hard blockers stamp the sheet and block the explicit release step (generation and
+  # downloads are never blocked); warnings are reported (and auto-fixed where a deterministic fix exists)
+  hard_blockers: [1, 2, 3, 4, 5, 6, 7, 8, 11]
+  warnings: [9, 10, 12]
+  stamp_text: "NOT FOR MANUFACTURE - INCOMPLETE (SEE COMPLIANCE REPORT)"

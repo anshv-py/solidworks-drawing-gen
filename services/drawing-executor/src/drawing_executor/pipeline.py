@@ -3,6 +3,10 @@
 Progress is reported through the callback with job states PLANNING, GENERATING, VALIDATING
 and EXPORTING. Exports (DXF/PDF/SVG) are written only when QA reports no CRITICAL issue;
 otherwise only a clearly marked QA preview image is kept for diagnosis.
+
+Every drawing also gets a compliance report (``compliance.json``) against the primary rule set's
+Universal Mandatory Minimum. If a hard blocker fails, the sheet is stamped NOT FOR MANUFACTURE; the
+drawing is still generated and downloadable, and only the explicit release step refuses it.
 """
 
 from __future__ import annotations
@@ -17,7 +21,10 @@ from pathlib import Path
 from drawing_compiler import CompileOptions, LayoutError, compile_drawing
 from drawing_compiler.compiler import scale_factor
 from drawing_planner import plan_baseline
+from drawing_planner.rule_set import load_rules
+from drawing_planner.view_rules import detail_triggers
 from drawing_qa import INCREASE_TIER_GAP, REDUCE_SCALE, Rendered, validate
+from drawing_qa.compliance import build_compliance
 from drawing_schema import PlanUncertainty, scale_series
 from drawing_schema.settings import DrawingSettings
 from geometry_schema import GeometryIR
@@ -43,6 +50,7 @@ class Result:
     artifacts: dict[str, str]
     qa_iterations: int
     scale: str
+    releasable: bool = False
 
 
 def generator_id() -> str:
@@ -77,10 +85,16 @@ def generate(
         )
 
     report("PLANNING", "Selecting views and dimensions", 5)
+    rules = load_rules()
     planned = plan_baseline(ir, settings, filename=filename)
     if planned.errors:
         # user annotations that do not match this part are rejected, never silently dropped
         raise DrawingFailed("PMI_INVALID", "; ".join(planned.errors))
+
+    def gate(p, **kw):
+        return build_compliance(p.plan, ir, p.candidates, hard_blockers=rules.gate.hard_blockers,
+                                stamp_text=rules.gate.stamp_text, **kw)
+
     defaults_applied = settings.default_gdt and not (settings.manufacturing.datums or settings.manufacturing.frames) \
         and bool(planned.plan.manufacturing.datums or planned.plan.manufacturing.frames)
     if defaults_applied and settings.sheet.scale == "AUTO":
@@ -88,12 +102,14 @@ def generate(
         # annotations do not fit the sheet at any scale, plan again without them and say so. (With a
         # scale the user chose they are kept: the layout error then names the largest scale that fits.)
         try:
-            compile_drawing(planned.plan, planned.candidates, ir, CompileOptions(generated_on=generated_on))
+            compile_drawing(planned.plan, planned.candidates, ir,
+                            CompileOptions(generated_on=generated_on, stamp=gate(planned).stamp))
         except LayoutError:
             planned = plan_baseline(ir, settings.model_copy(update={"default_gdt": False}), filename=filename)
             planned.plan = planned.plan.model_copy(update={"uncertainties": [*planned.plan.uncertainties, PlanUncertainty(
                 message="default datums / GD&T omitted: their annotations do not fit on the selected sheet "
                         "(choose a larger sheet to include them)")]})
+    stamp = gate(planned).stamp  # decided from the plan: the stamp is part of the layout
     (out_dir / "plan.json").write_text(planned.plan.model_dump_json(indent=2))
     (out_dir / "candidates.json").write_text(
         json.dumps([c.model_dump(mode="json") for c in planned.candidates], indent=1)
@@ -102,9 +118,10 @@ def generate(
     report("GENERATING", "Importing STEP for hidden-line removal", 15)
     shape, _ = read_step(source_path)
     hlr_cache: dict[tuple, tuple] = {}
-    opts = CompileOptions(generated_on=generated_on)
+    opts = CompileOptions(generated_on=generated_on, stamp=stamp)
     compiled = qa = rendered = None
     iterations = 0
+    best = None
     for iteration in range(1, max_retries + 2):
         iterations = iteration
         try:
@@ -132,6 +149,12 @@ def generate(
         report("VALIDATING", f"Deterministic QA (iteration {iteration})", 30 + 10 * iteration)
         qa = validate(planned.plan, planned.candidates, ir, compiled, rendered, iteration=iteration)
         (out_dir / f"qa_report_{iteration}.json").write_text(qa.model_dump_json(indent=2))
+        # a repair must not make the drawing worse (e.g. a smaller scale does not shrink annotation
+        # text, so crowding can grow): the best iteration is kept - fewest critical, then major
+        # issues, then the larger scale
+        rank = (qa.critical, qa.major, -scale_factor(compiled.scale))
+        if best is None or rank < best[0]:
+            best = (rank, compiled, rendered, qa)
         repairs = {i.repair for i in qa.issues if i.repair and i.severity in ("CRITICAL", "MAJOR")}
         if not repairs or iteration > max_retries:
             break
@@ -148,10 +171,17 @@ def generate(
         if INCREASE_TIER_GAP in repairs:
             opts.tier_gap += 3.0
 
+    _, compiled, rendered, qa = best
     (out_dir / "compiled.json").write_text(compiled.model_dump_json(indent=2))
     # what was actually drawn (sheet mm) - lets QA be re-run later without OCCT
     (out_dir / "rendered.json").write_text(json.dumps({"lines": rendered.lines, "snapped": rendered.snapped}))
     (out_dir / "qa_report.json").write_text(qa.model_dump_json(indent=2))
+    tight = {f.target.ref for f in planned.plan.manufacturing.frames
+             if f.tolerance < rules.views.detail_triggers.tight_tolerance_lt_mm}
+    compliance = gate(planned, qa=qa, extra_triggers=detail_triggers(ir, rules, scale_factor(compiled.scale), tight))
+    if stamp and compliance.releasable:
+        compliance = compliance.model_copy(update={"stamp": stamp})
+    (out_dir / "compliance.json").write_text(compliance.model_dump_json(indent=2))
     report("EXPORTING", "Writing DXF and rendering PDF/SVG/PNG", 85)
     if not text_font_available():
         raise DrawingFailed("FONT_MISSING", "no TrueType font is installed, so the drawing text cannot be rendered "
@@ -181,9 +211,13 @@ def generate(
         "qa_passed": qa.passed,
         "qa_iterations": iterations,
         "scale": compiled.scale,
+        "rule_set": planned.plan.rule_set,
+        "releasable": compliance.releasable,
+        "stamped": stamp is not None,
         "artifacts": artifacts,
         "views": {vid: {"geometry_segments": sum(len(p) - 1 for p in ls["visible"] + ls["hidden"])}
                   for vid, ls in rendered.lines.items()},
     }
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
-    return Result(passed=qa.passed, artifacts=artifacts, qa_iterations=iterations, scale=compiled.scale)
+    return Result(passed=qa.passed, artifacts=artifacts, qa_iterations=iterations, scale=compiled.scale,
+                  releasable=compliance.releasable)

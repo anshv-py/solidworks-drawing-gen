@@ -29,6 +29,33 @@ considered cost a lot to run:
 "free" to run, and none is needed. An LLM hook remains configurable (`CADAI_LLM_BACKEND`, default
 `none`) for future assistance such as explaining QA findings. It must never supply values.
 
+## 0. Primary rule set (default configuration)
+`drawing_planner/rules/`: the owner's documents RULES (`manufacturing_drawing_rules.md`) and EX
+(`manufacturing_drawing_reference_examples.md`), kept verbatim, and `drawing_rules.yaml`, which is
+validated on load (`rule_set.py`) and is the only place the values below come from.
+
+| Step | Module | Rule |
+|---|---|---|
+| Feature roles | `roles.py` | family SHAFT (turned, L ≥ 1.5 D) / DISC / PRISMATIC; mounting face = largest envelope face (disc: largest face ⟂ axis); bearing bore = one bore ≥ 8 mm and ≥ 1.5× the other holes, square to the mounting face (+ counterbore step); central bore = through hole on a disc axis; bearing seats / shoulders = journals ending against a larger diameter (≤ 2); clearance holes = through holes of an ISO 273 size (or an unmatched through-hole pattern, low confidence); dowel holes = ≤ 2 holes of an ISO 2338 pin size, ≥ 1 Ø deep; tapped = a thread callout exists |
+| Treatments | `gdt_defaults.py` | RULES 4.1 datums (A mounting / sealing face, B bearing or central bore, C dowel hole, else envelope faces); per role (EX 7): bearing bore H7 + ⌭ 0.01 + ⊥ Ø0.02 A + Ra 0.8; central bore H8 + ⊥ Ø0.05 A; bearing seat h6 + ⌭ 0.005 + ↗ 0.02 A + Ra 0.4; shoulder ⊥ 0.02 A + Ra 1.6; clearance +0.2/0 + ⌖ Ø0.4 Ⓜ, capped at the floating-fastener limit H − F; dowel H7 + ⌖ Ø0.1; tapped ⌖ Ø0.3 Ⓜ; mounting face flatness (ISO 2768-K) + Ra 1.6. Fits are computed from the ISO 286 tables in `iso286.py` (H, JS, f, g, h, k, p up to 500 mm; others are refused, not guessed). Datums nothing references are dropped (rule 9) |
+| Views | `baseline.py`, `view_rules.py` | RULES 1.1: the smallest subset of the ticked projected views (≥ 2 views always include FRONT) that still shows every dimension true size and every annotated face edge-on; one view + `THICKNESS t` note for a flat part (t ≤ 0.2 × the next envelope size). RULES 1.2: isometric only for > 3 non-orthogonal faces (fillet / chamfer faces excluded), casting / forging / moulding, or several bodies. RULES 1.3-1.6 section / auxiliary / break triggers (plan), detail triggers at the final scale (pipeline) - recorded as `view_triggers`, not drawn yet |
+| Defaults | `baseline.py` | general tolerance ISO 2768-mK, default finish Ra 3.2 (`source=DEFAULT`) |
+| Gate | `drawing_qa/compliance.py` | EX 1 items 1-12 → `compliance.json`; hard blockers (1-8, 11) stamp the sheet and block `POST /api/drawings/{id}/release` |
+
+Every inferred role carries a confidence and its reasons and is listed as an *assumed role* in the
+compliance report and the UI, where the user confirms or changes it (`DrawingSettings.feature_roles`,
+keyed by the deterministic GeometryIR id). `view_selection=MANUAL` restores the fixed
+primary + projected views and the ISO 2768 scheme without roles.
+
+Known limits: EX 3's common datum axis A-B of two bearing seats is drawn as datum A on the longer
+seat; rule R3 (a datum feature's form tighter than every tolerance referencing it) still tightens the
+mounting face below EX 4's 0.05 when a bore is ⊥ 0.02 to it; the shaft is drawn with its axis as
+modelled (EX 3 asks for it horizontal); ⌭ 0.005 is reported by QA-TOL-001 as needing a CMM.
+
+Surface finish on a hole / boss goes with its size callout (ISO 1302 symbol stacked with the frames);
+planar faces keep the leader symbol. Tolerance values print with as many decimals as they need
+(0.005 never becomes 0.01); QA-PMI-004 checks every frame's printed value.
+
 ## 1. Dimension candidates (`services/drawing-planner/candidates.py`)
 Each candidate copies its value from a named GeometryIR field (`source`):
 

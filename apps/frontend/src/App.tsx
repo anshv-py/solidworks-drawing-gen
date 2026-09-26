@@ -164,7 +164,7 @@ export default function App() {
           )}
           <div className="min-h-0 flex-1 overflow-auto">
             {tab === "drawing" && drawing ? (
-              <div className="p-3"><DrawingResult drawing={drawing} onRegenerate={onGenerate} /></div>
+              <div className="p-3"><DrawingResult drawing={drawing} onRegenerate={onGenerate} onChange={setDrawing} /></div>
             ) : tab === "drawing" ? (
               <div className="flex h-full items-center justify-center text-slate-400">Generating drawing…</div>
             ) : mesh ? (

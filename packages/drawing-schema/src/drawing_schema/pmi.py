@@ -111,6 +111,7 @@ class ToleranceKind(StrEnum):
     SYMMETRIC = "SYMMETRIC"  # 9.00 ±0.02
     DEVIATION = "DEVIATION"  # 8.00 +0.10 / 0.00  (stacked)
     LIMITS = "LIMITS"  # 8.10 / 8.00
+    FIT = "FIT"  # Ø40.00 H7 +0.025 / 0.000  (ISO 286 tolerance class; deviations from the ISO 286 tables)
 
 
 class DimensionTolerance(StrictModel):
@@ -118,9 +119,13 @@ class DimensionTolerance(StrictModel):
     kind: ToleranceKind
     upper: float = Field(description="SYMMETRIC: the ± value; DEVIATION/LIMITS: upper deviation")
     lower: float = Field(default=0.0, description="DEVIATION/LIMITS: lower deviation (signed)")
+    fit: str | None = Field(default=None, pattern=r"^[A-Za-z]{1,2}\d{1,2}$",
+                            description="FIT: ISO 286 tolerance class, e.g. H7 (hole) or h6 (shaft)")
 
     @model_validator(mode="after")
     def _order(self) -> Self:
+        if (self.kind == ToleranceKind.FIT) != (self.fit is not None):
+            raise ValueError("a FIT tolerance needs its ISO 286 class (and only a FIT tolerance has one)")
         if self.kind == ToleranceKind.SYMMETRIC and self.upper <= 0:
             raise ValueError("a symmetric tolerance must be > 0")
         if self.kind != ToleranceKind.SYMMETRIC and self.upper < self.lower:

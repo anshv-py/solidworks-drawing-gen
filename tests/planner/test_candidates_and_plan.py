@@ -3,7 +3,7 @@
 import pytest
 
 from drawing_planner import generate_candidates, plan_baseline, remove_redundant
-from drawing_schema import ViewFrame, ViewOrientation
+from drawing_schema import PICTORIAL, ViewFrame, ViewOrientation
 from drawing_schema.candidates import CandidateKind, CandidateRole
 from drawing_schema.settings import DrawingSettings
 
@@ -81,7 +81,10 @@ def test_plan_is_valid_and_views_show_true_size(analyzed, name):
     ir, _ = analyzed[name]
     r = plan_baseline(ir, DrawingSettings())
     plan = r.plan
-    assert plan.primary_view.orientation == ViewOrientation.ISOMETRIC and not plan.primary_view.dimensioned
+    # rule set (RULES 1.2): a pictorial view only when an isometric trigger fired
+    iso = any(t.kind.value == "ISOMETRIC" for t in plan.view_triggers)
+    assert (plan.primary_view.orientation in PICTORIAL) == iso
+    assert plan.primary_view.dimensioned == (not iso)
     by_id = {c.id: c for c in r.candidates}
     for s in plan.dimension_selections:
         c = by_id[s.candidate_id]

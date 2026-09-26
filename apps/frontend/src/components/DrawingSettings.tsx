@@ -43,6 +43,13 @@ export default function DrawingSettings({ defaults, settings, onChange, canGener
   return (
     <div className="space-y-2 rounded-lg bg-white p-3 shadow-sm" data-testid="drawing-settings">
       <p className="font-medium">Drawing settings</p>
+      <Select label="Views" value={settings.view_selection} options={["RULES", "MANUAL"]} testId="view-selection"
+        onChange={(v) => set({ view_selection: v as Settings["view_selection"] })} />
+      <p className="text-xs text-slate-500">
+        {settings.view_selection === "RULES"
+          ? "Rule set: the fewest orthographic views from the ones ticked below; an isometric only when the part needs one."
+          : "Manual: exactly the primary and projected views chosen here."}
+      </p>
       <Select label="Primary view" value={settings.primary_view} options={o.view_orientation ?? []}
         onChange={(v) => set({ primary_view: v as Settings["primary_view"] })} />
       <Select label="Model up axis" value={settings.view_frame} options={o.view_frame ?? []}
@@ -99,10 +106,16 @@ export default function DrawingSettings({ defaults, settings, onChange, canGener
           </label>
         ))}
       </fieldset>
+      <label className="flex items-center gap-1.5 text-sm">
+        <input type="checkbox" checked={settings.default_gdt} data-testid="default-gdt"
+          onChange={(e) => set({ default_gdt: e.target.checked })} />
+        Apply the rule set&apos;s default tolerances, GD&amp;T and finish
+      </label>
       <p className="rounded bg-slate-50 p-2 text-xs text-slate-600">
-        Drawing type: <b>{settings.drawing_kind}</b>. Material, tolerances, GD&amp;T, datums and finish are
-        printed only when you enter them under <i>Manufacturing information</i>; otherwise they stay
-        <b> unspecified</b> and are never invented.
+        Drawing type: <b>{settings.drawing_kind}</b>. With the rule set on, the general tolerance (ISO 2768-mK),
+        default finish (Ra 3.2) and the fits / GD&amp;T of each feature&apos;s <i>assumed role</i> are applied and
+        marked as defaults. Material, part number and revision are never invented: until you enter them the
+        sheet is stamped <b>NOT FOR MANUFACTURE</b>.
       </p>
       <button type="button" disabled={!canGenerate || busy} onClick={onGenerate} title={disabledReason}
         data-testid="generate"

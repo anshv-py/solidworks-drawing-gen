@@ -93,9 +93,17 @@ class FrameSpec(StrictModel):
 
 
 class ToleranceText(StrictModel):
-    kind: str  # SYMMETRIC | DEVIATION | LIMITS
+    kind: str  # SYMMETRIC | DEVIATION | LIMITS | FIT
     upper: str
     lower: str = ""
+    fit: str = ""  # FIT: the ISO 286 tolerance class printed before the deviations (e.g. H7)
+
+
+class Stamp(StrictModel):
+    """A boxed release stamp (e.g. NOT FOR MANUFACTURE) above the title-block column."""
+
+    text: str
+    rect: Rect
 
 
 class DimensionOpKind(StrEnum):
@@ -134,6 +142,8 @@ class DimensionOp(StrictModel):
     datum_box: Rect | None = None
     datum_line: list[Point2] = Field(default_factory=list, description="triangle base centre first, box last")
     extra_bbox: Rect | None = Field(default=None, description="area used by frames / datum symbol")
+    finish: str | None = Field(default=None, description="surface texture of the dimensioned feature, e.g. Ra 0.8")
+    finish_tip: Point2 | None = Field(default=None, description="point of the (upright) ISO 1302 symbol")
 
 
 class PmiKind(StrEnum):
@@ -203,5 +213,6 @@ class CompiledDrawing(StrictModel):
     notes_split: int | None = Field(default=None, description="two-column notes: index of the first right-column line")
     revision_rows: list[list[str]] = Field(default_factory=list)
     revision_rect: Rect | None = None
+    stamp: Stamp | None = None
     notes: list[str] = Field(default_factory=list, description="compiler notes (not printed)")
     dropped_candidates: list[str] = Field(default_factory=list, description="not placed (reason in notes)")

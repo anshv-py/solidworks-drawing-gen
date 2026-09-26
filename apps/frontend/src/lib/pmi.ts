@@ -1,5 +1,6 @@
 // Helpers for the "Manufacturing information" form. Everything the form produces is entered by
 // the user and references ids that exist in the part's GeometryIR / plan (the API re-validates).
+import type { RoleAssignment } from "../generated/compliance-report";
 import type { EngineeringField, Target } from "../generated/drawing-settings";
 
 export interface AnnotationTargets {
@@ -8,6 +9,8 @@ export interface AnnotationTargets {
   features: { id: string; type: string; diameter: number | null }[];
   datum_suggestion: { letter: string; target: Target; feature: string; reasons: string[] }[];
   datum_cautions: string[];
+  rule_set?: string | null;
+  roles?: RoleAssignment[];
 }
 
 /** A blank input means UNSPECIFIED; anything typed is SPECIFIED by the user. */

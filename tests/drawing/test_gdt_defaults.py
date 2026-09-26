@@ -16,6 +16,7 @@ from geometry_schema import FeatureType, SurfaceType
 
 def planned(analyzed, name, **settings):
     ir, _ = analyzed[name]
+    settings.setdefault("view_selection", "MANUAL")  # the ISO 2768 scheme without the rule set's roles
     return ir, plan_baseline(ir, DrawingSettings.model_validate(settings), filename=f"{name}.step")
 
 
@@ -128,7 +129,7 @@ def test_default_notes_are_concise_and_complete(analyzed):
 
 @pytest.mark.parametrize("name", ["mounting_plate", "flange", "shaft"])
 def test_default_gdt_drawings_pass_qa(geometry_files, models_dir, tmp_path, name):
-    res = generate(geometry_files[name], models_dir / f"{name}.step", DrawingSettings(), tmp_path)
+    res = generate(geometry_files[name], models_dir / f"{name}.step", DrawingSettings(view_selection="MANUAL"), tmp_path)
     assert res.passed
     qa = json.loads((tmp_path / "qa_report.json").read_text())
     assert not [i for i in qa["issues"] if i["severity"] in ("CRITICAL", "MAJOR")], qa["issues"]
@@ -137,7 +138,7 @@ def test_default_gdt_drawings_pass_qa(geometry_files, models_dir, tmp_path, name
 
 
 def test_defaults_that_do_not_fit_are_dropped_not_fatal(geometry_files, models_dir, tmp_path):
-    settings = DrawingSettings.model_validate({"sheet": {"size": "A4", "orientation": "LANDSCAPE"}})
+    settings = DrawingSettings.model_validate({"sheet": {"size": "A4", "orientation": "LANDSCAPE"}, "view_selection": "MANUAL"})
     res = generate(geometry_files["enclosure"], models_dir / "enclosure.step", settings, tmp_path)
     assert res.artifacts
     plan = json.loads((tmp_path / "plan.json").read_text())

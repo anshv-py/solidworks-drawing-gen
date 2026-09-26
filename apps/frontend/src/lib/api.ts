@@ -1,5 +1,6 @@
 import type { GeometryIR } from "../generated/geometry-ir";
 import type { DrawingSettings } from "../generated/drawing-settings";
+import type { ComplianceReport } from "../generated/compliance-report";
 import type { QaReport } from "../generated/qa-report";
 import type { AnnotationTargets } from "./pmi";
 
@@ -56,6 +57,9 @@ export interface DrawingOut {
   downloads: string[];
   unavailable_formats: Record<string, string>;
   qa: QaReport | null;
+  compliance: ComplianceReport | null;
+  released: boolean;
+  released_at: string | null;
 }
 
 /** RFC 9457 problem details returned by the API. */
@@ -124,6 +128,7 @@ export const api = {
       body: JSON.stringify({ model_id: modelId, settings }),
     }),
   drawing: (drawingId: string) => request<DrawingOut>(`/api/drawings/${drawingId}`),
+  release: (drawingId: string) => request<DrawingOut>(`/api/drawings/${drawingId}/release`, { method: "POST" }),
 };
 
 export const TERMINAL: JobState[] = ["COMPLETED", "FAILED"];

@@ -2,8 +2,18 @@
 
 Loop: GENERATE → VALIDATE → REPAIR → VALIDATE. Up to `CADAI_QA_MAX_RETRIES` (default 3) extra
 iterations. Repairs are compiler options: `REDUCE_SCALE` (next `DRAWING_SCALES` step) and
-`INCREASE_TIER_GAP`. If any **CRITICAL** issue remains, no PDF/DXF/SVG is exported. The job
-ends `FAILED` with `QA_FAILED`, and only a diagnostic preview is kept.
+`INCREASE_TIER_GAP`. A repair must not make the drawing worse: the best iteration is kept (fewest
+critical, then major issues, then the larger scale). If any **CRITICAL** issue remains, no PDF/DXF/SVG
+is exported. The job ends `FAILED` with `QA_FAILED`, and only a diagnostic preview is kept.
+
+**Compliance gate** (primary rule set, EX 1): after QA every drawing gets `compliance.json` with the 12
+items of the Universal Mandatory Minimum (PASS / FAIL / WARN / N/A with details), the assumed roles and
+the view triggers. Hard blockers 1-8 and 11 (title block incl. material, part number and revision;
+general tolerance; default finish; datum frame; every feature dimensioned; no duplicates; full thread
+designations; functional features toleranced; revision) stamp the sheet
+"NOT FOR MANUFACTURE - INCOMPLETE" and make `POST /api/drawings/{id}/release` answer 409
+`RELEASE_BLOCKED`. Warnings 9 (section / detail / auxiliary / break triggers), 10 (mixed standards) and
+12 (weight) are reported.
 
 Several checks compare two **independent** computations: the compiler's analytic projection of
 GeometryIR, and OCCT's hidden-line output of the real B-Rep.
@@ -11,7 +21,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | Check | Severity | What |
 |---|---|---|
 | QA-SHEET-001/002 | CRITICAL | view geometry / dimensions inside the frame |
-| QA-SHEET-003 | CRITICAL | no view, dimension or annotation touches the title block, `Note:` block or revision table |
+| QA-SHEET-003 | CRITICAL | no view, dimension or annotation touches the title block, `Note:` block, revision table or release stamp |
 | QA-VIEW-001 | CRITICAL | views do not overlap |
 | QA-VIEW-002 | CRITICAL | OCCT-drawn view extent == GeometryIR extent (catches wrong orientation or geometry) |
 | QA-VIEW-003 | CRITICAL | placement matches first/third-angle projection |
@@ -37,6 +47,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-TOL-001 | MAJOR | tolerance zone below 0.01 mm (not verifiable with standard shop equipment) |
 | QA-NOTE-001 | MAJOR | default-note values not supplied (printed as placeholders) |
 | QA-PMI-003 | MAJOR | frames, datum symbols and finish symbols don't overlap dimension text, each other or other views |
+| QA-PMI-004 | CRITICAL | every feature control frame prints its planned tolerance exactly (no rounding to the drawing's decimals) |
 | QA-REF-001 | CRITICAL | every dimension references a known candidate |
 
 `POST /api/drawings/{id}/validate` re-runs the checks on the stored drawing (pure Python).

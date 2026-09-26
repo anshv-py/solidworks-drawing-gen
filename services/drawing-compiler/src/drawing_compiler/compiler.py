@@ -42,6 +42,7 @@ from drawing_schema import (
 )
 from drawing_schema.candidates import CandidateKind, CandidateRole, DimensionCandidate, ViewRule
 from drawing_schema.compiled import (
+    Stamp,
     AnnotationKind,
     AnnotationOp,
     CompiledDrawing,
@@ -66,6 +67,7 @@ TOL_H = 2.5  # stacked tolerance text height
 CHAR_W = 0.8  # conservative width factor per character (Arial-metric sans; layout/QA boxes)
 FIRST_TIER = 10.0
 TIER_GAP = 8.0
+STAMP_H = 9.0  # release stamp band height
 VIEW_GAP = 12.0
 NOTE_GAP = 2.0
 CENTER_EXT = 3.0
@@ -79,6 +81,12 @@ PICT_LABEL_SPACE = 7.0  # 'SCALE 1:5' under a pictorial view drawn at its own sc
 NOTE_LINE = 3.8  # 2.5 mm text (legible on A3) at 1.5x pitch
 NOTE_TEXT_H = 2.5
 SF_HEIGHT = 11.0  # ISO 1302 symbol (long leg 10 mm) + clearance
+FINISH_TIP_X = 3.0  # symbol point from the left of its box (the short leg reaches 2.9 mm left)
+
+
+def finish_width(text: str) -> float:
+    """Upright ISO 1302 symbol: short leg, long leg (2*5/tan60) and the line over the Ra text."""
+    return FINISH_TIP_X + 5.8 + len(text) * CHAR_W * TOL_H + 2.0
 TIP_FRACTIONS = (0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8, 0.1, 0.9, 0.03, 0.97)
 
 ZONES = {  # ISO 5457 recommended grids (landscape: columns x rows)
@@ -142,6 +150,7 @@ class CompileOptions:
     tier_gap: float = TIER_GAP
     generated_on: date | None = None
     notes: list[str] = field(default_factory=list)
+    stamp: str | None = None  # release stamp text (compliance gate), printed above the title-block column
 
 
 def scale_factor(s: str) -> float:
@@ -165,6 +174,14 @@ def fmt(v: float, dp: int, trailing_zeros: bool = True) -> str:
     if trailing_zeros or "." not in s:
         return s
     return s.rstrip("0").rstrip(".")
+
+
+def decimals_needed(v: float, limit: int = 4) -> int:
+    """Decimals that print ``v`` without rounding (up to ``limit``)."""
+    for d in range(limit + 1):
+        if abs(round(v, d) - v) < 1e-9:
+            return d
+    return limit
 
 
 def _sub(a, b):
@@ -200,10 +217,11 @@ class _Attach:
 
     frames: list[FrameSpec] = field(default_factory=list)
     datum: str | None = None
+    finish: str | None = None  # ISO 1302 symbol text for a cylindrical feature (e.g. "Ra 0.8")
 
     @property
     def empty(self) -> bool:
-        return not self.frames and self.datum is None
+        return not self.frames and self.datum is None and self.finish is None
 
 
 @dataclass
@@ -224,12 +242,16 @@ class _Note:
             h += 1.0 + FRAME_H * len(self.attach.frames)
         if self.attach.datum:
             h += DATUM_DROP + DATUM_BOX
+        if self.attach.finish:
+            h += SF_HEIGHT
         return h
 
     def width(self) -> float:
         w = text_width(self.text) + 2
         for f in self.attach.frames:
             w = max(w, f.width + 2)
+        if self.attach.finish:
+            w = max(w, finish_width(self.attach.finish) + 2)
         return w
 
 
@@ -313,9 +335,14 @@ class Compiler:
     def f(self, v: float) -> str:
         return fmt(v, self.dp, self.tz)
 
+    def ft(self, v: float) -> str:
+        """A tolerance value: the drawing's decimals, or more when the value needs them (0.005 never
+        prints as 0.01)."""
+        return fmt(v, max(self.dp, decimals_needed(v)), self.tz)
+
     def _frame_spec(self, fr: FeatureControlFrame) -> FrameSpec:
         cells = [FrameCell(symbol=fr.characteristic.value, width=FRAME_H)]
-        tol = self.f(fr.tolerance)
+        tol = self.ft(fr.tolerance)
         w = len(tol) * CHAR_W * TEXT_H + 3.0 + (TEXT_H if fr.diameter_zone else 0.0) + (
             4.0 if fr.material_condition else 0.0)
         cells.append(FrameCell(text=tol, diameter=fr.diameter_zone,
@@ -331,16 +358,22 @@ class Compiler:
         if t is None:
             return None
         if t.kind == ToleranceKind.SYMMETRIC:
-            return ToleranceText(kind=t.kind.value, upper=f"±{self.f(t.upper)}")
+            return ToleranceText(kind=t.kind.value, upper=f"±{self.ft(t.upper)}")
 
         def dev(x: float) -> str:
-            return self.f(0.0) if abs(x) < 1e-12 else (f"+{self.f(x)}" if x > 0 else f"-{self.f(-x)}")
+            return self.f(0.0) if abs(x) < 1e-12 else (f"+{self.ft(x)}" if x > 0 else f"-{self.ft(-x)}")
 
         if t.kind == ToleranceKind.DEVIATION:
             return ToleranceText(kind=t.kind.value, upper=dev(t.upper), lower=dev(t.lower))
+        if t.kind == ToleranceKind.FIT:
+            # ISO 286 deviations are printed to the micrometre whatever the drawing's decimals
+            def fit_dev(x: float) -> str:
+                return "0" if abs(x) < 1e-12 else f"{x:+.3f}"
+
+            return ToleranceText(kind=t.kind.value, upper=fit_dev(t.upper), lower=fit_dev(t.lower), fit=t.fit or "")
         prefix = "Ø" if cand.text.lstrip("0123456789X ").startswith("Ø") else ""
-        return ToleranceText(kind=t.kind.value, upper=prefix + self.f(cand.value + t.upper),
-                             lower=prefix + self.f(cand.value + t.lower))
+        return ToleranceText(kind=t.kind.value, upper=prefix + self.ft(cand.value + t.upper),
+                             lower=prefix + self.ft(cand.value + t.lower))
 
     def _label_width(self, cand: DimensionCandidate) -> float:
         tol = self._tolerance(cand)
@@ -348,6 +381,8 @@ class Compiler:
         if tol is not None:
             if tol.kind == "LIMITS":
                 w = max(len(tol.upper), len(tol.lower)) * CHAR_W * TEXT_H
+            elif tol.kind == "FIT":
+                w += text_width(" " + tol.fit) + 1.8 + max(len(tol.upper), len(tol.lower)) * CHAR_W * TOL_H
             else:
                 w += 1.0 + max(len(tol.upper), len(tol.lower)) * CHAR_W * (TOL_H if tol.lower else TEXT_H)
         framed = cand.id in self.m.inspection_dimensions or cand.id in self.m.basic_dimensions
@@ -414,9 +449,17 @@ class Compiler:
             self.notes_rect = Rect(x0=fr.x1 - width, y0=tr.y1 + 1.0, x1=fr.x1,
                                    y1=tr.y1 + 3.0 + (rows + 1) * NOTE_LINE)
             self.obstacles.append(Rect(x0=self.notes_rect.x0 - 3, y0=fr.y0, x1=fr.x1, y1=self.notes_rect.y1 + 3))
+        self.stamp_rect = None
+        if self.opt.stamp:
+            # the stamp sits on top of the right-hand column (title block + notes); that column grows by it
+            col = self.obstacles[0]
+            self.stamp_rect = Rect(x0=tr.x0, y0=col.y1 - 2.0, x1=tr.x1, y1=col.y1 - 2.0 + STAMP_H)
+            self.obstacles[0] = Rect(x0=col.x0, y0=col.y0, x1=col.x1, y1=self.stamp_rect.y1 + 3)
         if self.revision_rect:
             self.obstacles.append(Rect(x0=self.revision_rect.x0 - 3, y0=self.revision_rect.y0 - 3,
                                        x1=fr.x1, y1=fr.y1))
+        if self.stamp_rect is not None and self.stamp_rect.y1 > top_free:
+            return False
         return self.notes_rect is None or self.notes_rect.y1 <= top_free
 
     # ------------------------------------------------------------------ views & assignment
@@ -509,6 +552,16 @@ class Compiler:
         for i, fr in enumerate(self.m.frames, 1):
             attach(fr.target, frame=self._frame_spec(fr), what=f"frame {i} ({fr.characteristic.value})")
         for sf in self.m.surface_finish_marks:
+            if sf.target.feature_id:
+                # a hole / boss surface: the symbol goes with the feature's size callout (ISO 1302)
+                cid = owner_candidate(sf.target.feature_id)
+                a = self.dim_attach.setdefault(cid, _Attach()) if cid else None
+                if a is None or a.finish is not None:
+                    self.opt.notes.append(f"UNPLACED: surface finish Ra {sf.ra_um} on {sf.target.feature_id} - its "
+                                          "feature has no size dimension / callout on the drawing")
+                else:
+                    a.finish = f"Ra {fmt(sf.ra_um, 2, False)}"
+                continue
             g = face_group(sf.target.face_id) if sf.target.face_id else None
             if g is None:
                 self.opt.notes.append(f"UNPLACED: surface finish Ra {sf.ra_um} - needs a planar face")
@@ -600,8 +653,10 @@ class Compiler:
         if a is None or a.empty:
             return 0.0
         if horizontal:
-            return len(a.frames) * FRAME_H + (DATUM_DROP + DATUM_BOX if a.datum else 0.0) + 1.0
-        return max([fr.width for fr in a.frames] + [0.0]) + (DATUM_DROP + DATUM_BOX if a.datum else 0.0) + 2.0
+            return len(a.frames) * FRAME_H + (DATUM_DROP + DATUM_BOX if a.datum else 0.0) + 1.0 + (
+                SF_HEIGHT if a.finish else 0.0)
+        return max([fr.width for fr in a.frames] + [0.0]) + (DATUM_DROP + DATUM_BOX if a.datum else 0.0) + 2.0 + (
+            finish_width(a.finish) + 2.0 if a.finish else 0.0)
 
     def _plan_view(self, v: _ViewCtx, s: float) -> None:
         """Assign dimension sides/tiers and compute envelope margins at scale s."""
@@ -627,8 +682,9 @@ class Compiler:
             for c, span, horizontal in sorted(items, key=lambda it: (it[1][1] - it[1][0], it[0].priority, it[0].id)):
                 tw = self._label_width(c) + 2
                 a = self.dim_attach.get(c.id)
-                if a and a.frames and horizontal:
-                    tw = max(tw, max(fr.width for fr in a.frames) + 2)
+                if a and horizontal:
+                    tw = max([tw] + [fr.width + 2 for fr in a.frames]
+                             + ([finish_width(a.finish) + 2] if a.finish else []))
                 lo, hi = span
                 mid = (lo + hi) / 2
                 occ = (min(lo, mid - tw / 2) - 1, max(hi, mid + tw / 2) + 1)
@@ -1021,6 +1077,7 @@ class Compiler:
             title_fields=self._title_fields(sc),
             zones=self.zones, sheet_notes=self.sheet_notes, notes_rect=self.notes_rect, notes_split=self.notes_split,
             revision_rows=self.revision_rows, revision_rect=self.revision_rect,
+            stamp=Stamp(text=self.opt.stamp, rect=self.stamp_rect) if self.stamp_rect is not None else None,
             notes=list(self.opt.notes)
             + [u.message for u in self.plan.uncertainties if "omitted: redundant" not in u.message],
         )
@@ -1062,6 +1119,7 @@ class Compiler:
     def _dim_attachment(self, a: _Attach, horizontal: bool, sign: int, line_at: float, q1, q2, bbox: Rect) -> dict:
         """Frames beyond the text (outward); datum symbol on the dimension line near p1, box outward."""
         res: dict = {"frames": a.frames}
+        extent = None
         if horizontal:
             fx = (bbox.x0 + bbox.x1) / 2 - max(fr.width for fr in a.frames) / 2 if a.frames else 0
             length = abs(q2[0] - q1[0])
@@ -1081,6 +1139,14 @@ class Compiler:
                            x1=bx + DATUM_BOX / 2, y1=max(y_box, y_box + sign * DATUM_BOX))
                 res.update(datum=a.datum, datum_box=box,
                            datum_line=[_r((bx, line_at)), _r((bx, box.y0 if sign > 0 else box.y1))])
+                extent = box if extent is None else extent.union(box)
+            if a.finish:
+                fw = finish_width(a.finish)
+                x0 = (bbox.x0 + bbox.x1) / 2 - fw / 2
+                y0 = ((extent.y1 if extent else bbox.y1) + 1.0) if sign > 0 else (
+                    (extent.y0 if extent else line_at - 1.0) - SF_HEIGHT)
+                box = Rect(x0=x0, y0=y0, x1=x0 + fw, y1=y0 + SF_HEIGHT - 1.0)
+                res.update(finish=a.finish, finish_tip=_r((x0 + FINISH_TIP_X, y0)))
                 extent = box if extent is None else extent.union(box)
         else:
             # vertical dims: text sits left of the line; frames go outward (right of the line on the
@@ -1104,6 +1170,14 @@ class Compiler:
                            x1=max(x_box, x_box + sign * DATUM_BOX), y1=by + DATUM_BOX / 2)
                 res.update(datum=a.datum, datum_box=box,
                            datum_line=[_r((line_at, by)), _r((box.x0 if sign > 0 else box.x1, by))])
+                extent = box if extent is None else extent.union(box)
+            if a.finish:
+                fw = finish_width(a.finish)
+                x0 = ((extent.x1 if extent else line_at) + 2.0) if sign > 0 else (
+                    (extent.x0 if extent else bbox.x0) - 2.0 - fw)
+                y0 = (bbox.y0 + bbox.y1) / 2 - SF_HEIGHT / 2
+                box = Rect(x0=x0, y0=y0, x1=x0 + fw, y1=y0 + SF_HEIGHT - 1.0)
+                res.update(finish=a.finish, finish_tip=_r((x0 + FINISH_TIP_X, y0)))
                 extent = box if extent is None else extent.union(box)
         res["extra_bbox"] = extent
         return res
@@ -1154,7 +1228,9 @@ class Compiler:
         for y_tip, n in prov:
             y = y_tip
             if y_prev is not None:
-                y = min(y, y_prev - NOTE_GAP * 2)
+                # a stacked tolerance raises the label above its text line
+                raised = (self._label_height(n.cand) - TEXT_H) if n.cand is not None else 0.0
+                y = min(y, y_prev - NOTE_GAP * 2 - raised)
             land = (round(x, 4), round(y, 4))
             tip = self._note_target(v, s, c, n, land)
             th, tw = text_height(n.text), text_width(n.text)
@@ -1185,6 +1261,12 @@ class Compiler:
                 op.update(datum=n.attach.datum, datum_box=box, datum_line=[land, _r((x, box.y1))])
                 extent = box if extent is None else extent.union(box)
                 bottom = box.y0
+            if n.attach.finish:
+                y0 = bottom - SF_HEIGHT
+                box = Rect(x0=x + 1.0, y0=y0, x1=x + 1.0 + finish_width(n.attach.finish), y1=y0 + SF_HEIGHT - 1.0)
+                op.update(finish=n.attach.finish, finish_tip=_r((x + 1.0 + FINISH_TIP_X, y0)))
+                extent = box if extent is None else extent.union(box)
+                bottom = y0
             op["extra_bbox"] = extent
             y_prev = bottom
             out.append(DimensionOp(**op))
@@ -1199,7 +1281,7 @@ class Compiler:
         taken = list(taken)
 
         def free(r: Rect) -> bool:
-            return not any(r.intersects(t, 0.8) for t in taken)
+            return r.inside(self.area) and not any(r.intersects(t, 0.8) for t in taken)
 
         for g in v.groups:
             side = v.group_side[g.face_id]
@@ -1231,9 +1313,9 @@ class Compiler:
                 angled leader from the face; then further levels outward (QA checks the envelope)."""
                 length = hi - lo
                 on_face = [lo + f * length for f in TIP_FRACTIONS]
-                sideways = [x for k in range(1, 9) for x in (lo - 6.0 * k, hi + 6.0 * k)]
+                sideways = [x for k in range(1, 17) for x in (lo - 6.0 * k, hi + 6.0 * k)]
                 step, _n = v.group_levels.get(side, (0.0, 1))
-                for lv in range(3):
+                for lv in range(5):
                     near = near0 + (d[0] + d[1]) * lv * step
                     for a in on_face + sideways:
                         t = min(max(a, lo + 0.1 * length), hi - 0.1 * length)

@@ -36,7 +36,8 @@ def test_dxf_content(geometry_files, models_dir, tmp_path):
     assert len(dims) >= 8
     assert {d.dxf.text for d in dims} | texts >= {"120.00", "80.00", "10.00", "50.00", "90.00", "15.00", "60.00",
                                                   "40.00"}
-    assert "4X Ø8.00 THRU" in texts
+    # rule set: the (assumed) clearance holes carry a +0.20/0 size tolerance between the size and THRU
+    assert "4X Ø8.00" in texts and " THRU" in texts and "+0.20" in texts
     assert any("NOT PRODUCED BY SOLIDWORKS" in t for t in texts)
     assert len(msp.query("LINE[layer=='HIDDEN']") ) > 0  # hidden lines are drawn in orthographic views
 

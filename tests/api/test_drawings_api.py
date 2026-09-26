@@ -42,7 +42,16 @@ def test_generate_preview_download(client, models_dir):  # noqa: F811
         assert r.status_code == 501 and r.json()["code"] == "FORMAT_REQUIRES_SOLIDWORKS"
 
     plan = client.get(f"/api/drawings/{drawing_id}/plan").json()
-    assert plan["primary_view"]["orientation"] == "ISOMETRIC"
+    # primary rule set: a simple turned flange gets no isometric (RULES 1.2) and the fewest views (RULES 1.1)
+    assert plan["rule_set"].startswith("CADAI-MFG-RULES")
+    assert plan["primary_view"]["orientation"] == "FRONT" and plan["projected_views"] == ["TOP"]
+    # compliance gate: no part number / material / revision -> stamped, downloadable, not releasable
+    c = d["compliance"]
+    assert c["releasable"] is False and c["stamp"].startswith("NOT FOR MANUFACTURE")
+    assert {i["number"] for i in c["items"] if i["status"] == "FAIL"} == {1, 11}
+    assert {a["role"] for a in c["assumed_roles"]} >= {"CENTRAL_BORE", "MOUNTING_FACE"}
+    r = client.post(f"/api/drawings/{drawing_id}/release")
+    assert r.status_code == 409 and r.json()["code"] == "RELEASE_BLOCKED" and "revision" in r.json()["detail"]
     qa = client.post(f"/api/drawings/{drawing_id}/validate").json()
     assert qa["passed"] is True and "QA-VIEW-002" in qa["checks_run"]
 
@@ -53,6 +62,18 @@ def test_generate_preview_download(client, models_dir):  # noqa: F811
     assert job2["state"] == "COMPLETED"
     d2 = client.get(f"/api/drawings/{r.json()['drawing_id']}").json()
     assert d2["settings"]["projection_method"] == "THIRD_ANGLE" and d2["settings"]["sheet"]["size"] == "A2"
+
+    # the hard blockers filled in -> releasable, no stamp; release is recorded once
+    complete = {"title_block": {"part_number": "FL-100", "revision": "A"},
+                "engineering_information": {"material": {"status": "SPECIFIED", "value": "EN AW-6082 T6",
+                                                         "source": "USER"}}}
+    r = client.post("/api/drawings/generate", json={"model_id": model["id"], "settings": complete})
+    rid = r.json()["drawing_id"]
+    assert wait(client, rid, timeout=180)["state"] == "COMPLETED"
+    d3 = client.get(f"/api/drawings/{rid}").json()
+    assert d3["compliance"]["releasable"] is True and d3["compliance"]["stamp"] is None and d3["released"] is False
+    rel = client.post(f"/api/drawings/{rid}/release")
+    assert rel.status_code == 200 and rel.json()["released"] is True and rel.json()["released_at"]
 
 
 def test_generate_requires_analysis_and_step(client, models_dir):  # noqa: F811

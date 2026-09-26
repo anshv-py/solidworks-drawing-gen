@@ -357,6 +357,11 @@ class DrawingPlan(StrictModel):
     pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
     uncertainties: list[PlanUncertainty] = Field(default_factory=list)
     rationale: str | None = Field(default=None, max_length=2000)
+    rule_set: str | None = Field(default=None, description="id and version of the rule set that planned the drawing")
+    feature_roles: list["RoleAssignment"] = Field(default_factory=list)
+    view_triggers: list["ViewTrigger"] = Field(default_factory=list)
+    rule_notes: list[str] = Field(default_factory=list, max_length=8,
+                                  description="sheet notes required by a rule (e.g. THICKNESS of a one-view part)")
 
     @field_validator("projected_views")
     @classmethod
@@ -395,3 +400,8 @@ def default_plan(source_sha256: str, geometry_schema_version: str = "0.1.0") -> 
             source_sha256=source_sha256, geometry_schema_version=geometry_schema_version
         )
     )
+
+
+from drawing_schema.roles import RoleAssignment, ViewTrigger  # noqa: E402  (roles imports pmi only)
+
+DrawingPlan.model_rebuild()

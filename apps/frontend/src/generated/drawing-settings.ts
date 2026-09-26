@@ -32,6 +32,27 @@ export type InfoSource = "USER" | "CAD_MODEL" | "DEFAULT";
 export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
 /**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "FeatureRole".
+ */
+export type FeatureRole =
+  | "MOUNTING_FACE"
+  | "SEALING_FACE"
+  | "BEARING_BORE"
+  | "CENTRAL_BORE"
+  | "BEARING_SEAT"
+  | "SHOULDER_FACE"
+  | "CLEARANCE_HOLES"
+  | "DOWEL_HOLE"
+  | "TAPPED_HOLE"
+  | "NONE";
+export type FaceId = string | null;
+export type FeatureId = string | null;
+/**
+ * user-set / confirmed functional roles, keyed by GeometryIR id
+ */
+export type FeatureRoles = RoleOverride[];
+/**
  * sharp-edge break value, e.g. as specified
  */
 export type EdgeBreak = string | null;
@@ -57,8 +78,6 @@ export type ThreadClass = string | null;
  */
 export type BasicDimensions = string[];
 export type Letter = string;
-export type FaceId = string | null;
-export type FeatureId = string | null;
 export type Datums = Datum[];
 /**
  * print the standard edge note (user choice)
@@ -131,10 +150,14 @@ export type FeatureId1 = string;
 export type Threads = ThreadCallout[];
 export type CandidateId = string;
 /**
+ * FIT: ISO 286 tolerance class, e.g. H7 (hole) or h6 (shaft)
+ */
+export type Fit = string | null;
+/**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "ToleranceKind".
  */
-export type ToleranceKind = "SYMMETRIC" | "DEVIATION" | "LIMITS";
+export type ToleranceKind = "SYMMETRIC" | "DEVIATION" | "LIMITS" | "FIT";
 /**
  * DEVIATION/LIMITS: lower deviation (signed)
  */
@@ -198,6 +221,10 @@ export type Weight = string | null;
  */
 export type ViewFrame = "Z_UP" | "Y_UP";
 /**
+ * RULES: projected_views is the pool the rule set picks the minimum from, and the pictorial primary view is added only when an isometric trigger fires; MANUAL: views exactly as chosen
+ */
+export type ViewSelection = "RULES" | "MANUAL";
+/**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "DisplayStyle".
  */
@@ -255,6 +282,11 @@ export type SheetSize1 = "A0" | "A1" | "A2" | "A3" | "A4";
  * via the `definition` "ViewFrame".
  */
 export type ViewFrame1 = "Z_UP" | "Y_UP";
+/**
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "ViewSelection".
+ */
+export type ViewSelection1 = "RULES" | "MANUAL";
 
 export interface DrawingSettings {
   annotations: AnnotationPreferences;
@@ -263,6 +295,7 @@ export interface DrawingSettings {
   drawing_kind: DrawingKind;
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
+  feature_roles: FeatureRoles;
   general_notes: GeneralNotes;
   manufacturing: ManufacturingAnnotations;
   orthographic_display_style: DisplayStyle;
@@ -273,6 +306,7 @@ export interface DrawingSettings {
   sheet: Sheet;
   title_block: TitleBlock;
   view_frame: ViewFrame;
+  view_selection: ViewSelection;
 }
 export interface AnnotationPreferences {
   center_marks: CenterMarks;
@@ -311,6 +345,26 @@ export interface EngineeringField {
   source: InfoSource | null;
   status: Status;
   value: Value;
+}
+/**
+ * A user's role for one face / feature (also used to confirm a guess).
+ *
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "RoleOverride".
+ */
+export interface RoleOverride {
+  role: FeatureRole;
+  target: Target;
+}
+/**
+ * A GeometryIR feature (hole, boss, pattern, slot, pocket …) or a single face.
+ *
+ * This interface was referenced by `DrawingSettings`'s JSON-Schema
+ * via the `definition` "Target".
+ */
+export interface Target {
+  face_id: FaceId;
+  feature_id: FeatureId;
 }
 /**
  * The default numbered drawing notes (on by default).
@@ -352,16 +406,6 @@ export interface ManufacturingAnnotations {
 export interface Datum {
   letter: Letter;
   target: Target;
-}
-/**
- * A GeometryIR feature (hole, boss, pattern, slot, pocket …) or a single face.
- *
- * This interface was referenced by `DrawingSettings`'s JSON-Schema
- * via the `definition` "Target".
- */
-export interface Target {
-  face_id: FaceId;
-  feature_id: FeatureId;
 }
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
@@ -424,6 +468,7 @@ export interface ThreadCallout {
  */
 export interface DimensionTolerance {
   candidate_id: CandidateId;
+  fit: Fit;
   kind: ToleranceKind;
   lower: Lower;
   upper: Upper;

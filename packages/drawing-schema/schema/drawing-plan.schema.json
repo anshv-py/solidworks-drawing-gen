@@ -202,6 +202,20 @@
           "title": "Candidate Id",
           "type": "string"
         },
+        "fit": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z]{1,2}\\d{1,2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "FIT: ISO 286 tolerance class, e.g. H7 (hole) or h6 (shaft)",
+          "title": "Fit"
+        },
         "kind": {
           "$ref": "#/$defs/ToleranceKind"
         },
@@ -221,7 +235,8 @@
         "candidate_id",
         "kind",
         "upper",
-        "lower"
+        "lower",
+        "fit"
       ],
       "title": "DimensionTolerance",
       "type": "object"
@@ -419,6 +434,22 @@
       ],
       "title": "FeatureNote",
       "type": "object"
+    },
+    "FeatureRole": {
+      "enum": [
+        "MOUNTING_FACE",
+        "SEALING_FACE",
+        "BEARING_BORE",
+        "CENTRAL_BORE",
+        "BEARING_SEAT",
+        "SHOULDER_FACE",
+        "CLEARANCE_HOLES",
+        "DOWEL_HOLE",
+        "TAPPED_HOLE",
+        "NONE"
+      ],
+      "title": "FeatureRole",
+      "type": "string"
     },
     "GdtCharacteristic": {
       "enum": [
@@ -798,6 +829,64 @@
       ],
       "title": "RevisionEntry",
       "type": "object"
+    },
+    "RoleAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "description": "1 for USER; the inference's confidence otherwise",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "the feature in words, e.g. '\u00d840.00 THRU hole'",
+          "title": "Description",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "role": {
+          "$ref": "#/$defs/FeatureRole"
+        },
+        "rule": {
+          "default": "",
+          "description": "rule-set reference of the treatment, e.g. 'EX 4 F2'",
+          "title": "Rule",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/RoleSource"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        }
+      },
+      "required": [
+        "target",
+        "role",
+        "source",
+        "confidence",
+        "description",
+        "reasons",
+        "rule"
+      ],
+      "title": "RoleAssignment",
+      "type": "object"
+    },
+    "RoleSource": {
+      "enum": [
+        "INFERRED",
+        "USER"
+      ],
+      "title": "RoleSource",
+      "type": "string"
     },
     "ScaleSystem": {
       "description": "Scales the layout may choose from when the scale is AUTO.",
@@ -1290,7 +1379,8 @@
       "enum": [
         "SYMMETRIC",
         "DEVIATION",
-        "LIMITS"
+        "LIMITS",
+        "FIT"
       ],
       "title": "ToleranceKind",
       "type": "string"
@@ -1353,6 +1443,56 @@
       ],
       "title": "ViewSpec",
       "type": "object"
+    },
+    "ViewTrigger": {
+      "additionalProperties": false,
+      "description": "A view rule of the rule set that fired for this part.",
+      "properties": {
+        "feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Feature Ids",
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/ViewTriggerKind"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "rule": {
+          "title": "Rule",
+          "type": "string"
+        },
+        "satisfied": {
+          "description": "the drawing contains what the rule asks for",
+          "title": "Satisfied",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "rule",
+        "message",
+        "feature_ids",
+        "satisfied"
+      ],
+      "title": "ViewTrigger",
+      "type": "object"
+    },
+    "ViewTriggerKind": {
+      "enum": [
+        "ISOMETRIC",
+        "SECTION",
+        "DETAIL",
+        "AUXILIARY",
+        "BREAK",
+        "THICKNESS_NOTE"
+      ],
+      "title": "ViewTriggerKind",
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -1462,6 +1602,13 @@
         }
       }
     },
+    "feature_roles": {
+      "items": {
+        "$ref": "#/$defs/RoleAssignment"
+      },
+      "title": "Feature Roles",
+      "type": "array"
+    },
     "general_notes": {
       "$ref": "#/$defs/GeneralNotes",
       "default": {
@@ -1540,6 +1687,28 @@
       "default": null,
       "title": "Rationale"
     },
+    "rule_notes": {
+      "description": "sheet notes required by a rule (e.g. THICKNESS of a one-view part)",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Rule Notes",
+      "type": "array"
+    },
+    "rule_set": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "id and version of the rule set that planned the drawing",
+      "title": "Rule Set"
+    },
     "schema_version": {
       "const": "0.1.0",
       "default": "0.1.0",
@@ -1601,6 +1770,13 @@
     "view_frame": {
       "$ref": "#/$defs/ViewFrame",
       "default": "Z_UP"
+    },
+    "view_triggers": {
+      "items": {
+        "$ref": "#/$defs/ViewTrigger"
+      },
+      "title": "View Triggers",
+      "type": "array"
     }
   },
   "required": [
@@ -1626,7 +1802,11 @@
     "general_notes",
     "pictorial_style",
     "uncertainties",
-    "rationale"
+    "rationale",
+    "rule_set",
+    "feature_roles",
+    "view_triggers",
+    "rule_notes"
   ],
   "title": "DrawingPlan",
   "type": "object"

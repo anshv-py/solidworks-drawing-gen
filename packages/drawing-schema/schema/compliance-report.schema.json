@@ -1,0 +1,271 @@
+{
+  "$defs": {
+    "ComplianceItem": {
+      "additionalProperties": false,
+      "properties": {
+        "details": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Details",
+          "type": "array"
+        },
+        "hard_blocker": {
+          "title": "Hard Blocker",
+          "type": "boolean"
+        },
+        "number": {
+          "description": "item of the Universal Mandatory Minimum (EX 1)",
+          "maximum": 12,
+          "minimum": 1,
+          "title": "Number",
+          "type": "integer"
+        },
+        "requirement": {
+          "title": "Requirement",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ComplianceStatus"
+        }
+      },
+      "required": [
+        "number",
+        "requirement",
+        "hard_blocker",
+        "status",
+        "details"
+      ],
+      "title": "ComplianceItem",
+      "type": "object"
+    },
+    "ComplianceStatus": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "WARN",
+        "NOT_APPLICABLE"
+      ],
+      "title": "ComplianceStatus",
+      "type": "string"
+    },
+    "FeatureRole": {
+      "enum": [
+        "MOUNTING_FACE",
+        "SEALING_FACE",
+        "BEARING_BORE",
+        "CENTRAL_BORE",
+        "BEARING_SEAT",
+        "SHOULDER_FACE",
+        "CLEARANCE_HOLES",
+        "DOWEL_HOLE",
+        "TAPPED_HOLE",
+        "NONE"
+      ],
+      "title": "FeatureRole",
+      "type": "string"
+    },
+    "RoleAssignment": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "description": "1 for USER; the inference's confidence otherwise",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "description": {
+          "description": "the feature in words, e.g. '\u00d840.00 THRU hole'",
+          "title": "Description",
+          "type": "string"
+        },
+        "reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "role": {
+          "$ref": "#/$defs/FeatureRole"
+        },
+        "rule": {
+          "default": "",
+          "description": "rule-set reference of the treatment, e.g. 'EX 4 F2'",
+          "title": "Rule",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/RoleSource"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        }
+      },
+      "required": [
+        "target",
+        "role",
+        "source",
+        "confidence",
+        "description",
+        "reasons",
+        "rule"
+      ],
+      "title": "RoleAssignment",
+      "type": "object"
+    },
+    "RoleSource": {
+      "enum": [
+        "INFERRED",
+        "USER"
+      ],
+      "title": "RoleSource",
+      "type": "string"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "description": "A GeometryIR feature (hole, boss, pattern, slot, pocket \u2026) or a single face.",
+      "properties": {
+        "face_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Face Id"
+        },
+        "feature_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Feature Id"
+        }
+      },
+      "required": [
+        "feature_id",
+        "face_id"
+      ],
+      "title": "Target",
+      "type": "object"
+    },
+    "ViewTrigger": {
+      "additionalProperties": false,
+      "description": "A view rule of the rule set that fired for this part.",
+      "properties": {
+        "feature_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Feature Ids",
+          "type": "array"
+        },
+        "kind": {
+          "$ref": "#/$defs/ViewTriggerKind"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "rule": {
+          "title": "Rule",
+          "type": "string"
+        },
+        "satisfied": {
+          "description": "the drawing contains what the rule asks for",
+          "title": "Satisfied",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "rule",
+        "message",
+        "feature_ids",
+        "satisfied"
+      ],
+      "title": "ViewTrigger",
+      "type": "object"
+    },
+    "ViewTriggerKind": {
+      "enum": [
+        "ISOMETRIC",
+        "SECTION",
+        "DETAIL",
+        "AUXILIARY",
+        "BREAK",
+        "THICKNESS_NOTE"
+      ],
+      "title": "ViewTriggerKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assumed_roles": {
+      "description": "roles guessed from geometry - confirm or override each",
+      "items": {
+        "$ref": "#/$defs/RoleAssignment"
+      },
+      "title": "Assumed Roles",
+      "type": "array"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ComplianceItem"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "releasable": {
+      "description": "no hard blocker failed",
+      "title": "Releasable",
+      "type": "boolean"
+    },
+    "rule_set": {
+      "description": "id and version of the rule set that produced the drawing",
+      "title": "Rule Set",
+      "type": "string"
+    },
+    "stamp": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "text stamped on the sheet when not releasable",
+      "title": "Stamp"
+    },
+    "view_triggers": {
+      "items": {
+        "$ref": "#/$defs/ViewTrigger"
+      },
+      "title": "View Triggers",
+      "type": "array"
+    }
+  },
+  "required": [
+    "rule_set",
+    "items",
+    "assumed_roles",
+    "view_triggers",
+    "releasable",
+    "stamp"
+  ],
+  "title": "ComplianceReport",
+  "type": "object"
+}

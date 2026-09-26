@@ -43,6 +43,7 @@ from drawing_schema import (
     ViewFrame,
     ViewOrientation,
 )
+from drawing_schema.compliance import ComplianceReport
 from drawing_schema.qa import QaReport
 from drawing_schema.settings import DrawingSettings
 
@@ -111,8 +112,8 @@ def _plan(storage: Storage, model: CadModel, settings: DrawingSettings):
 
 
 def _check_annotations(storage: Storage, model: CadModel, settings: DrawingSettings) -> None:
-    """User annotations must match this part; reject before queuing instead of failing later."""
-    if settings.manufacturing.is_empty:
+    """User annotations and role overrides must match this part; reject before queuing."""
+    if settings.manufacturing.is_empty and not settings.feature_roles:
         return
     _, planned = _plan(storage, model, settings)
     if planned.errors:
@@ -134,7 +135,7 @@ def annotation_targets(
     if model.status != ModelStatus.ANALYZED:
         raise Conflict(f"model is {model.status}; analyze it first", code="MODEL_NOT_ANALYZED")
     ir, planned = _plan(storage, model, body.settings.model_copy(update={"manufacturing": type(
-        body.settings.manufacturing)()}))
+        body.settings.manufacturing)(threads=body.settings.manufacturing.threads)}))
     by_id = {c.id: c for c in planned.candidates}
     dims = [AnnotationDimension(id=s.candidate_id, text=by_id[s.candidate_id].text,
                                 kind=by_id[s.candidate_id].kind.value)
@@ -153,6 +154,8 @@ def annotation_targets(
         datum_suggestion=[SuggestedDatum(letter=d.letter, target=d.target, feature=describe_target(ir, d.target),
                                          reasons=d.reasons) for d in suggestion],
         datum_cautions=cautions,
+        rule_set=planned.plan.rule_set,
+        roles=planned.plan.feature_roles,
     )
 
 
@@ -186,13 +189,47 @@ def get_drawing(
     manifest = json.loads((d / "manifest.json").read_text()) if (d / "manifest.json").exists() else {}
     qa = QaReport.model_validate_json((d / "qa_report.json").read_text()) if (d / "qa_report.json").exists() else None
     downloads = [fmt for fmt, name in FORMATS.items() if (d / name).exists()] if manifest.get("qa_passed") else []
+    compliance = (ComplianceReport.model_validate_json((d / "compliance.json").read_text())
+                  if (d / "compliance.json").exists() else None)
+    release = json.loads((d / "release.json").read_text()) if (d / "release.json").exists() else None
     return DrawingOut(
         id=job.id, model_id=job.model_id, job=JobOut.from_row(job),
         settings=DrawingSettings.model_validate_json((d / "settings.json").read_text()),
         passed=manifest.get("qa_passed"), scale=manifest.get("scale"), generator=manifest.get("generator"),
         solidworks=bool(manifest.get("solidworks", False)), downloads=downloads,
-        unavailable_formats=UNAVAILABLE, qa=qa,
+        unavailable_formats=UNAVAILABLE, qa=qa, compliance=compliance,
+        released=release is not None, released_at=release.get("released_at") if release else None,
     )
+
+
+@router.post("/{drawing_id}/release", response_model=DrawingOut)
+def release_drawing(
+    drawing_id: str,
+    session: Session = Depends(get_session),
+    storage: Storage = Depends(get_storage),
+    principal: Principal = Depends(get_principal),
+) -> DrawingOut:
+    """Release the drawing for manufacture (EX 1 gate rule). Refused while QA failed or any hard blocker
+    of the compliance report fails; generation and downloads are never blocked by the gate."""
+    job = get_drawing_job(session, drawing_id, principal)
+    d = storage.path("drawings", job.id)
+    if job.state != JobState.COMPLETED or not (d / "compliance.json").exists():
+        raise Conflict("the drawing has not been generated", code="JOB_NOT_COMPLETE")
+    manifest = json.loads((d / "manifest.json").read_text())
+    if not manifest.get("qa_passed"):
+        raise Conflict("the drawing failed QA and cannot be released", code="RELEASE_BLOCKED")
+    compliance = ComplianceReport.model_validate_json((d / "compliance.json").read_text())
+    if not compliance.releasable:
+        raise Conflict("not releasable - hard blockers fail: " + "; ".join(
+            f"{i.number} {i.requirement}" + (f" ({'; '.join(i.details)})" if i.details else "")
+            for i in compliance.blocking), code="RELEASE_BLOCKED")
+    if not (d / "release.json").exists():
+        from datetime import UTC, datetime
+
+        (d / "release.json").write_text(json.dumps({
+            "released_at": datetime.now(UTC).isoformat(timespec="seconds"), "rule_set": compliance.rule_set,
+            "by": principal.id}))
+    return get_drawing(drawing_id, session, storage, principal)
 
 
 @router.get("/{drawing_id}/plan")

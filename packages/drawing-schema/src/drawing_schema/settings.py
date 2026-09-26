@@ -21,8 +21,16 @@ from drawing_schema import (
     ViewOrientation,
     missing_manufacturing_information,
 )
+from enum import StrEnum
+
 from drawing_schema.pmi import GeneralNotes, ManufacturingAnnotations
+from drawing_schema.roles import RoleOverride
 from shared_types import StrictModel
+
+
+class ViewSelection(StrEnum):
+    RULES = "RULES"  # primary rule set: minimum orthographic views, isometric only when a trigger fires
+    MANUAL = "MANUAL"  # exactly primary_view + projected_views as chosen
 
 
 class DrawingSettings(StrictModel):
@@ -43,6 +51,13 @@ class DrawingSettings(StrictModel):
     manufacturing: ManufacturingAnnotations = ManufacturingAnnotations()
     general_notes: GeneralNotes = GeneralNotes()
     pictorial_style: DisplayStyle = DisplayStyle.SHADED_WITH_EDGES
+    view_selection: ViewSelection = Field(
+        default=ViewSelection.RULES,
+        description="RULES: projected_views is the pool the rule set picks the minimum from, and the pictorial "
+        "primary view is added only when an isometric trigger fires; MANUAL: views exactly as chosen",
+    )
+    feature_roles: list[RoleOverride] = Field(
+        default_factory=list, description="user-set / confirmed functional roles, keyed by GeometryIR id")
     default_gdt: bool = Field(
         default=True,
         description="when no datums / GD&T are supplied, apply the default datum reference frame and ISO 2768-mK "

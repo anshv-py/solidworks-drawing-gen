@@ -104,7 +104,9 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         blocks.append(("sheet notes", cd.notes_rect))
     if cd.revision_rect is not None:
         blocks.append(("revision table", cd.revision_rect))
-    drawn = [(f"view {vid}", vid, bb) for vid, bb in geo_bbox.items() if bb is not None]
+    if cd.stamp is not None:
+        blocks.append(("release stamp", cd.stamp.rect))
+    drawn =[(f"view {vid}", vid, bb) for vid, bb in geo_bbox.items() if bb is not None]
     drawn += [(f"dimension {d.id}", d.id, d.text_bbox) for d in cd.dimensions]
     drawn += [(f"annotations of {d.id}", d.id, d.extra_bbox) for d in cd.dimensions if d.extra_bbox]
     drawn += [(f"annotation {p.id}", p.id, p.bbox) for p in cd.pmi]
@@ -292,6 +294,20 @@ def _pmi_checks(R: _Report, plan: DrawingPlan, cd: CompiledDrawing, geo_bbox: di
     """User-supplied manufacturing annotations: every one is on the sheet exactly as supplied,
     and none of them collides with other drawing content."""
     m = plan.manufacturing
+    R.check("QA-PMI-004")
+    # the printed tolerance of every frame is the planned value (no rounding to the drawing's decimals)
+    printed = [(fs.cells[0].symbol, fs.cells[1].text) for d in [*cd.dimensions, *cd.pmi] for fs in d.frames
+               if len(fs.cells) > 1]
+    for i, fr in enumerate(m.frames, 1):
+        ok = False
+        for sym, text in printed:
+            try:
+                ok = ok or (sym == fr.characteristic.value and abs(float(text) - fr.tolerance) < 1e-9)
+            except (TypeError, ValueError):
+                continue
+        if not ok:
+            R.add("QA-PMI-004", QaSeverity.CRITICAL,
+                  f"frame {i} ({fr.characteristic.value} {fr.tolerance:g}) is not printed with its value")
     R.check("QA-PMI-001")
     for note in cd.notes:
         if note.startswith("UNPLACED:"):
@@ -327,7 +343,7 @@ def _pmi_checks(R: _Report, plan: DrawingPlan, cd: CompiledDrawing, geo_bbox: di
     for cid in m.basic_dimensions:
         if cid not in basic:
             R.add("QA-PMI-002", QaSeverity.CRITICAL, f"basic (TED) frame on {cid} is not shown", [cid])
-    marks = sum(1 for p in cd.pmi if p.kind == "SURFACE_FINISH")
+    marks = sum(1 for p in cd.pmi if p.kind == "SURFACE_FINISH") + sum(1 for d in cd.dimensions if d.finish)
     if marks != len(m.surface_finish_marks):
         R.add("QA-PMI-002", QaSeverity.CRITICAL,
               f"{marks} surface texture symbols on the sheet, {len(m.surface_finish_marks)} supplied")

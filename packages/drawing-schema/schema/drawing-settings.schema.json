@@ -146,6 +146,20 @@
           "title": "Candidate Id",
           "type": "string"
         },
+        "fit": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z]{1,2}\\d{1,2}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "FIT: ISO 286 tolerance class, e.g. H7 (hole) or h6 (shaft)",
+          "title": "Fit"
+        },
         "kind": {
           "$ref": "#/$defs/ToleranceKind"
         },
@@ -165,7 +179,8 @@
         "candidate_id",
         "kind",
         "upper",
-        "lower"
+        "lower",
+        "fit"
       ],
       "title": "DimensionTolerance",
       "type": "object"
@@ -363,6 +378,22 @@
       ],
       "title": "FeatureNote",
       "type": "object"
+    },
+    "FeatureRole": {
+      "enum": [
+        "MOUNTING_FACE",
+        "SEALING_FACE",
+        "BEARING_BORE",
+        "CENTRAL_BORE",
+        "BEARING_SEAT",
+        "SHOULDER_FACE",
+        "CLEARANCE_HOLES",
+        "DOWEL_HOLE",
+        "TAPPED_HOLE",
+        "NONE"
+      ],
+      "title": "FeatureRole",
+      "type": "string"
     },
     "GdtCharacteristic": {
       "enum": [
@@ -700,6 +731,24 @@
         "approved_by"
       ],
       "title": "RevisionEntry",
+      "type": "object"
+    },
+    "RoleOverride": {
+      "additionalProperties": false,
+      "description": "A user's role for one face / feature (also used to confirm a guess).",
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/FeatureRole"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        }
+      },
+      "required": [
+        "target",
+        "role"
+      ],
+      "title": "RoleOverride",
       "type": "object"
     },
     "ScaleSystem": {
@@ -1115,7 +1164,8 @@
       "enum": [
         "SYMMETRIC",
         "DEVIATION",
-        "LIMITS"
+        "LIMITS",
+        "FIT"
       ],
       "title": "ToleranceKind",
       "type": "string"
@@ -1142,6 +1192,14 @@
         "TRIMETRIC"
       ],
       "title": "ViewOrientation",
+      "type": "string"
+    },
+    "ViewSelection": {
+      "enum": [
+        "RULES",
+        "MANUAL"
+      ],
+      "title": "ViewSelection",
       "type": "string"
     }
   },
@@ -1243,6 +1301,14 @@
         }
       }
     },
+    "feature_roles": {
+      "description": "user-set / confirmed functional roles, keyed by GeometryIR id",
+      "items": {
+        "$ref": "#/$defs/RoleOverride"
+      },
+      "title": "Feature Roles",
+      "type": "array"
+    },
     "general_notes": {
       "$ref": "#/$defs/GeneralNotes",
       "default": {
@@ -1333,6 +1399,11 @@
     "view_frame": {
       "$ref": "#/$defs/ViewFrame",
       "default": "Z_UP"
+    },
+    "view_selection": {
+      "$ref": "#/$defs/ViewSelection",
+      "default": "RULES",
+      "description": "RULES: projected_views is the pool the rule set picks the minimum from, and the pictorial primary view is added only when an isometric trigger fires; MANUAL: views exactly as chosen"
     }
   },
   "required": [
@@ -1351,6 +1422,8 @@
     "manufacturing",
     "general_notes",
     "pictorial_style",
+    "view_selection",
+    "feature_roles",
     "default_gdt"
   ],
   "title": "DrawingSettings",

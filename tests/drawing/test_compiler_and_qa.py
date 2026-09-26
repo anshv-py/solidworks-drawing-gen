@@ -9,6 +9,7 @@ from drawing_schema.settings import DrawingSettings
 
 def compiled(analyzed, name, **settings):
     ir, _ = analyzed[name]
+    settings.setdefault("view_selection", "MANUAL")  # layout of the fixed three-view + isometric sheet
     r = plan_baseline(ir, DrawingSettings.model_validate(settings))
     return ir, r, compile_drawing(r.plan, r.candidates, ir)
 

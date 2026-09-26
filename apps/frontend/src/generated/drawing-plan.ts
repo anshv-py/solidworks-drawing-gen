@@ -43,6 +43,42 @@ export type InfoSource = "USER" | "CAD_MODEL" | "DEFAULT";
 export type Status = "SPECIFIED" | "UNSPECIFIED";
 export type Value = string | null;
 /**
+ * 1 for USER; the inference's confidence otherwise
+ */
+export type Confidence = number;
+/**
+ * the feature in words, e.g. 'Ø40.00 THRU hole'
+ */
+export type Description = string;
+export type Reasons = string[];
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "FeatureRole".
+ */
+export type FeatureRole =
+  | "MOUNTING_FACE"
+  | "SEALING_FACE"
+  | "BEARING_BORE"
+  | "CENTRAL_BORE"
+  | "BEARING_SEAT"
+  | "SHOULDER_FACE"
+  | "CLEARANCE_HOLES"
+  | "DOWEL_HOLE"
+  | "TAPPED_HOLE"
+  | "NONE";
+/**
+ * rule-set reference of the treatment, e.g. 'EX 4 F2'
+ */
+export type Rule = string;
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "RoleSource".
+ */
+export type RoleSource = "INFERRED" | "USER";
+export type FaceId = string | null;
+export type FeatureId1 = string | null;
+export type FeatureRoles = RoleAssignment[];
+/**
  * sharp-edge break value, e.g. as specified
  */
 export type EdgeBreak = string | null;
@@ -70,8 +106,6 @@ export type SourceSha256 = string;
  */
 export type BasicDimensions = string[];
 export type Letter = string;
-export type FaceId = string | null;
-export type FeatureId1 = string | null;
 export type Datums = Datum[];
 /**
  * print the standard edge note (user choice)
@@ -124,7 +158,7 @@ export type InspectionDimensions = string[];
 export type Notes = string[];
 export type ApprovedBy = string;
 export type Date = string;
-export type Description = string;
+export type Description1 = string;
 export type Revision = string;
 /**
  * @maxItems 12
@@ -144,10 +178,14 @@ export type FeatureId2 = string;
 export type Threads = ThreadCallout[];
 export type CandidateId1 = string;
 /**
+ * FIT: ISO 286 tolerance class, e.g. H7 (hole) or h6 (shaft)
+ */
+export type Fit = string | null;
+/**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ToleranceKind".
  */
-export type ToleranceKind = "SYMMETRIC" | "DEVIATION" | "LIMITS";
+export type ToleranceKind = "SYMMETRIC" | "DEVIATION" | "LIMITS" | "FIT";
 /**
  * DEVIATION/LIMITS: lower deviation (signed)
  */
@@ -175,6 +213,16 @@ export type Scale1 = string;
 export type ProjectedViews = ViewOrientation[];
 export type ProjectionMethod = "FIRST_ANGLE" | "THIRD_ANGLE";
 export type Rationale = string | null;
+/**
+ * sheet notes required by a rule (e.g. THICKNESS of a one-view part)
+ *
+ * @maxItems 8
+ */
+export type RuleNotes = string[];
+/**
+ * id and version of the rule set that planned the drawing
+ */
+export type RuleSet = string | null;
 export type SchemaVersion = "0.1.0";
 export type Id2 = string;
 export type Label1 = string;
@@ -234,6 +282,19 @@ export type Units = "mm";
  * Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
  */
 export type ViewFrame = "Z_UP" | "Y_UP";
+export type FeatureIds = string[];
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "ViewTriggerKind".
+ */
+export type ViewTriggerKind = "ISOMETRIC" | "SECTION" | "DETAIL" | "AUXILIARY" | "BREAK" | "THICKNESS_NOTE";
+export type Message1 = string;
+export type Rule1 = string;
+/**
+ * the drawing contains what the rule asks for
+ */
+export type Satisfied = boolean;
+export type ViewTriggers = ViewTrigger[];
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "DisplayStyle".
@@ -301,6 +362,7 @@ export interface DrawingPlan {
   drawing_kind: DrawingKind;
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
+  feature_roles: FeatureRoles;
   general_notes: GeneralNotes;
   geometry: GeometryReference;
   manufacturing: ManufacturingAnnotations;
@@ -310,6 +372,8 @@ export interface DrawingPlan {
   projected_views: ProjectedViews;
   projection_method: ProjectionMethod;
   rationale: Rationale;
+  rule_notes: RuleNotes;
+  rule_set: RuleSet;
   schema_version: SchemaVersion;
   sections: Sections;
   sheet: Sheet;
@@ -317,6 +381,7 @@ export interface DrawingPlan {
   uncertainties: Uncertainties;
   units: Units;
   view_frame: ViewFrame;
+  view_triggers: ViewTriggers;
 }
 export interface AnnotationPreferences {
   center_marks: CenterMarks;
@@ -380,6 +445,29 @@ export interface EngineeringField {
   value: Value;
 }
 /**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "RoleAssignment".
+ */
+export interface RoleAssignment {
+  confidence: Confidence;
+  description: Description;
+  reasons: Reasons;
+  role: FeatureRole;
+  rule: Rule;
+  source: RoleSource;
+  target: Target;
+}
+/**
+ * A GeometryIR feature (hole, boss, pattern, slot, pocket …) or a single face.
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "Target".
+ */
+export interface Target {
+  face_id: FaceId;
+  feature_id: FeatureId1;
+}
+/**
  * The default numbered drawing notes (on by default).
  *
  * Notes are assembled deterministically from these user entries, the rest of the drawing
@@ -429,16 +517,6 @@ export interface Datum {
   target: Target;
 }
 /**
- * A GeometryIR feature (hole, boss, pattern, slot, pocket …) or a single face.
- *
- * This interface was referenced by `DrawingPlan`'s JSON-Schema
- * via the `definition` "Target".
- */
-export interface Target {
-  face_id: FaceId;
-  feature_id: FeatureId1;
-}
-/**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "FeatureNote".
  */
@@ -473,7 +551,7 @@ export interface DatumReference {
 export interface RevisionEntry {
   approved_by: ApprovedBy;
   date: Date;
-  description: Description;
+  description: Description1;
   revision: Revision;
 }
 /**
@@ -499,6 +577,7 @@ export interface ThreadCallout {
  */
 export interface DimensionTolerance {
   candidate_id: CandidateId1;
+  fit: Fit;
   kind: ToleranceKind;
   lower: Lower;
   upper: Upper;
@@ -567,6 +646,19 @@ export interface TitleBlock {
 export interface PlanUncertainty {
   message: Message;
   related_ids: RelatedIds;
+}
+/**
+ * A view rule of the rule set that fired for this part.
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "ViewTrigger".
+ */
+export interface ViewTrigger {
+  feature_ids: FeatureIds;
+  kind: ViewTriggerKind;
+  message: Message1;
+  rule: Rule1;
+  satisfied: Satisfied;
 }
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema

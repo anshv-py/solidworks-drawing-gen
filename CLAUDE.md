@@ -37,17 +37,36 @@ user drawing settings → DrawingPlan (deterministic planner) → plan validatio
 drawing compiler → executor (OCCT HLR + ezdxf; SolidWorks worker later for SLDDRW/DWG) →
 deterministic QA → repair (max `QA_MAX_RETRIES`, default 3) → PDF/DXF/SVG.
 
-Defaults: primary view **ISOMETRIC**, standard **ISO**, projection **FIRST
-ANGLE**, sheet **A3 LANDSCAPE**, units **mm**.
+Defaults: standard **ISO**, projection **FIRST ANGLE**, sheet **A3 LANDSCAPE**, units **mm**.
+
+## Primary drawing rule set (owner decision, 2026-09-26)
+
+`services/drawing-planner/src/drawing_planner/rules/` holds the owner's two rule documents
+(`manufacturing_drawing_rules.md` = RULES, `manufacturing_drawing_reference_examples.md` = EX, kept
+verbatim) and their executable form `drawing_rules.yaml`. It is the default configuration of every
+upload (`DrawingSettings.view_selection=RULES`):
+- views: the fewest orthographic views (RULES 1.1), an isometric only when a RULES 1.2 trigger fires;
+  section / detail / auxiliary / break triggers are detected and reported (drawn in later phases)
+- functional roles (mounting face, bearing bore / seat, clearance / dowel / tapped hole ...) are
+  inferred from geometry, always reported as "assumed role: X - confirm or override", overridable per
+  feature id (`feature_roles`); the role's fits (ISO 286 table), GD&T and finish from the rule set apply
+  with `source=DEFAULT`
+- compliance gate (EX 1): every drawing gets `compliance.json`; failing hard blockers stamp the sheet
+  NOT FOR MANUFACTURE and make `POST /api/drawings/{id}/release` refuse - generation and downloads are
+  never blocked
+Change rules in the YAML (with the RULES / EX reference), not in code. Phases: `docs/ROADMAP.md`.
 
 ## Never invent
 
 geometry · numerical dimensions · material · general tolerance · GD&T ·
 datum scheme · surface finish · heat treatment · coating · inspection
 requirements · manufacturing process. Use only GeometryIR and explicit user
-metadata; otherwise mark `UNSPECIFIED`. Sole exception (owner's decision): the default datum
-scheme + GD&T of `drawing_planner/gdt_defaults.py`, derived from a declared ISO 2768-mK and
-labelled `source=DEFAULT`, applied only when the user supplied none (`default_gdt`, switchable). Distinguish a **GEOMETRY DRAWING**
+metadata; otherwise mark `UNSPECIFIED`. Sole exception (owner's decisions): the default datum
+scheme + GD&T of `drawing_planner/gdt_defaults.py`, derived from a declared ISO 2768-mK, and the
+primary rule set's defaults (general tolerance, default finish, and the fits / GD&T / finish of each
+feature's *assumed* functional role), all labelled `source=DEFAULT`, reported in the compliance
+report, applied only when the user supplied none (`default_gdt`, switchable). Material, part number,
+revision, heat treatment, coating and inspection are still never invented. Distinguish a **GEOMETRY DRAWING**
 (default) from a **MANUFACTURING DRAWING** (only with supplied information).
 
 STEP gets the strongest guarantees (exact B-Rep). STL is tessellated: all

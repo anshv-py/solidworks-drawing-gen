@@ -25,6 +25,7 @@ def flange_ids(ir):
 def pmi_settings(ir, **extra) -> DrawingSettings:
     bottom, top, bore, boss, pattern = flange_ids(ir)
     return DrawingSettings.model_validate({
+        "view_selection": "MANUAL",
         "drawing_kind": "MANUFACTURING",
         "title_block": {"title": "Flange", "drawing_number": "FL-001", "revision": "A"},
         "engineering_information": {

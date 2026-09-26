@@ -17,6 +17,7 @@ def plan(analyzed, name, **settings):
     ir, _ = analyzed[name]
     settings.setdefault("default_gdt", False)
     settings["general_notes"] = {"style": "FULL", **settings.get("general_notes", {})}
+    settings.setdefault("view_selection", "MANUAL")
     return ir, plan_baseline(ir, DrawingSettings.model_validate(settings), filename=f"{name}.step")
 
 

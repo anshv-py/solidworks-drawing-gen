@@ -12,7 +12,7 @@ from drawing_schema.settings import DrawingSettings
 
 def compiled(analyzed, name, **sheet):
     ir, _ = analyzed[name]
-    r = plan_baseline(ir, DrawingSettings.model_validate({"sheet": sheet}))
+    r = plan_baseline(ir, DrawingSettings.model_validate({"sheet": sheet, "view_selection": "MANUAL"}))
     return compile_drawing(r.plan, r.candidates, ir)
 
 
@@ -45,7 +45,7 @@ def test_chosen_isometric_scale_is_used_and_labelled(analyzed):
 
 def test_scale_that_does_not_fit_fails_with_the_largest_that_does(analyzed):
     ir, _ = analyzed["flange"]
-    r = plan_baseline(ir, DrawingSettings.model_validate({"sheet": {"scale": "2:1"}}))
+    r = plan_baseline(ir, DrawingSettings.model_validate({"sheet": {"scale": "2:1"}, "view_selection": "MANUAL"}))
     with pytest.raises(LayoutError, match=r"chosen scale 2:1 - the largest scale that fits is 1:1\.5"):
         compile_drawing(r.plan, r.candidates, ir)
 
@@ -57,7 +57,7 @@ def test_unsupported_scale_is_rejected():
 
 
 def test_pipeline_never_changes_a_chosen_scale(geometry_files, models_dir, tmp_path):
-    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:2", "pictorial_scale": "1:1.5"}})
+    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:2", "pictorial_scale": "1:1.5"}, "view_selection": "MANUAL"})
     res = generate(geometry_files["flange"], models_dir / "flange.step", settings, tmp_path)
     assert res.passed and res.scale == "1:2"
 
@@ -78,10 +78,10 @@ def test_chosen_scale_keeps_the_default_gdt(geometry_files, models_dir, tmp_path
     names the largest scale that does."""
     from drawing_executor.pipeline import DrawingFailed
 
-    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:1"}})
+    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:1"}, "view_selection": "MANUAL"})
     with pytest.raises(DrawingFailed, match="largest scale that fits"):
         generate(geometry_files["enclosure"], models_dir / "enclosure.step", settings, tmp_path)
-    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:2"}})
+    settings = DrawingSettings.model_validate({"sheet": {"scale": "1:2"}, "view_selection": "MANUAL"})
     res = generate(geometry_files["plate_with_holes"], models_dir / "plate_with_holes.step", settings, tmp_path)
     plan = __import__("json").loads((tmp_path / "plan.json").read_text())
     assert res.passed and plan["manufacturing"]["frames"]

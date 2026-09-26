@@ -1,5 +1,6 @@
 import type { DrawingOut } from "../lib/api";
 import { downloadUrl, previewUrl } from "../lib/api";
+import CompliancePanel from "./CompliancePanel";
 
 const SEVERITY_STYLE: Record<string, string> = {
   CRITICAL: "bg-red-100 text-red-800",
@@ -7,7 +8,9 @@ const SEVERITY_STYLE: Record<string, string> = {
   MINOR: "bg-slate-100 text-slate-700",
 };
 
-export default function DrawingResult({ drawing, onRegenerate }: { drawing: DrawingOut; onRegenerate: () => void }) {
+export default function DrawingResult({ drawing, onRegenerate, onChange }: {
+  drawing: DrawingOut; onRegenerate: () => void; onChange: (d: DrawingOut) => void;
+}) {
   const qa = drawing.qa;
   const err = drawing.job.error;
   const qaRejected = err?.code === "QA_FAILED";
@@ -68,6 +71,7 @@ export default function DrawingResult({ drawing, onRegenerate }: { drawing: Draw
         )}
         {qa && <p className="mt-2 text-xs text-slate-400">{qa.checks_run.length} deterministic checks run.</p>}
       </div>
+      {!engineFailed && <CompliancePanel drawing={drawing} onChange={onChange} />}
     </div>
   );
 }

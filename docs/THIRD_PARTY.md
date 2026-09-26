@@ -8,6 +8,7 @@
 | FastAPI, Starlette, Pydantic, pydantic-settings, SQLAlchemy, Uvicorn | backend | MIT / BSD / MIT | |
 | psycopg 3 | PostgreSQL driver | LGPL-3.0 | dynamic use as a library |
 | NumPy | numerics | BSD-3-Clause | |
+| PyYAML | loads the drawing rule set (`drawing_rules.yaml`, `yaml.safe_load` only) | MIT | |
 | ezdxf 1.4 | DXF writing + DXF rendering (drawing add-on) | MIT | |
 | Liberation Sans (font, Debian `fonts-liberation`) | drawing text; installed in the Docker images | SIL OFL 1.1 | without any TrueType font the text would be blank: generation then fails with `FONT_MISSING` |
 | DejaVu Sans (font, Debian `fonts-dejavu-core`) | fallback font in the Docker images | Bitstream Vera licence (permissive) | |
