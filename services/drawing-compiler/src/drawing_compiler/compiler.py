@@ -84,6 +84,7 @@ SF_HEIGHT = 11.0  # ISO 1302 symbol (long leg 10 mm) + clearance
 SECTION_STROKE = 6.0  # thick end of the cutting plane (ISO 128-44)
 SECTION_END = 16.0  # room beyond the dimensions for the stroke, arrow and letter
 SECTION_LABEL = 8.0  # room below a section view for its A-A designation
+DETAIL_LABEL = 9.0  # room below a detail view for its "B (5:1)" label
 FINISH_TIP_X = 3.0  # symbol point from the left of its box (the short leg reaches 2.9 mm left)
 
 
@@ -767,6 +768,41 @@ class Compiler:
         if v.pictorial:
             v.margins = {"top": 2.0, "bottom": 2.0, "left": 2.0, "right": 2.0}
 
+    def _emit_details(self, s: float, pos, views: list, dims: list, anns: list, pmi: list) -> None:
+        """RULES 1.4 detail views: each in the clearest free space left on the sheet, its region circled
+        and lettered in the parent view. A detail that does not fit is reported, never forced."""
+        if not self.plan.detail_views:
+            return
+        placed = [v.outline for v in views]
+        placed += [d.text_bbox for d in dims] + [d.extra_bbox for d in dims if d.extra_bbox]
+        placed += [p.bbox for p in pmi]
+        ctx = {v.id: v for v in self.views}
+        for dv in self.plan.detail_views:
+            parent = next((v for v in views if v.id == dv.parent_view_id and not v.pictorial), None)
+            if parent is None or dv.center is None or dv.radius is None or dv.scale == "AUTO":
+                self.opt.notes.append(f"UNPLACED: detail {dv.label}")
+                continue
+            p = tuple(dv.center)
+            ds = scale_factor(dv.scale)
+            big = dv.radius * ds
+            spot = self._free_spot((big, big, big + DETAIL_LABEL, big), placed)
+            if spot is None:
+                self.opt.notes.append(f"UNPLACED: detail {dv.label} ({dv.scale}) - no free space on the sheet")
+                continue
+            (cx, cy), env = spot
+            outline = Rect(x0=cx - big, y0=cy - big, x1=cx + big, y1=cy + big)
+            views.append(CompiledView(
+                id=dv.id, orientation=parent.orientation, pictorial=False, eye=parent.eye, x_axis=parent.x_axis,
+                y_axis=parent.y_axis, scale=dv.scale, scale_factor=ds, model_center=p, sheet_center=_r((cx, cy)),
+                outline=outline, display_style=parent.display_style, label=f"{dv.label} ({dv.scale})",
+                label_at=_r((cx, cy - big - DETAIL_LABEL / 2)), detail_of=parent.id, clip_radius=dv.radius))
+            v = ctx[parent.id]
+            pc = self._sheet(v, s, parent.sheet_center, p)
+            anns.append(AnnotationOp(id=f"DET-{dv.label}", view_id=parent.id, kind=AnnotationKind.DETAIL_CIRCLE,
+                                     center=_r(pc), radius=round(dv.radius * s, 4), label=dv.label,
+                                     feature_ids=list(dv.covers or [dv.feature_id])))
+            placed.append(env)
+
     @staticmethod
     def _trace_horizontal(v: _ViewCtx) -> bool:
         n = v.trace[2]
@@ -1117,6 +1153,7 @@ class Compiler:
             pmi.extend(self._emit_groups(v, s, c, outline, taken))
             if self.plan.annotations.center_marks or self.plan.annotations.centerlines:
                 anns.extend(self._emit_annotations(v, s, c))
+        self._emit_details(s, pos, views, dims, anns, pmi)
         return CompiledDrawing(
             source_sha256=self.plan.geometry.source_sha256,
             drawing_kind=self.plan.drawing_kind,

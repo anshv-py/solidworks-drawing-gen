@@ -75,7 +75,43 @@
     },
     "DetailView": {
       "additionalProperties": false,
+      "description": "An enlarged circular region of ``parent_view_id`` (RULES 1.4), drawn in free space on the sheet\nand labelled \"B (5:1)\"; the region is circled and lettered in the parent view.",
       "properties": {
+        "center": {
+          "anyOf": [
+            {
+              "additionalItems": false,
+              "items": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "maxItems": 3,
+              "minItems": 3,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "region centre, derived from GeometryIR: the feature's outermost edge point in the parent view",
+          "title": "Center"
+        },
+        "covers": {
+          "description": "features shown enlarged by this detail",
+          "items": {
+            "type": "string"
+          },
+          "title": "Covers",
+          "type": "array"
+        },
         "feature_id": {
           "description": "region is centred on this GeometryIR feature",
           "title": "Feature Id",
@@ -94,6 +130,20 @@
           "title": "Parent View Id",
           "type": "string"
         },
+        "radius": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "region radius in model mm",
+          "title": "Radius"
+        },
         "scale": {
           "title": "Scale",
           "type": "string"
@@ -104,7 +154,10 @@
         "label",
         "parent_view_id",
         "feature_id",
-        "scale"
+        "scale",
+        "radius",
+        "center",
+        "covers"
       ],
       "title": "DetailView",
       "type": "object"

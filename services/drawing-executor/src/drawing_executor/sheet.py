@@ -48,3 +48,46 @@ def snap_extension(p: tuple[float, float], d: DimensionOp, polys: list[Polyline]
 
 def all_lines(v: ViewLines) -> list[Polyline]:
     return v.visible + v.hidden
+
+
+def clip_to_circle(lines: list[Polyline], r: float) -> list[Polyline]:
+    """Parts of the polylines inside the circle of radius ``r`` about the origin (detail views)."""
+    import math
+
+    out: list[Polyline] = []
+    for pl in lines:
+        cur: Polyline = []
+        for a, b in zip(pl, pl[1:]):
+            dx, dy = b[0] - a[0], b[1] - a[1]
+            aa = dx * dx + dy * dy
+            ins_a = a[0] ** 2 + a[1] ** 2 <= r * r
+            if aa < 1e-18:
+                continue
+            bb = 2 * (a[0] * dx + a[1] * dy)
+            cc = a[0] ** 2 + a[1] ** 2 - r * r
+            disc = bb * bb - 4 * aa * cc
+            if disc < 0:
+                if cur:
+                    out.append(cur)
+                    cur = []
+                continue
+            sq = math.sqrt(disc)
+            t0, t1 = max(0.0, (-bb - sq) / (2 * aa)), min(1.0, (-bb + sq) / (2 * aa))
+            if t0 >= t1:
+                if cur:
+                    out.append(cur)
+                    cur = []
+                continue
+            p0 = (a[0] + dx * t0, a[1] + dy * t0)
+            p1 = (a[0] + dx * t1, a[1] + dy * t1)
+            if not cur or not ins_a or t0 > 0:
+                if cur:
+                    out.append(cur)
+                cur = [p0]
+            cur.append(p1)
+            if t1 < 1.0:
+                out.append(cur)
+                cur = []
+        if len(cur) >= 2:
+            out.append(cur)
+    return [pl for pl in out if len(pl) >= 2]

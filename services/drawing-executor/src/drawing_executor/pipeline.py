@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from importlib import metadata
 from pathlib import Path
@@ -21,6 +21,7 @@ from pathlib import Path
 from drawing_compiler import CompileOptions, LayoutError, compile_drawing
 from drawing_compiler.compiler import scale_factor
 from drawing_planner import plan_baseline
+from drawing_planner.details import plan_details
 from drawing_planner.rule_set import load_rules
 from drawing_planner.view_rules import detail_triggers
 from drawing_qa import INCREASE_TIER_GAP, REDUCE_SCALE, Rendered, validate
@@ -33,7 +34,7 @@ from geometry_service.step_analysis import read_step
 from drawing_executor.dxf_writer import FONT, text_font_available, write_dxf
 from drawing_executor.hlr import hidden_line_removal, section_cut, section_loops, shaded_facets
 from drawing_executor.render import render
-from drawing_executor.sheet import snap_extension, to_sheet
+from drawing_executor.sheet import clip_to_circle, snap_extension, to_sheet
 
 Progress = Callable[[str, str, float], None]  # (state, message, percent)
 
@@ -118,6 +119,34 @@ def generate(
     report("GENERATING", "Importing STEP for hidden-line removal", 15)
     shape, _ = read_step(source_path)
     hlr_cache: dict[tuple, tuple] = {}
+
+    def draw(compiled) -> Rendered:
+        """OCCT hidden-line removal of every view (sections cut and hatched, details clipped), in sheet mm."""
+        lines, hatches = {}, {}
+        for v in compiled.views:
+            key = (v.orientation.value, v.display_style.value, v.cut_point, v.cut_normal, v.model_center)
+            if key not in hlr_cache:
+                src, loops = shape, []
+                if v.cut_point is not None:  # full section: the half behind the cutting plane, cut faces hatched
+                    src = section_cut(shape, v.cut_point, v.cut_normal)
+                    loops = section_loops(src, v.cut_point, v.cut_normal, v.model_center, v.eye, v.x_axis)
+                hl = hidden_line_removal(src, v.model_center, v.eye, v.x_axis,
+                                         with_hidden=v.display_style == "HIDDEN_LINES_VISIBLE")
+                # (shaded views: the faces hide what is behind them, so only visible edges are drawn)
+                hlr_cache[key] = (hl.visible, hl.hidden, loops)
+            vis, hid, loops = hlr_cache[key]
+            if v.clip_radius is not None:  # detail: the circular region around its centre
+                vis, hid = clip_to_circle(vis, v.clip_radius), clip_to_circle(hid, v.clip_radius)
+            lines[v.id] = {"visible": to_sheet(vis, v), "hidden": to_sheet(hid, v)}
+            if loops:
+                hatches[v.id] = [to_sheet(face, v) for face in loops]
+        snapped = {}
+        for d in compiled.dimensions:
+            if d.kind == "LINEAR":
+                polys = lines[d.view_id]["visible"] + lines[d.view_id]["hidden"]
+                snapped[d.id] = tuple(snap_extension(p, d, polys) if s else p for p, s in zip((d.p1, d.p2), d.snap))
+        return Rendered(lines=lines, snapped=snapped, hatches=hatches)
+
     opts = CompileOptions(generated_on=generated_on, stamp=stamp)
     compiled = qa = rendered = None
     iterations = 0
@@ -129,28 +158,7 @@ def generate(
         except LayoutError as exc:
             raise DrawingFailed("LAYOUT_FAILED", str(exc)) from exc
         report("GENERATING", f"Projecting views (iteration {iteration}, scale {compiled.scale})", 20 + 10 * iteration)
-        lines, hatches = {}, {}
-        for v in compiled.views:
-            key = (v.orientation.value, v.display_style.value, v.cut_point, v.cut_normal)
-            if key not in hlr_cache:
-                src, loops = shape, []
-                if v.cut_point is not None:  # full section: the half behind the cutting plane, cut faces hatched
-                    src = section_cut(shape, v.cut_point, v.cut_normal)
-                    loops = section_loops(src, v.cut_point, v.cut_normal, v.model_center, v.eye, v.x_axis)
-                hl = hidden_line_removal(src, v.model_center, v.eye, v.x_axis,
-                                         with_hidden=v.display_style == "HIDDEN_LINES_VISIBLE")
-                # (shaded views: the faces hide what is behind them, so only visible edges are drawn)
-                hlr_cache[key] = (hl.visible, hl.hidden, loops)
-            vis, hid, loops = hlr_cache[key]
-            lines[v.id] = {"visible": to_sheet(vis, v), "hidden": to_sheet(hid, v)}
-            if loops:
-                hatches[v.id] = [to_sheet(face, v) for face in loops]
-        snapped = {}
-        for d in compiled.dimensions:
-            if d.kind == "LINEAR":
-                polys = lines[d.view_id]["visible"] + lines[d.view_id]["hidden"]
-                snapped[d.id] = tuple(snap_extension(p, d, polys) if s else p for p, s in zip((d.p1, d.p2), d.snap))
-        rendered = Rendered(lines=lines, snapped=snapped, hatches=hatches)
+        rendered = draw(compiled)
 
         report("VALIDATING", f"Deterministic QA (iteration {iteration})", 30 + 10 * iteration)
         qa = validate(planned.plan, planned.candidates, ir, compiled, rendered, iteration=iteration)
@@ -178,14 +186,35 @@ def generate(
             opts.tier_gap += 3.0
 
     _, compiled, rendered, qa = best
+
+    # RULES 1.4: detail views, now that the scale is known (kept only if QA is not worse)
+    tight = {f.target.ref for f in planned.plan.manufacturing.frames
+             if f.tolerance < rules.views.detail_triggers.tight_tolerance_lt_mm}
+    det_triggers = detail_triggers(ir, rules, scale_factor(compiled.scale), tight) if planned.plan.rule_set else []
+    wanted = sorted({fid for t in det_triggers for fid in t.feature_ids})
+    details = plan_details(ir, planned.plan, planned.candidates, compiled.scale, wanted) if wanted else []
+    if details:
+        report("GENERATING", f"Adding {len(details)} detail view(s)", 75)
+        plan2 = planned.plan.model_copy(update={"detail_views": details})
+        try:
+            c2 = compile_drawing(plan2, planned.candidates, ir, replace(opts, max_scale=compiled.scale, notes=[]))
+            r2 = draw(c2)
+            qa2 = validate(plan2, planned.candidates, ir, c2, r2, iteration=iterations + 1)
+            if c2.scale == compiled.scale and (qa2.critical, qa2.major) <= (qa.critical, qa.major):
+                planned.plan, compiled, rendered, qa = plan2, c2, r2, qa2
+                (out_dir / "plan.json").write_text(planned.plan.model_dump_json(indent=2))
+        except LayoutError:
+            pass
+    covered = {fid for v in compiled.views if v.detail_of
+               for d in planned.plan.detail_views if d.id == v.id for fid in (d.covers or [d.feature_id])}
+    det_triggers = [t.model_copy(update={"satisfied": True}) if set(t.feature_ids) <= covered else t
+                    for t in det_triggers]
     (out_dir / "compiled.json").write_text(compiled.model_dump_json(indent=2))
     # what was actually drawn (sheet mm) - lets QA be re-run later without OCCT
     (out_dir / "rendered.json").write_text(json.dumps({"lines": rendered.lines, "snapped": rendered.snapped,
                                                         "hatches": rendered.hatches}))
     (out_dir / "qa_report.json").write_text(qa.model_dump_json(indent=2))
-    tight = {f.target.ref for f in planned.plan.manufacturing.frames
-             if f.tolerance < rules.views.detail_triggers.tight_tolerance_lt_mm}
-    compliance = gate(planned, qa=qa, extra_triggers=detail_triggers(ir, rules, scale_factor(compiled.scale), tight))
+    compliance = gate(planned, qa=qa, extra_triggers=det_triggers)
     if stamp and compliance.releasable:
         compliance = compliance.model_copy(update={"stamp": stamp})
     (out_dir / "compliance.json").write_text(compliance.model_dump_json(indent=2))

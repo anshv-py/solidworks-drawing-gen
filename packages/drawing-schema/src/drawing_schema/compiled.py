@@ -74,6 +74,8 @@ class CompiledView(StrictModel):
     label_at: Point2 | None = Field(default=None, description="centre of the view label (below the view)")
     cut_point: Vec3 | None = Field(default=None, description="section view: a point of the cutting plane (model)")
     cut_normal: Vec3 | None = Field(default=None, description="section view: plane normal toward the removed half")
+    detail_of: str | None = Field(default=None, description="detail view: the view it enlarges")
+    clip_radius: float | None = Field(default=None, description="detail view: region radius (model mm) around model_center")
 
 
 class FrameCell(StrictModel):
@@ -176,6 +178,7 @@ class AnnotationKind(StrEnum):
     CENTERLINE = "CENTERLINE"
     PITCH_CIRCLE = "PITCH_CIRCLE"
     SECTION_LINE = "SECTION_LINE"  # ISO 128-44 cutting plane: thick ends, arrows (direction of sight), letters
+    DETAIL_CIRCLE = "DETAIL_CIRCLE"  # region of a detail view, with its letter (ISO 128-44)
 
 
 class AnnotationOp(StrictModel):

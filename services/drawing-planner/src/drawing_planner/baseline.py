@@ -391,6 +391,10 @@ def plan_baseline(
         rationale += ("; default datums and GD&T (" + engineering.general_tolerance.value + "): "
                       if engineering.general_tolerance.status == "SPECIFIED" else "; default datums and GD&T: ")
         rationale += "; ".join(gdt.rationale)
+    if sections:
+        # view designations never reuse a datum letter on the same sheet
+        free = [c for c in "ABCDEFGHJKLMNPRSTUVWXYZ" if c not in {d.letter for d in manufacturing.datums}]
+        sections = [s.model_copy(update={"label": free[k]}) for k, s in enumerate(sections)]
     tb = settings.title_block
     cad_applied: list[str] = []
     if settings.use_cad_metadata:

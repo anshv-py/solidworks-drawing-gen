@@ -699,10 +699,13 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
                           dxfattribs={"layer": "SHADE", "true_color": ezdxf.colors.rgb2int((g - 8, g - 4, g))})
         lines = sheet_lines[view.id]
         _hatch(msp, (hatches or {}).get(view.id, []))
+        if view.clip_radius is not None:  # boundary of a detail view (thin)
+            msp.add_circle(view.sheet_center, view.clip_radius * view.scale_factor, dxfattribs={"layer": "DIM"})
         if view.label:  # a view at another scale ("SCALE 2:1") or a section ("A-A")
             o = view.outline
             at = view.label_at or ((o.x0 + o.x1) / 2, o.y0 - 5.0)
-            _text(msp, view.label, at, 5.0 if view.cut_point is not None else 2.5, "NOTES", "MC")
+            big = view.cut_point is not None or view.detail_of is not None
+            _text(msp, view.label, at, 5.0 if big else 2.5, "NOTES", "MC")
         for layer in ("hidden", "visible"):
             for pl in lines[layer]:
                 if len(pl) == 2:
@@ -712,6 +715,11 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
     for a in cd.annotations:
         if a.kind == AnnotationKind.SECTION_LINE:
             _section_line(msp, a)
+        elif a.kind == AnnotationKind.DETAIL_CIRCLE:
+            msp.add_circle(a.center, a.radius, dxfattribs={"layer": "DIM"})
+            k = math.sqrt(0.5)
+            _text(msp, a.label or "", (a.center[0] + (a.radius + 3.5) * k, a.center[1] + (a.radius + 3.5) * k),
+                  5.0, "NOTES", "MC")
         elif a.kind == AnnotationKind.PITCH_CIRCLE:
             msp.add_circle(a.center, a.radius, dxfattribs={"layer": "CENTER"})
         elif a.kind == AnnotationKind.CENTER_MARK:

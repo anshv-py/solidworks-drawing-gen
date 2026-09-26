@@ -46,9 +46,12 @@ def test_section_is_drawn_hatched_and_indicated(drawn):
     assert res.passed
     cd = CompiledDrawing.model_validate_json((out / "compiled.json").read_text())
     sec = next(v for v in cd.views if v.cut_point is not None)
-    assert sec.label == "A-A" and sec.display_style.value == "HIDDEN_LINES_REMOVED"
+    plan = DrawingPlan.model_validate_json((out / "plan.json").read_text())
+    letter = plan.sections[0].label
+    assert letter not in {d.letter for d in plan.manufacturing.datums}  # never a datum letter
+    assert sec.label == f"{letter}-{letter}" and sec.display_style.value == "HIDDEN_LINES_REMOVED"
     line = next(a for a in cd.annotations if a.kind.value == "SECTION_LINE")
-    assert line.label == "A" and line.view_id != sec.id and len(line.points) == 4
+    assert line.label == letter and line.view_id != sec.id and len(line.points) == 4
     rendered = json.loads((out / "rendered.json").read_text())
     assert rendered["hatches"][sec.id]  # cut faces found in the plane
     assert not rendered["lines"][sec.id]["hidden"]  # no hidden lines in a section

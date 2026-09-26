@@ -220,11 +220,19 @@ class SectionView(StrictModel):
 
 
 class DetailView(StrictModel):
+    """An enlarged circular region of ``parent_view_id`` (RULES 1.4), drawn in free space on the sheet
+    and labelled "B (5:1)"; the region is circled and lettered in the parent view."""
+
     id: str
     label: str = Field(pattern=r"^[A-Z]{1,2}$")
     parent_view_id: str
     feature_id: str = Field(description="region is centred on this GeometryIR feature")
     scale: Scale
+    radius: float | None = Field(default=None, gt=0, description="region radius in model mm")
+    center: tuple[float, float, float] | None = Field(
+        default=None, description="region centre, derived from GeometryIR: the feature's outermost edge point "
+                                  "in the parent view")
+    covers: list[str] = Field(default_factory=list, description="features shown enlarged by this detail")
 
 
 class DimensionPreferences(StrictModel):

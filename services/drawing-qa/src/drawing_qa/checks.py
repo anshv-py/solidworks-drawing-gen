@@ -128,7 +128,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
     R.check("QA-VIEW-002")
     for v in cd.views:
         bb = geo_bbox.get(v.id)
-        if v.pictorial or bb is None:
+        if v.pictorial or bb is None or v.detail_of:  # (a detail shows a region only)
             continue
         # HLR extents (OCCT) must equal the GeometryIR bounding box projected by the compiler
         tol = 0.05 * v.scale_factor + 0.01
@@ -154,8 +154,20 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
                    for a in cd.annotations):
             R.add("QA-SEC-001", QaSeverity.CRITICAL, f"cutting plane {letter}-{letter} is not shown in any view",
                   [v.id])
+    R.check("QA-DET-001")
+    # every detail shows geometry and its region is circled with the same letter in the view it enlarges
+    for v in cd.views:
+        if not v.detail_of:
+            continue
+        letter = (v.label or "").split(" ")[0]
+        circles = [a for a in cd.annotations if a.kind == AnnotationKind.DETAIL_CIRCLE and a.label == letter]
+        if not any(a.view_id == v.detail_of for a in circles):
+            R.add("QA-DET-001", QaSeverity.CRITICAL, f"detail {letter} is not circled in {v.detail_of}", [v.id])
+        drawn = rendered.lines.get(v.id, {})
+        if not (drawn.get("visible") or drawn.get("hidden")):
+            R.add("QA-DET-001", QaSeverity.CRITICAL, f"detail {letter} shows no geometry", [v.id])
     R.check("QA-VIEW-003")
-    front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT), None)
+    front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT and not v.detail_of), None)
     if front is not None:
         first = cd.projection_method == ProjectionMethod.FIRST_ANGLE
         expect = {  # orientation -> (axis, sign) of offset from FRONT
@@ -164,7 +176,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         }
         fx, fy = front.sheet_center
         for v in cd.views:
-            if v.orientation not in expect:
+            if v.orientation not in expect or v.detail_of:  # details float freely
                 continue
             axis, sign = expect[v.orientation]
             dx, dy = v.sheet_center[0] - fx, v.sheet_center[1] - fy
@@ -264,7 +276,8 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         marked = {fid for a in cd.annotations if a.kind == AnnotationKind.CENTER_MARK for fid in a.feature_ids}
         centres = [(a.view_id, a.center) for a in cd.annotations if a.kind == AnnotationKind.CENTER_MARK]
         for h in [f for f in ir.features if f.type == FeatureType.HOLE]:
-            seen = [v for v in cd.views if not v.pictorial and abs(sum(a * b for a, b in zip(v.eye, h.axis.direction))) > 1 - 1e-6]
+            seen = [v for v in cd.views if not v.pictorial and not v.detail_of
+                    and abs(sum(a * b for a, b in zip(v.eye, h.axis.direction))) > 1 - 1e-6]
             if not seen or h.id in marked:
                 continue
             ok = False

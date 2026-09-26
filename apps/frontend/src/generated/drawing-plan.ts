@@ -9,12 +9,24 @@ export type HoleCallouts = boolean;
  */
 export type CadMetadataApplied = string[];
 /**
+ * region centre, derived from GeometryIR: the feature's outermost edge point in the parent view
+ */
+export type Center = [number, number, number] | null;
+/**
+ * features shown enlarged by this detail
+ */
+export type Covers = string[];
+/**
  * region is centred on this GeometryIR feature
  */
 export type FeatureId = string;
 export type Id = string;
 export type Label = string;
 export type ParentViewId = string;
+/**
+ * region radius in model mm
+ */
+export type Radius = number | null;
 export type Scale = string;
 export type DetailViews = DetailView[];
 export type CandidateId = string;
@@ -394,14 +406,20 @@ export interface AnnotationPreferences {
   hole_callouts: HoleCallouts;
 }
 /**
+ * An enlarged circular region of ``parent_view_id`` (RULES 1.4), drawn in free space on the sheet
+ * and labelled "B (5:1)"; the region is circled and lettered in the parent view.
+ *
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "DetailView".
  */
 export interface DetailView {
+  center: Center;
+  covers: Covers;
   feature_id: FeatureId;
   id: Id;
   label: Label;
   parent_view_id: ParentViewId;
+  radius: Radius;
   scale: Scale;
 }
 /**
