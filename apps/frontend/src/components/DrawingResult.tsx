@@ -71,6 +71,17 @@ export default function DrawingResult({ drawing, onRegenerate, onChange }: {
         )}
         {qa && <p className="mt-2 text-xs text-slate-400">{qa.checks_run.length} deterministic checks run.</p>}
       </div>
+      {drawing.change_report && (
+        <div className="rounded-lg bg-white p-3 text-sm shadow-sm" data-testid="change-report">
+          <p className="font-medium">Revision {drawing.change_report.revision} - regenerated for the new CAD version</p>
+          <p className="mt-1 text-xs">{drawing.change_report.diff.summary}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {drawing.change_report.carried.length} annotation(s) carried to the changed features
+            {drawing.change_report.dropped.length > 0 && <> · <span className="text-red-700">
+              dropped (feature removed): {drawing.change_report.dropped.join(", ")}</span></>}
+          </p>
+        </div>
+      )}
       {!engineFailed && <CompliancePanel drawing={drawing} onChange={onChange} />}
     </div>
   );

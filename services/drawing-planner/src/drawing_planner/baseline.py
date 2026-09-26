@@ -267,6 +267,8 @@ def plan_baseline(
                 feature_view[feat.id] = facing[0]
         selections: list[DimensionSelection] = []
         uncertainties: list[PlanUncertainty] = []
+        # count of dims assigned per view — used to prefer less-loaded views when otherwise equal
+        view_load: dict[ViewOrientation, int] = {o: 0 for o in order}
         # callouts / radii / PCD first so their features' views are known for the linear dims
         ordered = sorted(kept, key=lambda c: (0 if c.view_rule == ViewRule.ALONG_AXIS else 1, c.priority, c.id))
         for c in ordered:
@@ -287,10 +289,16 @@ def plan_baseline(
             ):
                 choice = preferred[0]
             else:
-                choice = min(options, key=lambda o: (_entry_score(c, frames[o], ir), order.index(o)))
+                # among equally-good options (same entry score), prefer the view with fewer dims
+                # to spread the annotation load and prevent crowding on a single view
+                choice = min(
+                    options,
+                    key=lambda o: (_entry_score(c, frames[o], ir), view_load[o], order.index(o)),
+                )
             if c.view_rule == ViewRule.ALONG_AXIS:
                 for fid in c.feature_ids:
                     feature_view.setdefault(fid, choice)
+            view_load[choice] = view_load.get(choice, 0) + 1
             selections.append(DimensionSelection(candidate_id=c.id, view_id=view_id(choice)))
         return selections, uncertainties
 

@@ -32,6 +32,7 @@ Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 | Section views | RULES 1.3 triggers → full section in place of a view: OCCT cut, hatched cut faces, cutting plane with arrows and A-A letters |
 | Detail views | RULES 1.4 at the final scale: enlarged, circled regions around features too small to read |
 | Sheet metal | bends recognized; flat pattern (DIN 6935 bend allowance) drawn as its own view with bend lines (UP/DOWN, angle, radius) |
+| CAD versions | uploading a new version of a part regenerates its drawing automatically: changes found, your roles / annotations carried over, revision logged |
 | Compliance gate | 12-item Universal Mandatory Minimum per drawing; failing hard blockers stamp the sheet NOT FOR MANUFACTURE and block the explicit release step |
 | QA | 31 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3, best iteration kept); critical issues block export |
 | Exports | PDF, DXF (real DIMENSION entities), SVG, PNG preview - labelled "not produced by SolidWorks"; DWG/SLDDRW → 501 until the SolidWorks worker exists |

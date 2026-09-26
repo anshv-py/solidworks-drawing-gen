@@ -25,6 +25,7 @@ from typing import Protocol
 
 from cad_api.config import Settings
 from cad_api.db import CadModel, Database, Job, JobKind, JobState, ModelStatus
+from cad_api.services.revisions import start_revision_drawing
 from cad_api.services.storage import Storage
 
 log = logging.getLogger(__name__)
@@ -219,8 +220,23 @@ class LocalProcessRunner:
                 job.finished_at = datetime.now(UTC)
                 model = s.get(CadModel, model_id)
                 model.status, model.feature_count = ModelStatus.ANALYZED, int(out.result["feature_count"])
+                # a new CAD version: its drawing job is created in the same commit that completes the
+                # analysis, so nobody sees the analysis done without the regeneration queued (EX 2)
+                follow_up = None
+                try:
+                    follow_up = start_revision_drawing(s, self.storage, model)
+                except Exception:  # noqa: BLE001 - the analysis itself succeeded; report, do not fail it
+                    s.rollback()
+                    log.exception("revision drawing could not be started", extra={"model_id": model_id})
+                    job = s.get(Job, job_id)
+                    job.state, job.progress, job.message = JobState.COMPLETED, 100.0, "Analysis complete"
+                    job.finished_at = datetime.now(UTC)
+                    model = s.get(CadModel, model_id)
+                    model.status, model.feature_count = ModelStatus.ANALYZED, int(out.result["feature_count"])
                 s.commit()
             log.info("analysis completed", extra={"job_id": job_id, "model_id": model_id})
+            if follow_up:
+                self.submit(follow_up)
         else:
             self._fail_from(job_id, out, model_failed=True)
         self.storage.remove_job_dir(job_id)

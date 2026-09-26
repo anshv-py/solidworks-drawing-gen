@@ -140,3 +140,43 @@ def test_annotation_targets_and_invalid_annotations(client, models_dir):  # noqa
     ok = {"manufacturing": {"datums": [{"letter": "A", "target": {"face_id": face}}],
                             "tolerances": [{"candidate_id": "DIM-OVERALL-Z", "kind": "SYMMETRIC", "upper": 0.1}]}}
     assert client.post("/api/drawings/generate", json={"model_id": model["id"], "settings": ok}).status_code == 202
+
+
+@pytest.mark.slow
+def test_new_cad_version_regenerates_the_drawing_with_a_revision(client, models_dir):  # noqa: F811
+    """EX 2: a new version of a part is analysed -> its drawing is regenerated automatically, the user's
+    annotations re-pointed to the changed features, a revision logged and a change report stored."""
+    v1 = analyzed_model(client, models_dir / "plate_with_holes.step")
+    geo = client.get(f"/api/models/{v1['id']}/geometry").json()
+    bore = max((f for f in geo["features"] if f["type"] == "HOLE"), key=lambda f: f["diameter"])
+    settings = {"title_block": {"revision": "A"},
+                "feature_roles": [{"target": {"feature_id": bore["id"]}, "role": "BEARING_BORE"}]}
+    first = client.post("/api/drawings/generate", json={"model_id": v1["id"], "settings": settings}).json()
+    assert wait(client, first["drawing_id"], timeout=180)["state"] == "COMPLETED"
+
+    with open(models_dir / "plate_with_holes_rev_b.step", "rb") as fh:
+        v2 = client.post("/api/models/upload", files={"file": ("plate_with_holes.step", fh)},
+                         data={"previous_model_id": v1["id"]}).json()
+    assert v2["previous_model_id"] == v1["id"]
+    assert wait(client, client.post(f"/api/models/{v2['id']}/analyze").json()["job_id"])["state"] == "COMPLETED"
+    drawings = client.get(f"/api/models/{v2['id']}/drawings").json()
+    assert len(drawings) == 1  # started by the analysis, nobody asked
+    assert wait(client, drawings[0]["id"], timeout=180)["state"] == "COMPLETED"
+    d = client.get(f"/api/drawings/{drawings[0]['id']}").json()
+    rep = d["change_report"]
+    assert rep["previous_drawing_id"] == first["drawing_id"] and rep["revision"] == "B"
+    assert rep["diff"]["summary"] == "ADDED HOLE Ø5; RESIZED HOLE Ø22" and rep["dropped"] == []
+    new_bore = rep["diff"]["resized"][0][1]
+    assert d["settings"]["feature_roles"] == [{"target": {"feature_id": new_bore, "face_id": None},
+                                               "role": "BEARING_BORE"}]
+    revs = d["settings"]["manufacturing"]["revisions"]
+    assert [r["revision"] for r in revs] == ["A", "B"] and revs[1]["description"] == rep["diff"]["summary"]
+    assert d["settings"]["title_block"]["revision"] == "B"
+    eleven = next(i for i in d["compliance"]["items"] if i["number"] == 11)
+    assert eleven["status"] == "PASS"
+
+
+def test_previous_version_must_be_your_own_model(client, models_dir):  # noqa: F811
+    with open(models_dir / "plate_with_holes.step", "rb") as fh:
+        r = client.post("/api/models/upload", files={"file": ("p.step", fh)}, data={"previous_model_id": "nope"})
+    assert r.status_code == 404

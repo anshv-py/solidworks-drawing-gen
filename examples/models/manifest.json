@@ -309,6 +309,55 @@
       "step": "plate_with_holes.step",
       "stl": "plate_with_holes.stl"
     },
+    "plate_with_holes_rev_b": {
+      "expected": {
+        "bbox_size": [
+          120.0,
+          80.0,
+          10.0
+        ],
+        "expected_diff": {
+          "added": [
+            "HOLE d5"
+          ],
+          "removed": [],
+          "resized": [
+            "HOLE d20 -> d22"
+          ]
+        },
+        "holes": [
+          {
+            "count": 4,
+            "diameter": 8.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 22.0,
+            "through": true
+          },
+          {
+            "count": 1,
+            "diameter": 5.0,
+            "through": true
+          }
+        ],
+        "patterns": [
+          {
+            "count": 4,
+            "member_diameter": 8.0,
+            "pattern_type": "RECTANGULAR",
+            "pitches": [
+              50.0,
+              90.0
+            ]
+          }
+        ],
+        "revision_of": "plate_with_holes",
+        "volume": 89991.70405000953
+      },
+      "step": "plate_with_holes_rev_b.step"
+    },
     "pocketed_block": {
       "expected": {
         "bbox_size": [

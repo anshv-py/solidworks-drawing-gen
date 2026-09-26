@@ -199,6 +199,7 @@ def get_drawing(
         passed=manifest.get("qa_passed"), scale=manifest.get("scale"), generator=manifest.get("generator"),
         solidworks=bool(manifest.get("solidworks", False)), downloads=downloads,
         unavailable_formats=UNAVAILABLE, qa=qa, compliance=compliance,
+        change_report=json.loads((d / "change_report.json").read_text()) if (d / "change_report.json").exists() else None,
         released=release is not None, released_at=release.get("released_at") if release else None,
     )
 

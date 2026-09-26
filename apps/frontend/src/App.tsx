@@ -31,6 +31,7 @@ export default function App() {
   const [file, setFile] = useState<File | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const recovering = useRef<Promise<ModelOut> | null>(null);
+  const [awaitingRevision, setAwaitingRevision] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [ir, setIr] = useState<GeometryIR | null>(null);
   const [mesh, setMesh] = useState<PreviewMesh | null>(null);
@@ -57,8 +58,34 @@ export default function App() {
 
   useEffect(() => {
     if (!drawingJobId || !drawingJob || !TERMINAL.includes(drawingJob.state)) return;
-    api.drawing(drawingJobId).then((d) => { setDrawing(d); setTab("drawing"); }).catch(() => undefined);
+    api.drawing(drawingJobId).then((d) => {
+      setDrawing(d); setTab("drawing");
+      if (d.change_report) setSettings(d.settings); // carried roles / annotations and the new revision
+    }).catch(() => undefined);
   }, [drawingJobId, drawingJob]);
+
+  // a new CAD version: the server starts its drawing when the analysis finishes (EX 2)
+  useEffect(() => {
+    if (!awaitingRevision || job?.state !== "COMPLETED" || !model) return;
+    let live = true;
+    const poll = async () => {
+      for (let k = 0; k < 20 && live; k++) {
+        const list = await api.modelDrawings(model.id).catch(() => []);
+        if (list.length) {
+          setDrawingJobId(list[0]!.id);
+          setAwaitingRevision(false);
+          return;
+        }
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      if (live) {
+        setAwaitingRevision(false);
+        setNotice("The previous version had no finished drawing - generate one for this version.");
+      }
+    };
+    void poll();
+    return () => { live = false; };
+  }, [awaitingRevision, job?.state, model]);
 
   const onFile = async (file: File) => {
     setError(null); setNotice(null); setIr(null); setMesh(null); setSelected(null); setJobId(null);
@@ -100,6 +127,22 @@ export default function App() {
 
   const onModelLost = () => { recoverModel().catch((e: unknown) => setError(errorText(e))); };
 
+  const onNewVersion = async (next: File) => {
+    if (!model) return;
+    setError(null); setNotice(null); setIr(null); setMesh(null); setSelected(null); setJobId(null);
+    setDrawingJobId(null); setDrawing(null); setTab("model"); setFile(next);
+    try {
+      const m = await api.upload(next, model.id);
+      setModel(m);
+      setAwaitingRevision(true);
+      const { job_id } = await api.analyze(m.id);
+      setJobId(job_id);
+    } catch (e) {
+      setAwaitingRevision(false);
+      setError(errorText(e));
+    }
+  };
+
   const onGenerate = async () => {
     if (!model || !settings) return;
     setError(null); setDrawing(null);
@@ -133,7 +176,8 @@ export default function App() {
       </header>
       <main className="grid min-h-0 flex-1 grid-cols-[340px_1fr_380px] gap-3 p-3">
         <aside className="space-y-3 overflow-y-auto">
-          <UploadPanel disabled={busy || drawingBusy} onFile={onFile} />
+          <UploadPanel disabled={busy || drawingBusy} onFile={onFile}
+            onNewVersion={model && model.status !== "FAILED" ? onNewVersion : undefined} />
           {error && <p className="rounded bg-red-50 p-2 text-sm text-red-700" data-testid="error">{error}</p>}
           {notice && <p className="rounded bg-blue-50 p-2 text-sm text-blue-800" data-testid="notice">{notice}</p>}
           {job && <JobProgress job={job} />}

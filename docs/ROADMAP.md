@@ -14,7 +14,7 @@
 | R4 | Tapped holes from tap-drill sizes (default callouts, blind depth = drill − 3P), keyways (N9), face O-ring grooves (recognizer + EX 6 treatment), sections never carry hidden features' dimensions | ✅ done, tested (radial grooves, modelled threads: later) |
 | R5 | Auxiliary views (arrow method), shafts drawn horizontal, conventional breaks for long turned parts | ✅ done, tested (layout of horizontal-shaft annotations: long leaders - to improve) |
 | R6 | Sheet-metal bends + DIN 6935 flat pattern view (EX 5) | ✅ done, tested (branched parts, reliefs: later) |
-| R7 | Auto-regenerate on CAD change: feature diff, per-feature rule re-evaluation, role overrides persisted per model, revision log (EX 2) | ⏭ next |
+| R7 | New CAD version (`previous_model_id`) → automatic regeneration: feature diff, annotations / role overrides carried to the changed features, revision log, change report; UI "Upload new version" | ✅ done, tested |
 | 4 | Better annotation layout (leader routing around geometry, ordinate dims option) | planned |
 | 5 | Job system hardening: RQ runner, SSE progress, Alembic migrations, auth | planned |
 | 6 | SolidWorks Windows worker (verified API, STA, leasing) → SLDDRW + DWG | planned |

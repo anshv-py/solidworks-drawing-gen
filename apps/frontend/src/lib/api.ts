@@ -12,6 +12,7 @@ export interface ModelOut {
   sha256: string;
   status: "UPLOADED" | "ANALYZING" | "ANALYZED" | "FAILED";
   feature_count: number | null;
+  previous_model_id?: string | null;
   created_at: string;
 }
 
@@ -45,6 +46,15 @@ export interface DrawingDefaults {
   options: Record<string, string[]>;
 }
 
+export interface ChangeReport {
+  previous_model_id: string;
+  previous_drawing_id: string;
+  revision: string;
+  diff: { summary: string; added: string[]; removed: string[]; resized: string[][]; moved: string[][] };
+  carried: string[];
+  dropped: string[];
+}
+
 export interface DrawingOut {
   id: string;
   model_id: string;
@@ -58,6 +68,7 @@ export interface DrawingOut {
   unavailable_formats: Record<string, string>;
   qa: QaReport | null;
   compliance: ComplianceReport | null;
+  change_report: ChangeReport | null;
   released: boolean;
   released_at: string | null;
 }
@@ -103,11 +114,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  upload(file: File): Promise<ModelOut> {
+  upload(file: File, previousModelId?: string): Promise<ModelOut> {
     const body = new FormData();
     body.append("file", file);
+    if (previousModelId) body.append("previous_model_id", previousModelId);
     return request("/api/models/upload", { method: "POST", body });
   },
+  modelDrawings: (modelId: string) => request<JobOut[]>(`/api/models/${modelId}/drawings`),
   analyze: (modelId: string) =>
     request<{ job_id: string; job: JobOut }>(`/api/models/${modelId}/analyze`, { method: "POST" }),
   job: (jobId: string) => request<JobOut>(`/api/jobs/${jobId}`),

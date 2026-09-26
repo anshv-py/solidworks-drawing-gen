@@ -23,6 +23,7 @@ class ModelOut(BaseModel):
     sha256: str
     status: str
     feature_count: int | None
+    previous_model_id: str | None = None
     created_at: datetime
 
 
@@ -103,6 +104,8 @@ class DrawingOut(BaseModel):
     unavailable_formats: dict[str, str]
     qa: QaReport | None
     compliance: ComplianceReport | None = None
+    change_report: dict | None = Field(default=None, description="set when the drawing was regenerated for a new "
+                                       "CAD version: feature diff, carried / dropped annotations, revision")
     released: bool = False
     released_at: str | None = None
 

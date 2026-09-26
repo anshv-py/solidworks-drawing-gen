@@ -110,19 +110,33 @@ def chamfer(shape: Shape, dist: float, mids: list[tuple[float, float, float]]) -
 # Each builder returns (shape, expected) where expected holds construction values.
 
 
-def plate_with_holes():
+def plate_with_holes(center_d: float = 20.0, extra: tuple | None = None):
     L, W, T = 120.0, 80.0, 10.0
     corner = [(15.0, 15.0), (105.0, 15.0), (15.0, 65.0), (105.0, 65.0)]
     s = box(0, 0, 0, L, W, T)
     s = cut(s, *[cyl((x, y, -1), (0, 0, 1), 4.0, T + 2) for x, y in corner])
-    s = cut(s, cyl((60, 40, -1), (0, 0, 1), 10.0, T + 2))
+    s = cut(s, cyl((60, 40, -1), (0, 0, 1), center_d / 2, T + 2))
+    holes = [{"diameter": 8.0, "through": True, "count": 4}, {"diameter": center_d, "through": True, "count": 1}]
+    volume = L * W * T - 4 * math.pi * 16 * T - math.pi * (center_d / 2) ** 2 * T
+    if extra is not None:  # (x, y, d)
+        s = cut(s, cyl((extra[0], extra[1], -1), (0, 0, 1), extra[2] / 2, T + 2))
+        holes.append({"diameter": extra[2], "through": True, "count": 1})
+        volume -= math.pi * (extra[2] / 2) ** 2 * T
     exp = {
         "bbox_size": [L, W, T],
-        "volume": L * W * T - 4 * math.pi * 16 * T - math.pi * 100 * T,
-        "holes": [{"diameter": 8.0, "through": True, "count": 4}, {"diameter": 20.0, "through": True, "count": 1}],
+        "volume": volume,
+        "holes": holes,
         "patterns": [{"pattern_type": "RECTANGULAR", "count": 4, "member_diameter": 8.0, "pitches": [50.0, 90.0]}],
     }
     return clean(s), exp
+
+
+def plate_with_holes_rev_b():
+    """plate_with_holes, next CAD revision: centre bore d20 -> d22, a new d5 hole at (60, 15)."""
+    s, exp = plate_with_holes(22.0, (60.0, 15.0, 5.0))
+    exp["revision_of"] = "plate_with_holes"
+    exp["expected_diff"] = {"resized": ["HOLE d20 -> d22"], "added": ["HOLE d5"], "removed": []}
+    return s, exp
 
 
 def mounting_plate():
@@ -394,6 +408,7 @@ MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "angled_block": angled_block,
     "long_shaft": long_shaft,
     "sheet_bracket": sheet_bracket,
+    "plate_with_holes_rev_b": plate_with_holes_rev_b,
 }
 
 STL_MODELS = ("plate_with_holes", "flange", "bracket")

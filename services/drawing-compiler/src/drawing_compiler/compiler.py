@@ -748,6 +748,8 @@ class Compiler:
             sides[side].append((c, span, horizontal))
         v.tiers, v.margins, v.side_of, v.tier_off = {}, {}, {}, {}
         overhang = {"top": 0.0, "bottom": 0.0, "left": 0.0, "right": 0.0}
+        # clearance between adjacent text boxes on the same tier (arrows + extension lines need room)
+        TEXT_CLEARANCE = 1.5
         for side, items in sides.items():
             tiers: list[list[tuple[float, float]]] = []
             extra: list[float] = []
@@ -759,15 +761,18 @@ class Compiler:
                              + ([finish_width(a.finish) + 2] if a.finish else []))
                 lo, hi = span
                 mid = (lo + hi) / 2
-                occ = (min(lo, mid - tw / 2) - 1, max(hi, mid + tw / 2) + 1)
+                # use the larger of: text centered on dim midpoint, or the dim span itself
+                occ = (min(lo, mid - tw / 2) - TEXT_CLEARANCE, max(hi, mid + tw / 2) + TEXT_CLEARANCE)
                 ext = self._attach_extent(c.id, horizontal)
+                placed = False
                 for k, tier in enumerate(tiers):
                     if all(occ[1] <= a0 or occ[0] >= b0 for a0, b0 in tier):
                         tier.append(occ)
                         extra[k] = max(extra[k], ext)
                         v.tiers[c.id] = k
+                        placed = True
                         break
-                else:
+                if not placed:
                     tiers.append([occ])
                     extra.append(ext)
                     v.tiers[c.id] = len(tiers) - 1
@@ -814,10 +819,16 @@ class Compiler:
             v.margins["bottom"] += SECTION_LABEL
         if v.flat is not None:  # bend-line labels above the blank
             v.margins["top"] = max(v.margins["top"], 9.0)
-        # leader-note column on the right of the right-hand tiers
+        # leader-note column: anchor it from the tier edge (not the face-group edge) so
+        # face annotation boxes and the notes column share the same side band rather than stacking.
         if v.notes:
-            v.notes_x = u1 + v.margins["right"] + 8.0
-            v.margins["right"] = v.margins["right"] + 8.0 + max(n.width() for n in v.notes) + 3.0
+            NOTE_COL_GAP = 6.0
+            notes_max_w = max(n.width() for n in v.notes)
+            # start the column just outside the dimension tiers (tier_margin), not outside face groups
+            v.notes_x = u1 + v.tier_margin["right"] + NOTE_COL_GAP
+            # the right margin must cover both the face group and the note column
+            right_need = v.tier_margin["right"] + NOTE_COL_GAP + notes_max_w + 3.0
+            v.margins["right"] = max(v.margins["right"], right_need)
             total_h = sum(n.height() + NOTE_GAP * 2 for n in v.notes)
             extra_v = max(0.0, total_h - (w1 - w0)) / 2
             v.margins["top"] = max(v.margins["top"], extra_v)
@@ -1429,6 +1440,32 @@ class Compiler:
             tip = self._note_target(v, s, c, n, (x, self._sheet(v, s, c, ref)[1]))
             prov.append((tip[1], n))
         prov.sort(key=lambda t: (-t[0], t[1].id))
+
+        # pre-collect dim text bboxes in this view to avoid leader lines crossing them
+        dim_bboxes = []
+        for cand, horizontal, p1, p2 in v.dims:
+            side = v.side_of.get(cand.id)
+            if side is None:
+                continue
+            tier_idx = v.tiers.get(cand.id, 0)
+            offs = v.tier_off.get(side, [])
+            if tier_idx >= len(offs):
+                continue
+            off = offs[tier_idx]
+            line_at = {
+                "top": outline.y1 + off, "bottom": outline.y0 - off,
+                "left": outline.x0 - off, "right": outline.x1 + off,
+            }[side]
+            tw, th = self._label_width(cand), self._label_height(cand)
+            q1 = self._sheet(v, s, c, p1)
+            q2 = self._sheet(v, s, c, p2)
+            if horizontal:
+                mx = (q1[0] + q2[0]) / 2
+                dim_bboxes.append(Rect(x0=mx - tw / 2, y0=line_at + 1.0, x1=mx + tw / 2, y1=line_at + 1.0 + th))
+            else:
+                my = (q1[1] + q2[1]) / 2
+                dim_bboxes.append(Rect(x0=line_at - 1.0 - th, y0=my - tw / 2, x1=line_at - 1.0, y1=my + tw / 2))
+
         out, y_prev = [], None
         for y_tip, n in prov:
             y = y_tip
@@ -1436,6 +1473,16 @@ class Compiler:
                 # a stacked tolerance raises the label above its text line
                 raised = (self._label_height(n.cand) - TEXT_H) if n.cand is not None else 0.0
                 y = min(y, y_prev - NOTE_GAP * 2 - raised)
+            # push landing y away from existing dimension text boxes so the leader doesn't cross them
+            for bb in dim_bboxes:
+                if bb.x0 <= x <= bb.x1 + 2.0:
+                    # landing x is within a dim text box column — avoid the y band
+                    if bb.y0 - 1.0 <= y <= bb.y1 + 1.0:
+                        # shift above or below whichever is closer to original y_tip
+                        gap = NOTE_GAP
+                        above = bb.y1 + 1.0 + gap
+                        below = bb.y0 - 1.0 - gap - TEXT_H
+                        y = above if abs(above - y_tip) <= abs(below - y_tip) else below
             land = (round(x, 4), round(y, 4))
             tip = self._note_target(v, s, c, n, land)
             th, tw = text_height(n.text), text_width(n.text)

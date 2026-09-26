@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Header, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, UploadFile, status
 from fastapi.responses import FileResponse, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -34,6 +34,7 @@ def _get_model(session: Session, model_id: str, principal: Principal) -> CadMode
 @router.post("/upload", status_code=status.HTTP_201_CREATED, response_model=ModelOut)
 def upload_model(
     file: UploadFile = File(...),
+    previous_model_id: str | None = Form(default=None),
     content_length: int | None = Header(default=None),
     settings: Settings = Depends(get_settings_dep),
     storage: Storage = Depends(get_storage),
@@ -42,6 +43,8 @@ def upload_model(
 ) -> CadModel:
     if content_length is not None and content_length > settings.max_upload_bytes + 64 * 1024:
         raise FileTooLarge(f"file exceeds the {settings.max_upload_mb} MB limit")
+    if previous_model_id is not None:
+        _get_model(session, previous_model_id, principal)  # a version of the caller's own part
     filename = sanitize_filename(file.filename)
     declared = format_from_extension(filename)
     if declared is None:
@@ -64,6 +67,7 @@ def upload_model(
             size_bytes=tmp.stat().st_size,
             sha256=sha256_of(tmp),
             status=ModelStatus.UPLOADED,
+            previous_model_id=previous_model_id,
         )
         session.add(model)
         session.flush()
@@ -79,6 +83,17 @@ def get_model(
     model_id: str, session: Session = Depends(get_session), principal: Principal = Depends(get_principal)
 ) -> CadModel:
     return _get_model(session, model_id, principal)
+
+
+@router.get("/{model_id}/drawings", response_model=list[JobOut])
+def model_drawings(
+    model_id: str, session: Session = Depends(get_session), principal: Principal = Depends(get_principal)
+) -> list[JobOut]:
+    """Drawing jobs of a model, newest first (a new CAD version's drawing is started automatically)."""
+    model = _get_model(session, model_id, principal)
+    jobs = session.scalars(select(Job).where(Job.model_id == model.id, Job.kind == JobKind.DRAWING)
+                           .order_by(Job.created_at.desc())).all()
+    return [JobOut.from_row(j) for j in jobs]
 
 
 @router.post("/{model_id}/analyze", status_code=status.HTTP_202_ACCEPTED, response_model=AnalyzeAccepted)

@@ -3,12 +3,15 @@ import { useRef, useState } from "react";
 interface Props {
   disabled: boolean;
   onFile: (file: File) => void;
+  /** set when a model is loaded: upload the next CAD version of the same part */
+  onNewVersion?: (file: File) => void;
 }
 
 const ACCEPT = ".step,.stp,.stl";
 
-export default function UploadPanel({ disabled, onFile }: Props) {
+export default function UploadPanel({ disabled, onFile, onNewVersion }: Props) {
   const input = useRef<HTMLInputElement>(null);
+  const version = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
   return (
     <div
@@ -32,6 +35,21 @@ export default function UploadPanel({ disabled, onFile }: Props) {
       >
         Choose file…
       </button>
+      {onNewVersion && (
+        <>
+          <button type="button" disabled={disabled} onClick={() => version.current?.click()}
+            title="the drawing is regenerated for it with your settings, and a revision is logged"
+            className="ml-2 mt-3 rounded border border-blue-600 px-3 py-1.5 text-blue-700 disabled:opacity-50">
+            Upload new version…
+          </button>
+          <input ref={version} type="file" accept={ACCEPT} className="hidden" data-testid="version-input"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onNewVersion(f);
+              e.target.value = "";
+            }} />
+        </>
+      )}
       <input
         ref={input}
         type="file"
