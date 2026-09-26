@@ -267,7 +267,7 @@ def validate_drawing(
         [DimensionCandidate.model_validate(c) for c in json.loads((d / "candidates.json").read_text())],
         GeometryIR.model_validate_json(storage.path("models", job.model_id, "geometry_ir.json").read_text()),
         CompiledDrawing.model_validate_json((d / "compiled.json").read_text()),
-        Rendered(lines=rendered["lines"], snapped=rendered["snapped"]),
+        Rendered(lines=rendered["lines"], snapped=rendered["snapped"], hatches=rendered.get("hatches", {})),
     )
 
 

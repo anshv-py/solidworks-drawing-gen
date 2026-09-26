@@ -595,6 +595,10 @@ export interface ViewSpec {
   scale: Scale1;
 }
 /**
+ * A full section. With ``replaces`` it is drawn in place of that orthographic view (same id, same
+ * grid cell, ISO 128-44 designation "A-A"); the cutting plane is shown in ``parent_view_id``, which sees
+ * the plane edge-on. The plane is parallel to the replaced view and contains the feature's axis.
+ *
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "SectionView".
  */
@@ -603,6 +607,7 @@ export interface SectionView {
   label: Label1;
   parent_view_id: ParentViewId1;
   plane: SectionPlane;
+  replaces: ViewOrientation | null;
   scale: Scale2;
 }
 /**

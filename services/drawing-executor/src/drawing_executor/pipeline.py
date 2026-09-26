@@ -31,7 +31,7 @@ from geometry_schema import GeometryIR
 from geometry_service.step_analysis import read_step
 
 from drawing_executor.dxf_writer import FONT, text_font_available, write_dxf
-from drawing_executor.hlr import hidden_line_removal, shaded_facets
+from drawing_executor.hlr import hidden_line_removal, section_cut, section_loops, shaded_facets
 from drawing_executor.render import render
 from drawing_executor.sheet import snap_extension, to_sheet
 
@@ -129,22 +129,28 @@ def generate(
         except LayoutError as exc:
             raise DrawingFailed("LAYOUT_FAILED", str(exc)) from exc
         report("GENERATING", f"Projecting views (iteration {iteration}, scale {compiled.scale})", 20 + 10 * iteration)
-        lines = {}
+        lines, hatches = {}, {}
         for v in compiled.views:
-            key = (v.orientation.value, v.display_style.value)
+            key = (v.orientation.value, v.display_style.value, v.cut_point, v.cut_normal)
             if key not in hlr_cache:
-                hl = hidden_line_removal(shape, v.model_center, v.eye, v.x_axis,
+                src, loops = shape, []
+                if v.cut_point is not None:  # full section: the half behind the cutting plane, cut faces hatched
+                    src = section_cut(shape, v.cut_point, v.cut_normal)
+                    loops = section_loops(src, v.cut_point, v.cut_normal, v.model_center, v.eye, v.x_axis)
+                hl = hidden_line_removal(src, v.model_center, v.eye, v.x_axis,
                                          with_hidden=v.display_style == "HIDDEN_LINES_VISIBLE")
                 # (shaded views: the faces hide what is behind them, so only visible edges are drawn)
-                hlr_cache[key] = (hl.visible, hl.hidden)
-            vis, hid = hlr_cache[key]
+                hlr_cache[key] = (hl.visible, hl.hidden, loops)
+            vis, hid, loops = hlr_cache[key]
             lines[v.id] = {"visible": to_sheet(vis, v), "hidden": to_sheet(hid, v)}
+            if loops:
+                hatches[v.id] = [to_sheet(face, v) for face in loops]
         snapped = {}
         for d in compiled.dimensions:
             if d.kind == "LINEAR":
                 polys = lines[d.view_id]["visible"] + lines[d.view_id]["hidden"]
                 snapped[d.id] = tuple(snap_extension(p, d, polys) if s else p for p, s in zip((d.p1, d.p2), d.snap))
-        rendered = Rendered(lines=lines, snapped=snapped)
+        rendered = Rendered(lines=lines, snapped=snapped, hatches=hatches)
 
         report("VALIDATING", f"Deterministic QA (iteration {iteration})", 30 + 10 * iteration)
         qa = validate(planned.plan, planned.candidates, ir, compiled, rendered, iteration=iteration)
@@ -174,7 +180,8 @@ def generate(
     _, compiled, rendered, qa = best
     (out_dir / "compiled.json").write_text(compiled.model_dump_json(indent=2))
     # what was actually drawn (sheet mm) - lets QA be re-run later without OCCT
-    (out_dir / "rendered.json").write_text(json.dumps({"lines": rendered.lines, "snapped": rendered.snapped}))
+    (out_dir / "rendered.json").write_text(json.dumps({"lines": rendered.lines, "snapped": rendered.snapped,
+                                                        "hatches": rendered.hatches}))
     (out_dir / "qa_report.json").write_text(qa.model_dump_json(indent=2))
     tight = {f.target.ref for f in planned.plan.manufacturing.frames
              if f.tolerance < rules.views.detail_triggers.tight_tolerance_lt_mm}
@@ -194,7 +201,7 @@ def generate(
             s, (cx, cy) = v.scale_factor, v.sheet_center
             shading[v.id] = [([(cx + x * s, cy + y * s) for x, y in f.points], f.shade)
                              for f in shaded_facets(shape, v.model_center, v.eye, v.x_axis)]
-    write_dxf(compiled, rendered.lines, rendered.snapped, dxf, gen, shading)
+    write_dxf(compiled, rendered.lines, rendered.snapped, dxf, gen, shading, rendered.hatches)
     artifacts: dict[str, str] = {}
     if qa.passed:
         render(dxf, compiled.sheet_w, compiled.sheet_h,

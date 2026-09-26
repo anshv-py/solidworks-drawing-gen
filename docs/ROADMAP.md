@@ -9,8 +9,8 @@
 | 2c | Default datums + ISO 2768-mK GD&T applied directly (reference-generator conventions), boxed TEDs, concise notes, user-selectable scales (sheet, isometric, ISO 5455 / intermediate series), isometric fixed top-right | ✅ done, tested |
 | R1 | **Primary rule set** (owner's RULES / EX documents): rule set as data, role inference + treatments (ISO 286 fits, GD&T, finish), minimum views, isometric only when triggered, view triggers, compliance report + NOT FOR MANUFACTURE stamp + release step, UI (roles, compliance, release) | ✅ done, tested |
 | R1b | CAD metadata import: title, part number, revision, material, mass from STEP product data / AP214 user-defined attributes (custom properties) into the title block; calculated weight from volume × nominal density | ✅ done, tested (real SolidWorks exports UNVERIFIED) |
-| 3 / R2 | **Section views** (RULES 1.3 triggers: deep blind holes, stepped bores, turned parts) | ⏭ next |
-| R3 | **Detail views** (RULES 1.4 triggers at the final scale) | planned |
+| 3 / R2 | **Section views** (RULES 1.3 triggers): full section in place of a view, OCCT cut + HLR, ISO 128-50 hatching, ISO 128-44 cutting plane + A-A, QA-SEC-001 | ✅ done, tested (half / multiple / offset sections: later) |
+| R3 | **Detail views** (RULES 1.4 triggers at the final scale) | ⏭ next |
 | R4 | Thread / keyway / groove recognition (tapped holes → full designation check, keyway N9, O-ring groove profile) | planned |
 | R5 | Auxiliary views (angled faces) + conventional breaks (long parts); shafts drawn horizontal (EX 3) | planned |
 | R6 | Sheet metal recognition + flat pattern view (EX 5) | planned |

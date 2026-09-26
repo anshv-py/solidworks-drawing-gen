@@ -942,6 +942,7 @@
     },
     "SectionView": {
       "additionalProperties": false,
+      "description": "A full section. With ``replaces`` it is drawn in place of that orthographic view (same id, same\ngrid cell, ISO 128-44 designation \"A-A\"); the cutting plane is shown in ``parent_view_id``, which sees\nthe plane edge-on. The plane is parallel to the replaced view and contains the feature's axis.",
       "properties": {
         "id": {
           "title": "Id",
@@ -959,6 +960,17 @@
         "plane": {
           "$ref": "#/$defs/SectionPlane"
         },
+        "replaces": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ViewOrientation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "scale": {
           "default": "AUTO",
           "title": "Scale",
@@ -970,7 +982,8 @@
         "label",
         "parent_view_id",
         "plane",
-        "scale"
+        "scale",
+        "replaces"
       ],
       "title": "SectionView",
       "type": "object"

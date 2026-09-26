@@ -50,6 +50,7 @@ from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
 from drawing_planner.roles import infer_roles
 from drawing_planner.rule_set import load_rules
+from drawing_planner.sections import plan_sections
 from drawing_planner.view_rules import auxiliary_triggers, break_triggers, isometric_triggers, section_triggers
 
 VIEW_PREFERENCE = [
@@ -317,6 +318,16 @@ def plan_baseline(
             views, thickness = found
             selections, uncertainties = assign(views, {thickness.id} if thickness else set())
 
+    # RULES 1.3: a full section in place of a view (it may need a view that shows the cutting plane)
+    sections: list = []
+    sec_triggers = section_triggers(ir, rules) if rules_mode else []
+    if sec_triggers:
+        sections, extra, sec_triggers = plan_sections(ir, views, pool, frames, sec_triggers)
+        if extra:
+            views = [o for o in VIEW_PREFERENCE if o in views or o in extra]
+            thickness = None  # the added view shows the thickness
+            selections, uncertainties = assign(views, set())
+
     for c in dropped:
         uncertainties.append(
             PlanUncertainty(message=f"{c.id} ({c.text}) omitted: redundant with a higher-priority dimension",
@@ -332,7 +343,7 @@ def plan_baseline(
         iso = isometric_triggers(ir, rules, settings.general_notes.process)
         show_pictorial = bool(iso)
         triggers += [t.model_copy(update={"satisfied": True}) for t in iso]
-        triggers += section_triggers(ir, rules) + auxiliary_triggers(ir, rules) + break_triggers(ir, rules)
+        triggers += sec_triggers + auxiliary_triggers(ir, rules) + break_triggers(ir, rules)
         if thickness is not None:
             rule_notes.append(f"THICKNESS {thickness.text}")
             triggers.append(ViewTrigger(kind=ViewTriggerKind.THICKNESS_NOTE, rule="RULES 1.1 (one view + note)",
@@ -407,6 +418,7 @@ def plan_baseline(
         uncertainties=uncertainties,
         rationale=rationale[:2000],
         rule_set=rules.label if rules_mode else None,
+        sections=sections,
         feature_roles=roles.assignments if rules_mode else [],
         view_triggers=triggers,
         rule_notes=rule_notes,

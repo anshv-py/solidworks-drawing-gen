@@ -207,11 +207,16 @@ class SectionPlane(StrictModel):
 
 
 class SectionView(StrictModel):
+    """A full section. With ``replaces`` it is drawn in place of that orthographic view (same id, same
+    grid cell, ISO 128-44 designation "A-A"); the cutting plane is shown in ``parent_view_id``, which sees
+    the plane edge-on. The plane is parallel to the replaced view and contains the feature's axis."""
+
     id: str
     label: str = Field(pattern=r"^[A-Z]{1,2}$")
     parent_view_id: str
     plane: SectionPlane
     scale: Scale = "AUTO"
+    replaces: ViewOrientation | None = None
 
 
 class DetailView(StrictModel):

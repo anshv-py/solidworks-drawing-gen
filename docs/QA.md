@@ -23,7 +23,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-SHEET-001/002 | CRITICAL | view geometry / dimensions inside the frame |
 | QA-SHEET-003 | CRITICAL | no view, dimension or annotation touches the title block, `Note:` block, revision table or release stamp |
 | QA-VIEW-001 | CRITICAL | views do not overlap |
-| QA-VIEW-002 | CRITICAL | OCCT-drawn view extent == GeometryIR extent (catches wrong orientation or geometry) |
+| QA-VIEW-002 | CRITICAL | OCCT-drawn view extent == GeometryIR extent (catches wrong orientation or geometry); a section may be smaller, never larger |
 | QA-VIEW-003 | CRITICAL | placement matches first/third-angle projection |
 | QA-VIEW-004 | MAJOR / MINOR | supported drawing scale (MAJOR); intermediate, non-ISO 5455 scale (MINOR) |
 | QA-VIEW-005 | MINOR | sheet fill ratio |
@@ -48,6 +48,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-NOTE-001 | MAJOR | default-note values not supplied (printed as placeholders) |
 | QA-PMI-003 | MAJOR | frames, datum symbols and finish symbols don't overlap dimension text, each other or other views |
 | QA-PMI-004 | CRITICAL | every feature control frame prints its planned tolerance exactly (no rounding to the drawing's decimals) |
+| QA-SEC-001 | CRITICAL | every section view has hatched cut faces and its cutting plane (same letter) is shown in another view |
 | QA-REF-001 | CRITICAL | every dimension references a known candidate |
 
 `POST /api/drawings/{id}/validate` re-runs the checks on the stored drawing (pure Python).

@@ -81,6 +81,9 @@ PICT_LABEL_SPACE = 7.0  # 'SCALE 1:5' under a pictorial view drawn at its own sc
 NOTE_LINE = 3.8  # 2.5 mm text (legible on A3) at 1.5x pitch
 NOTE_TEXT_H = 2.5
 SF_HEIGHT = 11.0  # ISO 1302 symbol (long leg 10 mm) + clearance
+SECTION_STROKE = 6.0  # thick end of the cutting plane (ISO 128-44)
+SECTION_END = 16.0  # room beyond the dimensions for the stroke, arrow and letter
+SECTION_LABEL = 8.0  # room below a section view for its A-A designation
 FINISH_TIP_X = 3.0  # symbol point from the left of its box (the short leg reaches 2.9 mm left)
 
 
@@ -291,6 +294,9 @@ class _ViewCtx:
     tier_margin: dict = field(default_factory=dict)
     notes_x: float = 0.0
     cell: tuple[int, int] = (0, 0)
+    section: tuple | None = None  # (letter, plane point, normal toward the removed half): drawn as a section
+    trace: tuple | None = None  # (letter, plane point, normal): this view shows the cutting plane
+    trace_base: dict = field(default_factory=dict)  # side -> margin before the cutting-plane ends
 
 
 class Compiler:
@@ -479,6 +485,16 @@ class Compiler:
             vs = [dot(_sub(c, self.center), v.frame.y) for c in self.corners]
             v.half = (min(us), max(us), min(vs), max(vs))
         by_id = {v.id: v for v in out}
+        # RULES 1.3 / ISO 128-44: a full section drawn in place of its view, the plane shown in the parent
+        for sec in p.sections:
+            v, parent = by_id.get(sec.id), by_id.get(sec.parent_view_id)
+            feat = self.features.get(sec.plane.through_feature_id or "")
+            if sec.replaces is None or v is None or v.pictorial or parent is None or feat is None:
+                self.opt.notes.append(f"UNPLACED: section {sec.label}-{sec.label}")
+                continue
+            cut = (sec.label, tuple(feat.axis.origin), tuple(v.frame.eye))
+            v.section, v.style = cut, DisplayStyle.HIDDEN_LINES_REMOVED  # no hidden lines in sections
+            parent.trace = cut
         dim_view: dict[str, _ViewCtx] = {}
         for sel in p.dimension_selections:
             c = self.cands.get(sel.candidate_id)
@@ -732,6 +748,14 @@ class Compiler:
             # one level is reserved; boxes that do not fit side by side stack outward (QA verifies)
             v.group_levels[side] = (step, len(needs))
             v.margins[side] = max(v.margins[side], v.tier_margin[side] + FACE_OFFSET + step)
+        # cutting-plane ends beyond everything else on the sides the plane's trace runs to; section label below
+        if v.trace:
+            sides = ("left", "right") if self._trace_horizontal(v) else ("top", "bottom")
+            v.trace_base = {sd: v.margins[sd] for sd in sides}
+            for sd in sides:
+                v.margins[sd] += SECTION_END
+        if v.section:
+            v.margins["bottom"] += SECTION_LABEL
         # leader-note column on the right of the right-hand tiers
         if v.notes:
             v.notes_x = u1 + v.margins["right"] + 8.0
@@ -742,6 +766,29 @@ class Compiler:
             v.margins["bottom"] = max(v.margins["bottom"], extra_v)
         if v.pictorial:
             v.margins = {"top": 2.0, "bottom": 2.0, "left": 2.0, "right": 2.0}
+
+    @staticmethod
+    def _trace_horizontal(v: _ViewCtx) -> bool:
+        n = v.trace[2]
+        return abs(dot(n, v.frame.y)) > abs(dot(n, v.frame.x))
+
+    def _section_line(self, v: _ViewCtx, s, c, outline: Rect) -> AnnotationOp:
+        """ISO 128-44: thick ends of the cutting plane outside the view's dimensions, arrows in the
+        direction of sight (toward the kept half), the section letter at each end."""
+        letter, point, n = v.trace
+        nx, ny = dot(n, v.frame.x), dot(n, v.frame.y)
+        ln = math.hypot(nx, ny) or 1.0
+        sight = (-nx / ln, -ny / ln)
+        px, py = self._sheet(v, s, c, point)
+        b = v.trace_base
+        if self._trace_horizontal(v):
+            xa, xb = outline.x0 - b["left"] - 2.0, outline.x1 + b["right"] + 2.0
+            pts = [(xa - SECTION_STROKE, py), (xa, py), (xb, py), (xb + SECTION_STROKE, py)]
+        else:
+            ya, yb = outline.y0 - b["bottom"] - 2.0, outline.y1 + b["top"] + 2.0
+            pts = [(px, ya - SECTION_STROKE), (px, ya), (px, yb), (px, yb + SECTION_STROKE)]
+        return AnnotationOp(id=f"SEC-{letter}", view_id=v.id, kind=AnnotationKind.SECTION_LINE,
+                            points=[_r(q) for q in pts], label=letter, direction=_r(sight))
 
     def _vs(self, v: _ViewCtx, s: float) -> float:
         """Scale factor of a view: the pictorial view may use its own scale."""
@@ -1050,12 +1097,18 @@ class Compiler:
             u0, u1, w0, w1 = (x * vs for x in v.half)
             outline = Rect(x0=c[0] + u0, y0=c[1] + w0, x1=c[0] + u1, y1=c[1] + w1)
             own = v.pictorial and self.pict_scale is not None
+            label, label_at = (f"SCALE {self.pict_scale[0]}" if own else None), None
+            if v.section:
+                label = f"{v.section[0]}-{v.section[0]}"
+                label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
             views.append(CompiledView(
                 id=v.id, orientation=v.orientation, pictorial=v.pictorial, eye=v.frame.eye, x_axis=v.frame.x,
                 y_axis=v.frame.y, scale=self.pict_scale[0] if own else sc, scale_factor=vs, model_center=self.center,
-                sheet_center=c, outline=outline, display_style=v.style,
-                label=f"SCALE {self.pict_scale[0]}" if own else None,
+                sheet_center=c, outline=outline, display_style=v.style, label=label, label_at=label_at,
+                cut_point=v.section[1] if v.section else None, cut_normal=v.section[2] if v.section else None,
             ))
+            if v.trace and not v.pictorial:
+                anns.append(self._section_line(v, s, c, outline))
             if v.pictorial:
                 continue
             vdims = self._emit_linear(v, s, c, outline) + self._emit_notes(v, s, c, outline)

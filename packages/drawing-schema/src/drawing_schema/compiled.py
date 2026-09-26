@@ -71,6 +71,9 @@ class CompiledView(StrictModel):
     outline: Rect = Field(description="sheet bbox of the projected part (from GeometryIR bbox)")
     display_style: DisplayStyle
     label: str | None = None
+    label_at: Point2 | None = Field(default=None, description="centre of the view label (below the view)")
+    cut_point: Vec3 | None = Field(default=None, description="section view: a point of the cutting plane (model)")
+    cut_normal: Vec3 | None = Field(default=None, description="section view: plane normal toward the removed half")
 
 
 class FrameCell(StrictModel):
@@ -172,6 +175,7 @@ class AnnotationKind(StrEnum):
     CENTER_MARK = "CENTER_MARK"
     CENTERLINE = "CENTERLINE"
     PITCH_CIRCLE = "PITCH_CIRCLE"
+    SECTION_LINE = "SECTION_LINE"  # ISO 128-44 cutting plane: thick ends, arrows (direction of sight), letters
 
 
 class AnnotationOp(StrictModel):
@@ -182,6 +186,8 @@ class AnnotationOp(StrictModel):
     center: Point2 | None = None
     radius: float | None = None
     feature_ids: list[str] = Field(default_factory=list)
+    label: str | None = None  # SECTION_LINE: the section letter
+    direction: Point2 | None = None  # SECTION_LINE: unit direction of sight (sheet)
 
 
 class TitleBlockField(StrictModel):

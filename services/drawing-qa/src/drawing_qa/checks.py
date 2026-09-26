@@ -31,6 +31,7 @@ class Rendered:
 
     lines: dict[str, dict[str, list[Polyline]]]  # view id -> {"visible": [...], "hidden": [...]}
     snapped: dict[str, tuple] = field(default_factory=dict)  # dim id -> (p1, p2)
+    hatches: dict[str, list] = field(default_factory=dict)  # section view id -> [[loop, ...] per cut face]
 
 
 def _bbox(polys: list[Polyline]) -> Rect | None:
@@ -131,11 +132,28 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
             continue
         # HLR extents (OCCT) must equal the GeometryIR bounding box projected by the compiler
         tol = 0.05 * v.scale_factor + 0.01
+        if v.cut_point is not None:
+            # a section shows the half behind the plane: never larger than the part, possibly smaller
+            if bb.w > v.outline.w + tol or bb.h > v.outline.h + tol:
+                R.add("QA-VIEW-002", QaSeverity.CRITICAL, f"section {v.id} is drawn larger than the part", [v.id], bb)
+            continue
         if abs(bb.w - v.outline.w) > tol or abs(bb.h - v.outline.h) > tol:
             R.add("QA-VIEW-002", QaSeverity.CRITICAL,
                   f"view {v.id}: drawn extent {bb.w / v.scale_factor:.3f} x {bb.h / v.scale_factor:.3f} mm "
                   f"differs from GeometryIR {v.outline.w / v.scale_factor:.3f} x {v.outline.h / v.scale_factor:.3f} mm",
                   [v.id], bb)
+    R.check("QA-SEC-001")
+    # every section is hatched and its cutting plane (same letter) is shown in another view
+    for v in cd.views:
+        if v.cut_point is None:
+            continue
+        letter = (v.label or "-").split("-")[0]
+        if not rendered.hatches.get(v.id):
+            R.add("QA-SEC-001", QaSeverity.CRITICAL, f"section {v.label} has no hatched cut face", [v.id])
+        if not any(a.kind == AnnotationKind.SECTION_LINE and a.label == letter and a.view_id != v.id
+                   for a in cd.annotations):
+            R.add("QA-SEC-001", QaSeverity.CRITICAL, f"cutting plane {letter}-{letter} is not shown in any view",
+                  [v.id])
     R.check("QA-VIEW-003")
     front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT), None)
     if front is not None:

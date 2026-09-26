@@ -151,3 +151,83 @@ def _sub3(a, b):
 def _unit(a):
     n = math.sqrt(_dot(a, a)) or 1.0
     return (a[0] / n, a[1] / n, a[2] / n)
+
+
+# ---------------------------------------------------------------------------- section views
+
+def section_cut(shape: TopoDS_Shape, point, normal) -> TopoDS_Shape:
+    """The part with everything on the ``normal`` side of the plane removed (what a full section
+    shows when looking along -normal)."""
+    from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
+
+    from geometry_service.occt import geom as g
+
+    lo, hi = g.bounding_box(shape)
+    size = 4.0 * max(g.dist(lo, hi), 1.0)
+    n = _unit(normal)
+    helper = (1.0, 0.0, 0.0) if abs(n[0]) < 0.9 else (0.0, 1.0, 0.0)
+    xd = _unit(_cross(helper, n))
+    yd = _cross(n, xd)
+    origin = tuple(point[i] - size / 2 * xd[i] - size / 2 * yd[i] for i in range(3))
+    box = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(*origin), gp_Dir(*n), gp_Dir(*xd)), size, size, size).Shape()
+    cut = BRepAlgoAPI_Cut(shape, box)
+    cut.Build()
+    if not cut.IsDone():
+        raise RuntimeError("section cut failed")
+    return cut.Shape()
+
+
+def section_loops(cut: TopoDS_Shape, point, normal, center, eye, x_axis, max_seg: float = 0.5) -> list[list[Polyline]]:
+    """Boundary loops (projector-plane coordinates) of the faces lying in the cutting plane - the
+    areas to hatch. One list of closed loops per face (outer boundary and holes)."""
+    from OCP.BRepAdaptor import BRepAdaptor_Surface
+    from OCP.BRepTools import BRepTools_WireExplorer
+    from OCP.GeomAbs import GeomAbs_Plane
+    from OCP.TopAbs import TopAbs_FACE, TopAbs_REVERSED, TopAbs_WIRE
+    from OCP.TopExp import TopExp_Explorer
+
+    n = _unit(normal)
+    xa = _unit(x_axis)
+    ya = _cross(_unit(eye), xa)
+    out: list[list[Polyline]] = []
+    faces = TopExp_Explorer(cut, TopAbs_FACE)
+    while faces.More():
+        face = TopoDS.Face(faces.Current())
+        faces.Next()
+        s = BRepAdaptor_Surface(face)
+        if s.GetType() != GeomAbs_Plane:
+            continue
+        pl = s.Plane()
+        d, o = pl.Axis().Direction(), pl.Location()
+        if abs(abs(_dot((d.X(), d.Y(), d.Z()), n)) - 1) > 1e-6:
+            continue
+        if abs(_dot((o.X() - point[0], o.Y() - point[1], o.Z() - point[2]), n)) > 1e-4:
+            continue
+        loops: list[Polyline] = []
+        wires = TopExp_Explorer(face, TopAbs_WIRE)
+        while wires.More():
+            we = BRepTools_WireExplorer(TopoDS.Wire(wires.Current()), face)
+            wires.Next()
+            loop: Polyline = []
+            while we.More():
+                edge = we.Current()
+                we.Next()
+                c = BRepAdaptor_Curve(edge)
+                f, l = c.FirstParameter(), c.LastParameter()
+                k = 1 if c.GetType() == GeomAbs_Line else int(min(256, max(8, math.ceil(
+                    GCPnts_AbscissaPoint.Length_s(c) / max_seg))))
+                params = [f + (l - f) * j / k for j in range(k + 1)]
+                if edge.Orientation() == TopAbs_REVERSED:
+                    params.reverse()
+                for t in params:
+                    p = c.Value(t)
+                    q = (p.X() - center[0], p.Y() - center[1], p.Z() - center[2])
+                    pt = (_dot(q, xa), _dot(q, ya))
+                    if not loop or math.dist(loop[-1], pt) > 1e-6:
+                        loop.append(pt)
+            if len(loop) >= 3:
+                loops.append(loop)
+        if loops:
+            out.append(loops)
+    return out
