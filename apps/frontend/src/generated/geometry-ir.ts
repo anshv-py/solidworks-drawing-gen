@@ -46,6 +46,16 @@ export type SurfaceArea = number;
  */
 export type Volume = number | null;
 export type Bodies = Body[];
+export type Assembly = boolean;
+export type Description = string | null;
+/**
+ * mass stated in the file (not computed)
+ */
+export type MassG = number | null;
+export type Material = string | null;
+export type Name = string | null;
+export type PartNumber = string | null;
+export type Revision = string | null;
 export type Code = string;
 export type EntityIds = string[];
 export type Message = string;
@@ -403,6 +413,7 @@ export interface GeometryIR {
   analysis: AnalysisInfo;
   bodies: Bodies;
   bounding_box: BoundingBox;
+  cad_metadata: CadMetadata;
   diagnostics: Diagnostics;
   edges: Edges;
   faces: Faces;
@@ -460,6 +471,36 @@ export interface MassProperties {
   centroid: Centroid;
   surface_area: SurfaceArea;
   volume: Volume;
+}
+/**
+ * Product data read from the CAD file (STEP PRODUCT / version / MATERIAL_DESIGNATION / user-defined
+ * attributes). Every value names its origin in ``sources``; nothing here is guessed.
+ *
+ * This interface was referenced by `GeometryIR`'s JSON-Schema
+ * via the `definition` "CadMetadata".
+ */
+export interface CadMetadata {
+  assembly: Assembly;
+  attributes: Attributes;
+  description: Description;
+  mass_g: MassG;
+  material: Material;
+  name: Name;
+  part_number: PartNumber;
+  revision: Revision;
+  sources: Sources;
+}
+/**
+ * all user-defined attributes found
+ */
+export interface Attributes {
+  [k: string]: string;
+}
+/**
+ * field -> STEP entity it was read from
+ */
+export interface Sources {
+  [k: string]: string;
 }
 /**
  * This interface was referenced by `GeometryIR`'s JSON-Schema

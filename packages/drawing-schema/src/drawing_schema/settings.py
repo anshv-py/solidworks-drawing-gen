@@ -56,6 +56,9 @@ class DrawingSettings(StrictModel):
         description="RULES: projected_views is the pool the rule set picks the minimum from, and the pictorial "
         "primary view is added only when an isometric trigger fires; MANUAL: views exactly as chosen",
     )
+    use_cad_metadata: bool = Field(
+        default=True, description="fill title-block fields the user left empty (title, part number, revision, "
+        "material, weight) from the CAD file's product data")
     feature_roles: list[RoleOverride] = Field(
         default_factory=list, description="user-set / confirmed functional roles, keyed by GeometryIR id")
     default_gdt: bool = Field(

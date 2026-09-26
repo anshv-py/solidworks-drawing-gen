@@ -37,6 +37,7 @@ from geometry_schema import (
     Vertex,
 )
 from shared_types import Diagnostic, Representation, Severity, SourceFormat
+from geometry_service.step_metadata import read_step_metadata
 from geometry_service import ids
 from geometry_service.errors import CadImportError
 from geometry_service.features.blends import recognize_chamfers, recognize_fillets
@@ -349,6 +350,7 @@ def analyze_step(
             file_length_units=file_units,
             kernel_version=kernel_version(),
         ),
+        cad_metadata=read_step_metadata(path),
         representation=Representation.EXACT_BREP,
         bounding_box=_bbox(lo, hi),
         mass_properties=mass,

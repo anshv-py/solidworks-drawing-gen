@@ -32,6 +32,7 @@ SCHEMA_VERSION = "0.1.0"
 
 __all__ = [
     "SCHEMA_VERSION",
+    "CadMetadata",
     "GeometryIR",
     "Axis",
     "BoundingBox",
@@ -420,9 +421,29 @@ class AnalysisInfo(StrictModel):
     )
 
 
+class CadMetadata(StrictModel):
+    """Product data read from the CAD file (STEP PRODUCT / version / MATERIAL_DESIGNATION / user-defined
+    attributes). Every value names its origin in ``sources``; nothing here is guessed."""
+
+    name: str | None = None
+    part_number: str | None = None
+    description: str | None = None
+    revision: str | None = None
+    material: str | None = None
+    mass_g: float | None = Field(default=None, description="mass stated in the file (not computed)")
+    assembly: bool = False
+    attributes: dict[str, str] = Field(default_factory=dict, description="all user-defined attributes found")
+    sources: dict[str, str] = Field(default_factory=dict, description="field -> STEP entity it was read from")
+
+    @property
+    def empty(self) -> bool:
+        return not any((self.name, self.part_number, self.revision, self.material, self.mass_g))
+
+
 class GeometryIR(StrictModel):
     schema_version: Literal["0.1.0"] = SCHEMA_VERSION
     source: SourceInfo
+    cad_metadata: CadMetadata = Field(default_factory=CadMetadata)
     representation: Representation
     units: Units = Units()
     bounding_box: BoundingBox

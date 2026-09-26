@@ -214,6 +214,10 @@ export type Title = string | null;
  */
 export type Weight = string | null;
 /**
+ * fill title-block fields the user left empty (title, part number, revision, material, weight) from the CAD file's product data
+ */
+export type UseCadMetadata = boolean;
+/**
  * Which model axis points up in the drawing views.
  *
  * Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
@@ -305,6 +309,7 @@ export interface DrawingSettings {
   projection_method: ProjectionMethod;
   sheet: Sheet;
   title_block: TitleBlock;
+  use_cad_metadata: UseCadMetadata;
   view_frame: ViewFrame;
   view_selection: ViewSelection;
 }

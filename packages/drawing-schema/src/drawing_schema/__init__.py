@@ -360,6 +360,8 @@ class DrawingPlan(StrictModel):
     rule_set: str | None = Field(default=None, description="id and version of the rule set that planned the drawing")
     feature_roles: list["RoleAssignment"] = Field(default_factory=list)
     view_triggers: list["ViewTrigger"] = Field(default_factory=list)
+    cad_metadata_applied: list[str] = Field(
+        default_factory=list, description="title-block fields taken from the CAD file, with their origin")
     rule_notes: list[str] = Field(default_factory=list, max_length=8,
                                   description="sheet notes required by a rule (e.g. THICKNESS of a one-view part)")
 

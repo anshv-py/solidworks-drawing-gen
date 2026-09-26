@@ -26,7 +26,9 @@ def _spec(plan: DrawingPlan, name: str) -> tuple[bool, str]:
     f = getattr(plan.engineering_information, name)
     if f.status != "SPECIFIED":
         return False, ""
-    return True, f"{f.value}" + (" (rule-set default)" if f.source and f.source.value == "DEFAULT" else "")
+    origin = {"DEFAULT": " (rule-set default)", "CAD_MODEL": " (from the CAD file)"}.get(
+        f.source.value if f.source else "", "")
+    return True, f"{f.value}{origin}"
 
 
 def _item(n: int, requirement: str, blockers: set[int], status: S, details: list[str] | None = None) -> ComplianceItem:
@@ -53,10 +55,11 @@ def build_compliance(plan: DrawingPlan, ir: GeometryIR, candidates: list[Dimensi
     ok, _ = _spec(plan, "material")
     if not ok:
         missing.append("material")
+    from_cad = [f"from CAD: {a}" for a in plan.cad_metadata_applied]
     items.append(_item(1, "Title block complete (part number, revision, material, scale, sheet, projection, units)",
                        blockers, S.FAIL if missing else S.PASS,
-                       [f"missing: {', '.join(missing)}"] if missing else
-                       ["scale, sheet size, projection symbol and units are always printed"]))
+                       ([f"missing: {', '.join(missing)}"] if missing else
+                        ["scale, sheet size, projection symbol and units are always printed"]) + from_cad))
 
     # 2 general tolerance, 3 default finish
     ok, v = _spec(plan, "general_tolerance")
@@ -177,8 +180,9 @@ def build_compliance(plan: DrawingPlan, ir: GeometryIR, candidates: list[Dimensi
 
     # 12 weight / material
     items.append(_item(12, "Weight / material block populated", blockers, S.PASS if tb.weight else S.WARN,
-                       [] if tb.weight else ["weight not given - pulled from CAD mass properties once the material "
-                                             "is known (next feature: CAD metadata import)"]))
+                       [tb.weight] if tb.weight else
+                       ["weight not given: the CAD file states no mass and the material is unknown or not in the "
+                        "density table (enter the material or the weight)"]))
 
     releasable = not any(i.hard_blocker and i.status == S.FAIL for i in items)
     return ComplianceReport(

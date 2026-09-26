@@ -1396,6 +1396,12 @@
         "weight": null
       }
     },
+    "use_cad_metadata": {
+      "default": true,
+      "description": "fill title-block fields the user left empty (title, part number, revision, material, weight) from the CAD file's product data",
+      "title": "Use Cad Metadata",
+      "type": "boolean"
+    },
     "view_frame": {
       "$ref": "#/$defs/ViewFrame",
       "default": "Z_UP"
@@ -1423,6 +1429,7 @@
     "general_notes",
     "pictorial_style",
     "view_selection",
+    "use_cad_metadata",
     "feature_roles",
     "default_gdt"
   ],

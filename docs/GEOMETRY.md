@@ -19,6 +19,18 @@ OCCT 8 via `cadquery-ocp` 8.0.1 (Python bindings). Runs only inside the analysis
    (face-centroid reflection about global/principal planes through the bbox centre).
 8. Stable IDs and GeometryIR assembly; preview tessellation (`BRepMesh`, deflection 1e-3 × diagonal).
 
+### CAD product data (`geometry_service/step_metadata.py` → `GeometryIR.cad_metadata`)
+Read from the STEP file itself (no kernel): `PRODUCT` name / id / description, the version id of
+`PRODUCT_DEFINITION_FORMATION` (revision, ≤ 4 characters), `MATERIAL_DESIGNATION`, and the AP214
+user-defined attributes (`PROPERTY_DEFINITION` → `REPRESENTATION` → `DESCRIPTIVE_REPRESENTATION_ITEM` /
+`MEASURE_REPRESENTATION_ITEM`) that CAD systems use for custom properties (keys such as Material,
+PartNo / Part Number / Number, Revision, Description, Mass / Weight). An explicit custom property wins
+over `PRODUCT.id`; a `PRODUCT.id` equal to the name (the file name) is not taken as a part number.
+Ignored, never used: translator placeholders ("Open CASCADE STEP translator …", Part1, None, Any),
+unevaluated SolidWorks links (`"SW-Material@Part1.SLDPRT"`), several different materials, and product
+identification of assemblies. Every value records its entity in `sources`. Which custom properties a real
+SolidWorks / CATIA / NX export contains is UNVERIFIED (tested on synthetic AP214 files).
+
 ## STL path (tessellated)
 `RWStl` → nodes/triangles; bbox, area, watertightness; volume/centroid/inertia by signed
 tetrahedra when closed. Units assumed mm (warning). **No feature recognition yet**; all values

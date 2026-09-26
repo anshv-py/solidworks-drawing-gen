@@ -1505,6 +1505,14 @@
         "hole_callouts": true
       }
     },
+    "cad_metadata_applied": {
+      "description": "title-block fields taken from the CAD file, with their origin",
+      "items": {
+        "type": "string"
+      },
+      "title": "Cad Metadata Applied",
+      "type": "array"
+    },
     "detail_views": {
       "items": {
         "$ref": "#/$defs/DetailView"
@@ -1806,6 +1814,7 @@
     "rule_set",
     "feature_roles",
     "view_triggers",
+    "cad_metadata_applied",
     "rule_notes"
   ],
   "title": "DrawingPlan",

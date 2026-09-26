@@ -46,6 +46,7 @@ from shared_types import InfoSource
 
 from drawing_planner.candidates import generate_candidates
 from drawing_planner.gdt_defaults import default_gdt
+from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
 from drawing_planner.roles import infer_roles
 from drawing_planner.rule_set import load_rules
@@ -152,6 +153,43 @@ def _entry_score(c: DimensionCandidate, f: Frame, ir: GeometryIR) -> int:
     if h is None or h.through:
         return 0
     return 0 if dot(f.eye, tuple(-x for x in h.axis.direction)) > 0 else 1
+
+
+def _apply_cad_metadata(ir: GeometryIR, tb: TitleBlock, engineering, settings: DrawingSettings):
+    """Title-block fields the user left empty, from the CAD file's product data (never overriding the
+    user). The weight is the file's stated mass, else the exact volume x the nominal density of the stated
+    material (EX 1 item 12), marked CALC."""
+    meta = ir.cad_metadata
+    src = meta.sources
+    applied: list[str] = []
+    patch: dict = {}
+    if meta.name and tb.title is None:
+        patch["title"] = meta.name[:60]
+        applied.append(f"title '{meta.name}' ({src.get('name', 'CAD')})")
+    if meta.part_number and not (tb.part_number or tb.drawing_number):
+        patch["part_number"] = meta.part_number[:40]
+        applied.append(f"part number {meta.part_number} ({src.get('part_number', 'CAD')})")
+    if meta.revision and not tb.revision and not settings.manufacturing.revisions:
+        patch["revision"] = meta.revision[:4]
+        applied.append(f"revision {meta.revision} ({src.get('revision', 'CAD')})")
+    if meta.material and engineering.material.status != "SPECIFIED":
+        engineering = engineering.model_copy(update={"material": EngineeringField(
+            status="SPECIFIED", value=meta.material, source=InfoSource.CAD_MODEL)})
+        applied.append(f"material {meta.material} ({src.get('material', 'CAD')})")
+    if not tb.weight:
+        if meta.mass_g:
+            patch["weight"] = format_mass(meta.mass_g)
+            applied.append(f"weight {patch['weight']} ({src.get('mass', 'CAD')})")
+        elif engineering.material.status == "SPECIFIED" and ir.mass_properties.volume:
+            rho = density(engineering.material.value)
+            if rho is not None:
+                grams = ir.mass_properties.volume / 1000.0 * rho[0]
+                patch["weight"] = f"{format_mass(grams)} (CALC.)"
+                applied.append(f"weight {format_mass(grams)} calculated: CAD volume "
+                               f"{ir.mass_properties.volume / 1000:.2f} cm³ x {rho[0]:g} g/cm³ ({rho[1]})")
+    if patch:
+        tb = TitleBlock(**{**tb.model_dump(), **patch})
+    return tb, engineering, applied
 
 
 def _face_targets(m, gdt) -> set[str]:
@@ -343,6 +381,9 @@ def plan_baseline(
                       if engineering.general_tolerance.status == "SPECIFIED" else "; default datums and GD&T: ")
         rationale += "; ".join(gdt.rationale)
     tb = settings.title_block
+    cad_applied: list[str] = []
+    if settings.use_cad_metadata:
+        tb, engineering, cad_applied = _apply_cad_metadata(ir, tb, engineering, settings)
     if tb.title is None and filename:
         tb = TitleBlock(**{**tb.model_dump(), "title": filename.rsplit(".", 1)[0]})
     plan = DrawingPlan(
@@ -369,6 +410,7 @@ def plan_baseline(
         feature_roles=roles.assignments if rules_mode else [],
         view_triggers=triggers,
         rule_notes=rule_notes,
+        cad_metadata_applied=cad_applied,
     )
     result = PlanResult(plan=plan, candidates=candidates)
     placed = {s.candidate_id for s in plan.dimension_selections}

@@ -6,6 +6,7 @@ export default function GeometrySummary({ ir }: { ir: GeometryIR }) {
   const mp = ir.mass_properties;
   const exact = ir.representation === "EXACT_BREP";
   const counts = countByType(ir);
+  const meta = ir.cad_metadata;
   return (
     <div className="rounded-lg bg-white p-3 text-sm shadow-sm" data-testid="geometry-summary">
       <div className="flex items-center justify-between">
@@ -30,6 +31,14 @@ export default function GeometrySummary({ ir }: { ir: GeometryIR }) {
         <dd>{ir.source.file_length_units.join(", ") || "none declared (assumed mm)"}</dd>
         <dt className="text-slate-500">Features</dt>
         <dd>{Object.entries(counts).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(", ") || "none recognized"}</dd>
+        <dt className="text-slate-500">From the CAD file</dt>
+        <dd data-testid="cad-metadata">
+          {[["name", meta?.name], ["part no.", meta?.part_number], ["rev.", meta?.revision],
+            ["material", meta?.material], ["mass", meta?.mass_g != null ? `${meta.mass_g} g` : null]]
+            .filter(([, v]) => v)
+            .map(([k, v]) => `${k} ${v}`)
+            .join(" · ") || "no product data (title-block fields stay empty until entered)"}
+        </dd>
       </dl>
       {ir.diagnostics.length > 0 && (
         <ul className="mt-2 space-y-1">

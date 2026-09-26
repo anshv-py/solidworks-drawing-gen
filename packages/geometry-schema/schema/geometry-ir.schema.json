@@ -287,6 +287,119 @@
       "title": "BoundingBox",
       "type": "object"
     },
+    "CadMetadata": {
+      "additionalProperties": false,
+      "description": "Product data read from the CAD file (STEP PRODUCT / version / MATERIAL_DESIGNATION / user-defined\nattributes). Every value names its origin in ``sources``; nothing here is guessed.",
+      "properties": {
+        "assembly": {
+          "default": false,
+          "title": "Assembly",
+          "type": "boolean"
+        },
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "all user-defined attributes found",
+          "title": "Attributes",
+          "type": "object"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "mass_g": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "mass stated in the file (not computed)",
+          "title": "Mass G"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "part_number": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Number"
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Revision"
+        },
+        "sources": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "field -> STEP entity it was read from",
+          "title": "Sources",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "part_number",
+        "description",
+        "revision",
+        "material",
+        "mass_g",
+        "assembly",
+        "attributes",
+        "sources"
+      ],
+      "title": "CadMetadata",
+      "type": "object"
+    },
     "ChamferFeature": {
       "additionalProperties": false,
       "properties": {
@@ -2043,6 +2156,9 @@
     "bounding_box": {
       "$ref": "#/$defs/BoundingBox"
     },
+    "cad_metadata": {
+      "$ref": "#/$defs/CadMetadata"
+    },
     "diagnostics": {
       "items": {
         "$ref": "#/$defs/Diagnostic"
@@ -2155,6 +2271,7 @@
   "required": [
     "schema_version",
     "source",
+    "cad_metadata",
     "representation",
     "units",
     "bounding_box",

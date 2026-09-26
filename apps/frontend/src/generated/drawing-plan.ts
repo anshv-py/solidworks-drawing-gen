@@ -5,6 +5,10 @@ export type CenterMarks = boolean;
 export type Centerlines = boolean;
 export type HoleCallouts = boolean;
 /**
+ * title-block fields taken from the CAD file, with their origin
+ */
+export type CadMetadataApplied = string[];
+/**
  * region is centred on this GeometryIR feature
  */
 export type FeatureId = string;
@@ -356,6 +360,7 @@ export type ViewFrame1 = "Z_UP" | "Y_UP";
 
 export interface DrawingPlan {
   annotations: AnnotationPreferences;
+  cad_metadata_applied: CadMetadataApplied;
   detail_views: DetailViews;
   dimension_selections: DimensionSelections;
   dimensions: DimensionPreferences;

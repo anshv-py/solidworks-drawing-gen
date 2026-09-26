@@ -46,7 +46,7 @@ Job errors: `STEP_READ_FAILED`, `STEP_NO_GEOMETRY`, `STL_READ_FAILED`, `LAYOUT_F
 `sheet {size A0-A4, orientation, scale (AUTO or a scale from options.scale), pictorial_scale, scale_system ISO_5455/INTERMEDIATE}`, `view_frame` (Z_UP / Y_UP = SolidWorks frame),
 `view_selection` (default RULES: the rule set picks the fewest of `projected_views` and adds the
 pictorial `primary_view` only when an isometric trigger fires; MANUAL: exactly as chosen),
-`feature_roles` (user-set / confirmed functional roles `{target, role}`),
+`feature_roles` (user-set / confirmed functional roles `{target, role}`), `use_cad_metadata` (default true: fill empty title-block fields and the material from the CAD file's product data),
 `primary_view` (default ISOMETRIC), `projected_views` (default FRONT, TOP, RIGHT),
 `orthographic_display_style`, `dimensions {overall, feature, holes, radii, diameters, angles,
 depths, decimal_places}`, `annotations {center_marks, centerlines, hole_callouts}`,
