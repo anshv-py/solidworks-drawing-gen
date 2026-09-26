@@ -328,7 +328,7 @@ export type MemberFeatureIds = string[];
  * This interface was referenced by `GeometryIR`'s JSON-Schema
  * via the `definition` "FeatureType".
  */
-export type FeatureType = "HOLE" | "BOSS" | "POCKET" | "SLOT" | "FILLET" | "CHAMFER" | "PATTERN" | "GROOVE";
+export type FeatureType = "HOLE" | "BOSS" | "POCKET" | "SLOT" | "FILLET" | "CHAMFER" | "PATTERN" | "GROOVE" | "BEND";
 export type Notes6 = string[];
 /**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
@@ -350,6 +350,24 @@ export type Notes7 = string[];
 export type OuterDiameter = number;
 export type Type7 = "GROOVE";
 export type Width2 = number;
+/**
+ * bend angle = angular extent of the bend faces (90 = square)
+ */
+export type AngleDeg2 = number;
+export type Confidence8 = number;
+export type EdgeIds9 = string[];
+export type FaceIds10 = string[];
+export type Id11 = string;
+export type InnerFaceIds = string[];
+export type InnerRadius = number;
+/**
+ * extent along the bend axis
+ */
+export type Length3 = number;
+export type Notes8 = string[];
+export type OuterFaceIds = string[];
+export type Thickness = number;
+export type Type8 = "BEND";
 export type Features = (
   | HoleFeature
   | BossFeature
@@ -359,6 +377,7 @@ export type Features = (
   | ChamferFeature
   | PatternFeature
   | GrooveFeature
+  | BendFeature
 )[];
 /**
  * @minItems 3
@@ -378,6 +397,8 @@ export type PrincipalAxes = PrincipalAxis[];
  */
 export type Representation = "EXACT_BREP" | "TESSELLATED";
 export type SchemaVersion = "0.1.0";
+export type BendIds = string[];
+export type Thickness1 = number;
 /**
  * length units declared in the file (STEP); empty for STL
  */
@@ -418,8 +439,8 @@ export type Solids = number;
 export type Triangles = number | null;
 export type Vertices = number;
 export type Angle = "deg";
-export type Length3 = "mm";
-export type Id11 = string;
+export type Length4 = "mm";
+export type Id12 = string;
 export type Index2 = number;
 /**
  * @minItems 3
@@ -441,6 +462,7 @@ export interface GeometryIR {
   principal_axes: PrincipalAxes;
   representation: Representation;
   schema_version: SchemaVersion;
+  sheet_metal: SheetMetal | null;
   source: SourceInfo;
   symmetry_candidates: SymmetryCandidates;
   topology: TopologyCounts;
@@ -835,12 +857,45 @@ export interface Axis3 {
   origin: Origin1;
 }
 /**
+ * Sheet-metal bend: coaxial inner (concave, radius r) and outer (convex, r + t) cylinder faces.
+ *
+ * This interface was referenced by `GeometryIR`'s JSON-Schema
+ * via the `definition` "BendFeature".
+ */
+export interface BendFeature {
+  angle_deg: AngleDeg2;
+  axis: Axis;
+  confidence: Confidence8;
+  edge_ids: EdgeIds9;
+  face_ids: FaceIds10;
+  id: Id11;
+  inner_face_ids: InnerFaceIds;
+  inner_radius: InnerRadius;
+  length: Length3;
+  notes: Notes8;
+  outer_face_ids: OuterFaceIds;
+  provenance: Provenance;
+  thickness: Thickness;
+  type: Type8;
+}
+/**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
  * via the `definition` "PrincipalAxis".
  */
 export interface PrincipalAxis {
   direction: Direction1;
   moment: Moment;
+}
+/**
+ * The part is formed from constant-thickness sheet (every bend: outer radius = inner + t, and the
+ * flat faces pair up at distance t).
+ *
+ * This interface was referenced by `GeometryIR`'s JSON-Schema
+ * via the `definition` "SheetMetal".
+ */
+export interface SheetMetal {
+  bend_ids: BendIds;
+  thickness: Thickness1;
 }
 /**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
@@ -881,14 +936,14 @@ export interface TopologyCounts {
 }
 export interface Units {
   angle: Angle;
-  length: Length3;
+  length: Length4;
 }
 /**
  * This interface was referenced by `GeometryIR`'s JSON-Schema
  * via the `definition` "Vertex".
  */
 export interface Vertex {
-  id: Id11;
+  id: Id12;
   index: Index2;
   point: Point;
 }
@@ -898,5 +953,5 @@ export interface Vertex {
  */
 export interface Units1 {
   angle: Angle;
-  length: Length3;
+  length: Length4;
 }

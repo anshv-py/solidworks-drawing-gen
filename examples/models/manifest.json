@@ -402,6 +402,34 @@
         "holes": []
       },
       "step": "shaft.step"
+    },
+    "sheet_bracket": {
+      "expected": {
+        "bbox_size": [
+          60.0,
+          40.0,
+          40.0
+        ],
+        "holes": [
+          {
+            "count": 4,
+            "diameter": 6.6,
+            "through": true
+          }
+        ],
+        "sheet_metal": {
+          "bends": [
+            {
+              "angle_deg": 90.0,
+              "inner_radius": 2.0
+            }
+          ],
+          "flat_length": 96.16261026600648,
+          "flat_width": 40.0,
+          "thickness": 2.0
+        }
+      },
+      "step": "sheet_bracket.step"
     }
   },
   "unit_variants": {

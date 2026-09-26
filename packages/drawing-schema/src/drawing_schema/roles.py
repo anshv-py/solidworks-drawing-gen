@@ -64,6 +64,7 @@ class ViewTriggerKind(StrEnum):
     AUXILIARY = "AUXILIARY"
     BREAK = "BREAK"
     THICKNESS_NOTE = "THICKNESS_NOTE"
+    FLAT_PATTERN = "FLAT_PATTERN"
 
 
 class ViewTrigger(StrictModel):

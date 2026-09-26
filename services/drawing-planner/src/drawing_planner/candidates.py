@@ -376,6 +376,18 @@ class _Builder:
                 feature_ids=[m.id for m in members],
             )
 
+    def bends(self) -> None:
+        """Sheet-metal bends: inside radius and angle, on the arc where the bend axis is seen end-on."""
+        for b in sorted((f for f in self.ir.features if f.type == FeatureType.BEND), key=lambda f: f.id):
+            face = self.faces[b.inner_face_ids[0]]
+            surf = face.surface
+            self.add(
+                id=f"DIM-BEND-{b.id}", kind=CandidateKind.RADIUS, role=CandidateRole.SIZE, value=b.inner_radius,
+                text=f"BEND R{self.f(b.inner_radius)} {_fmt(b.angle_deg, 0, False)}°", source=f"{b.id}.inner_radius",
+                view_rule=ViewRule.ALONG_AXIS, priority=P_RADIUS, center=surf.axis.origin, axis=surf.axis.direction,
+                radius=b.inner_radius, anchor=face.centroid, feature_ids=[b.id],
+            )
+
     def chamfers(self) -> None:
         groups: dict[tuple, list[ChamferFeature]] = defaultdict(list)
         for c in [f for f in self.ir.features if f.type == FeatureType.CHAMFER]:
@@ -426,6 +438,7 @@ def generate_candidates(ir: GeometryIR, decimal_places: int = 2, trailing_zeros:
     b.grooves()
     b.slots()
     b.fillets()
+    b.bends()
     b.chamfers()
     seen: dict[str, DimensionCandidate] = {}
     for c in b.out:  # identical ids (e.g. two holes sharing a location) keep the first

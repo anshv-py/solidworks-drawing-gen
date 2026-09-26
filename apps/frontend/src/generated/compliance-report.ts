@@ -72,7 +72,8 @@ export type FeatureIds = string[];
  * This interface was referenced by `ComplianceReport`'s JSON-Schema
  * via the `definition` "ViewTriggerKind".
  */
-export type ViewTriggerKind = "ISOMETRIC" | "SECTION" | "DETAIL" | "AUXILIARY" | "BREAK" | "THICKNESS_NOTE";
+export type ViewTriggerKind =
+  "ISOMETRIC" | "SECTION" | "DETAIL" | "AUXILIARY" | "BREAK" | "THICKNESS_NOTE" | "FLAT_PATTERN";
 export type Message = string;
 export type Rule1 = string;
 /**

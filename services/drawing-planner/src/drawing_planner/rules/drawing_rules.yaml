@@ -181,6 +181,14 @@ roles:
         - {characteristic: PROFILE_OF_A_SURFACE, tolerance: 0.05, datums: [A, B]}
       finish_ra: 1.6
 
+sheet_metal:
+  # EX 5: every sheet-metal part gets a flat-pattern view with the developed size and the bend lines
+  # (angle, inside radius, UP / DOWN). Neutral fibre per DIN 6935 - the bend allowance is flagged for the
+  # fabricator to confirm with the actual tooling.
+  flat_pattern: true
+  bend_allowance: DIN_6935
+  bend_angle_tolerance_deg: 0.5          # EX 5 F2
+
 gate:
   # EX 1 gate rule: hard blockers stamp the sheet and block the explicit release step (generation and
   # downloads are never blocked); warnings are reported (and auto-fixed where a deterministic fix exists)

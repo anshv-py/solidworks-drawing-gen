@@ -53,6 +53,10 @@ def isometric_triggers(ir: GeometryIR, rules: RuleSet, process: ManufacturingPro
     if process in t.processes:
         out.append(ViewTrigger(kind=K.ISOMETRIC, rule="RULES 1.2 (casting / forging / moulding)",
                                message=f"process {process.value}", satisfied=False))
+    bends = len(ir.sheet_metal.bend_ids) if ir.sheet_metal else 0
+    if bends > t.sheet_metal_bends_gt:
+        out.append(ViewTrigger(kind=K.ISOMETRIC, rule="RULES 1.2 (sheet metal, several bends)",
+                               message=f"{bends} bends", satisfied=False))
     if len(ir.bodies) > t.assembly_bodies_gt:
         out.append(ViewTrigger(kind=K.ISOMETRIC, rule="RULES 1.2 (assembly)",
                                message=f"{len(ir.bodies)} bodies", satisfied=False))

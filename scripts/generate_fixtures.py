@@ -340,6 +340,45 @@ def long_shaft():
     return s, exp
 
 
+def sheet_bracket():
+    """EX 5 style sheet-metal L-bracket: t = 2, inner bend radius 2, 90 deg bend about Y; base leg 60 x 40
+    (2 x d6.6), upright leg 40 high (2 x d6.6)."""
+    from OCP.BRepBuilderAPI import BRepBuilderAPI_MakeEdge, BRepBuilderAPI_MakeFace, BRepBuilderAPI_MakeWire
+    from OCP.BRepPrimAPI import BRepPrimAPI_MakePrism
+    from OCP.GC import GC_MakeArcOfCircle
+    from OCP.gp import gp_Vec
+
+    t, r, W = 2.0, 2.0, 40.0
+    c, q = r + t, math.sqrt(0.5)  # bend centre (x = z = r + t); cross-section in the XZ plane, extruded along Y
+
+    def P(x, z):
+        return gp_Pnt(x, 0.0, z)
+
+    def line(a, b):
+        return BRepBuilderAPI_MakeEdge(P(*a), P(*b)).Edge()
+
+    def arc(a, rad, b):
+        m = (c - rad * q, c - rad * q)
+        return BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(P(*a), P(*m), P(*b)).Value()).Edge()
+
+    wire = BRepBuilderAPI_MakeWire()
+    for e in (line((c, 0), (60, 0)), line((60, 0), (60, t)), line((60, t), (c, t)), arc((c, t), r, (t, c)),
+              line((t, c), (t, 40)), line((t, 40), (0, 40)), line((0, 40), (0, c)), arc((0, c), r + t, (c, 0))):
+        wire.Add(e)
+    s = BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(wire.Wire()).Face(), gp_Vec(0, W, 0)).Shape()
+    s = cut(s, *[cyl((40.0, y, -1.0), (0, 0, 1), 3.3, t + 2) for y in (10.0, 30.0)])
+    s = clean(cut(s, *[cyl((-1.0, y, 25.0), (1, 0, 0), 3.3, t + 2) for y in (10.0, 30.0)]))
+    k = 0.65 + 0.5 * math.log10(r / t)  # DIN 6935
+    exp = {
+        "bbox_size": [60.0, W, 40.0],
+        "sheet_metal": {"thickness": t, "bends": [{"inner_radius": r, "angle_deg": 90.0}],
+                        "flat_length": (60.0 - r - t) + (40.0 - r - t) + math.pi / 2 * (r + k * t / 2),
+                        "flat_width": W},
+        "holes": [{"diameter": 6.6, "through": True, "count": 4}],
+    }
+    return s, exp
+
+
 MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "plate_with_holes": plate_with_holes,
     "mounting_plate": mounting_plate,
@@ -354,6 +393,7 @@ MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "seal_cover": seal_cover,
     "angled_block": angled_block,
     "long_shaft": long_shaft,
+    "sheet_bracket": sheet_bracket,
 }
 
 STL_MODELS = ("plate_with_holes", "flange", "bracket")

@@ -76,6 +76,8 @@ class CompiledView(StrictModel):
     cut_normal: Vec3 | None = Field(default=None, description="section view: plane normal toward the removed half")
     detail_of: str | None = Field(default=None, description="detail view: the view it enlarges")
     auxiliary_of: str | None = Field(default=None, description="auxiliary view: the view its arrow is in")
+    flat_lines: list[list[Point2]] | None = Field(
+        default=None, description="flat pattern: the blank's outline and holes in flat coordinates (not an HLR view)")
     break_at: tuple[float, float, float] | None = Field(
         default=None, description="conventional break: (start, end, gap) along x, model mm about model_center")
     clip_radius: float | None = Field(default=None, description="detail view: region radius (model mm) around model_center")
@@ -183,6 +185,7 @@ class AnnotationKind(StrEnum):
     SECTION_LINE = "SECTION_LINE"  # ISO 128-44 cutting plane: thick ends, arrows (direction of sight), letters
     DETAIL_CIRCLE = "DETAIL_CIRCLE"  # region of a detail view, with its letter (ISO 128-44)
     VIEW_ARROW = "VIEW_ARROW"  # arrow method (ISO 128-30): direction of sight of an auxiliary view + letter
+    BEND_LINE = "BEND_LINE"  # flat pattern: bend centre line with "UP 90° R2"
 
 
 class AnnotationOp(StrictModel):

@@ -27,6 +27,8 @@ export function describeFeature(f: Feature): string {
       if (f.pattern_type === "CIRCULAR")
         return `${f.count}× circular on PCD Ø${mm(f.pitch_circle_diameter ?? 0)}, ${mm(f.angular_step_deg ?? 0, 1)}° step`;
       return `${f.count}× ${f.pattern_type.toLowerCase()} · pitch ${f.pitches.map((p) => mm(p)).join(" × ")}`;
+    case "BEND":
+      return `bend R${mm(f.inner_radius)} × ${mm(f.angle_deg, 1)}° (t ${mm(f.thickness)})`;
     case "GROOVE":
       return `face groove Ø${mm(f.inner_diameter)}–Ø${mm(f.outer_diameter)} ↧ ${mm(f.depth)}`;
   }

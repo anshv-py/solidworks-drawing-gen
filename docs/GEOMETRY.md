@@ -25,6 +25,12 @@ wall) on one axis with the same axial extent, bounding one planar floor square t
 (`kind=FACE`, inner / outer Ø, width, depth, axis from the opening into the material). Its faces are
 claimed, so the inner wall is not reported as a short boss.
 
+### Sheet-metal bends (`features/sheetmetal.py`)
+Partial concave (inner, r) and convex (outer, r + t) cylinders on one axis with the same extent and angle
+→ `BEND` (inner radius, thickness, angle, length). `GeometryIR.sheet_metal` (thickness, bends) is set only
+when all bends share t and ≥ 80 % of the planar area pairs up t apart, so a fillet next to a coaxial
+round on a machined part is not mistaken for a bend.
+
 ### CAD product data (`geometry_service/step_metadata.py` → `GeometryIR.cad_metadata`)
 Read from the STEP file itself (no kernel): `PRODUCT` name / id / description, the version id of
 `PRODUCT_DEFINITION_FORMATION` (revision, ≤ 4 characters), `MATERIAL_DESIGNATION`, and the AP214

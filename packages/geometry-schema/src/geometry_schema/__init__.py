@@ -68,6 +68,8 @@ __all__ = [
     "PocketFeature",
     "SlotFeature",
     "GrooveFeature",
+    "BendFeature",
+    "SheetMetal",
     "FilletFeature",
     "ChamferFeature",
     "PatternFeature",
@@ -290,6 +292,7 @@ class FeatureType(StrEnum):
     CHAMFER = "CHAMFER"
     PATTERN = "PATTERN"
     GROOVE = "GROOVE"
+    BEND = "BEND"
 
 
 class _FeatureBase(StrictModel):
@@ -373,6 +376,27 @@ class GrooveFeature(_FeatureBase):
     floor_face_id: str
 
 
+class BendFeature(_FeatureBase):
+    """Sheet-metal bend: coaxial inner (concave, radius r) and outer (convex, r + t) cylinder faces."""
+
+    type: Literal[FeatureType.BEND] = FeatureType.BEND
+    axis: Axis
+    inner_radius: float
+    thickness: float
+    angle_deg: float = Field(description="bend angle = angular extent of the bend faces (90 = square)")
+    length: float = Field(description="extent along the bend axis")
+    inner_face_ids: list[str]
+    outer_face_ids: list[str]
+
+
+class SheetMetal(StrictModel):
+    """The part is formed from constant-thickness sheet (every bend: outer radius = inner + t, and the
+    flat faces pair up at distance t)."""
+
+    thickness: float
+    bend_ids: list[str]
+
+
 class FilletFeature(_FeatureBase):
     type: Literal[FeatureType.FILLET] = FeatureType.FILLET
     radius: float
@@ -420,6 +444,7 @@ Feature = Annotated[
         ChamferFeature,
         PatternFeature,
         GrooveFeature,
+        BendFeature,
     ],
     Field(discriminator="type"),
 ]
@@ -461,6 +486,7 @@ class GeometryIR(StrictModel):
     schema_version: Literal["0.1.0"] = SCHEMA_VERSION
     source: SourceInfo
     cad_metadata: CadMetadata = Field(default_factory=CadMetadata)
+    sheet_metal: SheetMetal | None = None
     representation: Representation
     units: Units = Units()
     bounding_box: BoundingBox

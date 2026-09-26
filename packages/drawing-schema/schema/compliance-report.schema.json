@@ -206,7 +206,8 @@
         "DETAIL",
         "AUXILIARY",
         "BREAK",
-        "THICKNESS_NOTE"
+        "THICKNESS_NOTE",
+        "FLAT_PATTERN"
       ],
       "title": "ViewTriggerKind",
       "type": "string"

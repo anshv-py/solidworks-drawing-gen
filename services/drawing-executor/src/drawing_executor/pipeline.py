@@ -124,6 +124,11 @@ def generate(
         """OCCT hidden-line removal of every view (sections cut and hatched, details clipped), in sheet mm."""
         lines, hatches = {}, {}
         for v in compiled.views:
+            if v.flat_lines is not None:  # flat pattern: computed blank, no projection
+                mc = v.model_center
+                vis = [[(x - mc[0], y - mc[1]) for x, y in pl] for pl in v.flat_lines]
+                lines[v.id] = {"visible": to_sheet(vis, v), "hidden": []}
+                continue
             key = (v.eye, v.x_axis, v.display_style.value, v.cut_point, v.cut_normal, v.model_center)
             if key not in hlr_cache:
                 src, loops = shape, []

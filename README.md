@@ -31,6 +31,7 @@ Nothing is invented: every number on the sheet is traceable to the CAD geometry.
 | Primary rule set | the owner's manufacturing drawing rules as the default configuration: fewest orthographic views, isometric only when needed, functional roles guessed from geometry (confirm / override in the UI) with ISO 286 fits, GD&T and finish, section / detail / auxiliary / break triggers reported |
 | Section views | RULES 1.3 triggers → full section in place of a view: OCCT cut, hatched cut faces, cutting plane with arrows and A-A letters |
 | Detail views | RULES 1.4 at the final scale: enlarged, circled regions around features too small to read |
+| Sheet metal | bends recognized; flat pattern (DIN 6935 bend allowance) drawn as its own view with bend lines (UP/DOWN, angle, radius) |
 | Compliance gate | 12-item Universal Mandatory Minimum per drawing; failing hard blockers stamp the sheet NOT FOR MANUFACTURE and block the explicit release step |
 | QA | 31 deterministic checks incl. OCCT-vs-GeometryIR cross-checks; repair loop (≤ 3, best iteration kept); critical issues block export |
 | Exports | PDF, DXF (real DIMENSION entities), SVG, PNG preview - labelled "not produced by SolidWorks"; DWG/SLDDRW → 501 until the SolidWorks worker exists |

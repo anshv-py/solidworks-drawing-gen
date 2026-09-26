@@ -121,6 +121,29 @@ export type RoleSource = "INFERRED" | "USER";
 export type FaceId = string | null;
 export type FeatureId3 = string | null;
 export type FeatureRoles = RoleAssignment[];
+export type Allowance = number;
+export type AngleDeg = number;
+export type BendId = string;
+export type InnerRadius = number;
+/**
+ * DIN 6935 neutral-fibre factor used
+ */
+export type K = number;
+export type Up = boolean;
+/**
+ * bend centre line on the flat, mm from its start
+ */
+export type X = number;
+export type Bends = FlatBendLine[];
+export type Diameter = number;
+export type FeatureId4 = string;
+export type X1 = number;
+export type Y = number;
+export type Holes1 = FlatHole[];
+export type Id2 = string;
+export type Length = number;
+export type Thickness = number;
+export type Width = number;
 /**
  * sharp-edge break value, e.g. as specified
  */
@@ -217,7 +240,7 @@ export type Depth = number | null;
  * e.g. M8x1.25-6H (as specified by the user)
  */
 export type Designation = string;
-export type FeatureId4 = string;
+export type FeatureId5 = string;
 /**
  * Where a piece of engineering information came from.
  */
@@ -246,7 +269,7 @@ export type DisplayStyle = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SH
 export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 export type Dimensioned = boolean;
 export type DisplayStyle2 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
-export type Id2 = string;
+export type Id3 = string;
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ViewOrientation".
@@ -271,7 +294,7 @@ export type RuleNotes = string[];
  */
 export type RuleSet = string | null;
 export type SchemaVersion = "0.1.0";
-export type Id3 = string;
+export type Id4 = string;
 export type Label2 = string;
 export type ParentViewId2 = string;
 /**
@@ -334,7 +357,8 @@ export type FeatureIds = string[];
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ViewTriggerKind".
  */
-export type ViewTriggerKind = "ISOMETRIC" | "SECTION" | "DETAIL" | "AUXILIARY" | "BREAK" | "THICKNESS_NOTE";
+export type ViewTriggerKind =
+  "ISOMETRIC" | "SECTION" | "DETAIL" | "AUXILIARY" | "BREAK" | "THICKNESS_NOTE" | "FLAT_PATTERN";
 export type Message1 = string;
 export type Rule1 = string;
 /**
@@ -413,6 +437,7 @@ export interface DrawingPlan {
   drawing_standard: DrawingStandard;
   engineering_information: EngineeringInformation;
   feature_roles: FeatureRoles;
+  flat_pattern: FlatPatternView | null;
   general_notes: GeneralNotes;
   geometry: GeometryReference;
   manufacturing: ManufacturingAnnotations;
@@ -553,6 +578,45 @@ export interface Target {
   feature_id: FeatureId3;
 }
 /**
+ * EX 5: the developed (unfolded) blank, computed from GeometryIR (segments + DIN 6935 bend allowances),
+ * drawn in free space as its own 2-D view (flat coordinates: x along the unrolled profile, y along the
+ * bend axes).
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "FlatPatternView".
+ */
+export interface FlatPatternView {
+  bends: Bends;
+  holes: Holes1;
+  id: Id2;
+  length: Length;
+  thickness: Thickness;
+  width: Width;
+}
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "FlatBendLine".
+ */
+export interface FlatBendLine {
+  allowance: Allowance;
+  angle_deg: AngleDeg;
+  bend_id: BendId;
+  inner_radius: InnerRadius;
+  k: K;
+  up: Up;
+  x: X;
+}
+/**
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "FlatHole".
+ */
+export interface FlatHole {
+  diameter: Diameter;
+  feature_id: FeatureId4;
+  x: X1;
+  y: Y;
+}
+/**
  * The default numbered drawing notes (on by default).
  *
  * Notes are assembled deterministically from these user entries, the rest of the drawing
@@ -654,7 +718,7 @@ export interface SurfaceFinishMark {
 export interface ThreadCallout {
   depth: Depth;
   designation: Designation;
-  feature_id: FeatureId4;
+  feature_id: FeatureId5;
   source: InfoSource1;
 }
 /**
@@ -671,7 +735,7 @@ export interface DimensionTolerance {
 export interface ViewSpec {
   dimensioned: Dimensioned;
   display_style: DisplayStyle2;
-  id: Id2;
+  id: Id3;
   orientation: ViewOrientation;
   scale: Scale1;
 }
@@ -684,7 +748,7 @@ export interface ViewSpec {
  * via the `definition` "SectionView".
  */
 export interface SectionView {
-  id: Id3;
+  id: Id4;
   label: Label2;
   parent_view_id: ParentViewId2;
   plane: SectionPlane;
@@ -875,7 +939,7 @@ export interface TitleBlock1 {
 export interface ViewSpec1 {
   dimensioned: Dimensioned;
   display_style: DisplayStyle2;
-  id: Id2;
+  id: Id3;
   orientation: ViewOrientation;
   scale: Scale1;
 }

@@ -722,6 +722,9 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
     for a in cd.annotations:
         if a.kind == AnnotationKind.SECTION_LINE:
             _section_line(msp, a)
+        elif a.kind == AnnotationKind.BEND_LINE:
+            _line(msp, a.points[0], a.points[1], "CENTER")
+            _text(msp, a.label or "", (a.points[1][0], a.points[1][1] + 3.0), 2.5, "NOTES", "MC")
         elif a.kind == AnnotationKind.VIEW_ARROW:
             tail, tip = a.points[0], a.points[1]
             _line(msp, tail, tip, "DIM")

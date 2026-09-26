@@ -145,7 +145,8 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
             if bb.w > v.outline.w + tol or bb.h > v.outline.h + tol:
                 R.add("QA-VIEW-002", QaSeverity.CRITICAL, f"section {v.id} is drawn larger than the part", [v.id], bb)
             continue
-        if abs(bb.w - v.outline.w) > tol or abs(bb.h - v.outline.h) > tol:
+        if abs(bb.w - v.outline.w) > tol or abs(bb.h - v.outline.h) > tol or (
+                v.flat_lines is not None and (abs(bb.x0 - v.outline.x0) > tol or abs(bb.y0 - v.outline.y0) > tol)):
             R.add("QA-VIEW-002", QaSeverity.CRITICAL,
                   f"view {v.id}: drawn extent {bb.w / v.scale_factor:.3f} x {bb.h / v.scale_factor:.3f} mm "
                   f"differs from GeometryIR {v.outline.w / v.scale_factor:.3f} x {v.outline.h / v.scale_factor:.3f} mm",
@@ -181,6 +182,13 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
                                       and a.view_id == v.auxiliary_of for a in cd.annotations):
             R.add("QA-AUX-001", QaSeverity.CRITICAL, f"auxiliary view {v.label} has no arrow in {v.auxiliary_of}",
                   [v.id])
+    R.check("QA-FLAT-001")
+    # a sheet-metal plan with a flat pattern has it on the sheet, with one bend line per bend
+    if plan.flat_pattern is not None:
+        view = next((v for v in cd.views if v.id == plan.flat_pattern.id and v.flat_lines), None)
+        lines = [a for a in cd.annotations if a.kind == AnnotationKind.BEND_LINE]
+        if view is None or len(lines) != len(plan.flat_pattern.bends):
+            R.add("QA-FLAT-001", QaSeverity.CRITICAL, "flat pattern (or one of its bend lines) is missing")
     R.check("QA-VIEW-003")
     front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT and not v.detail_of
                   and not v.auxiliary_of), None)
@@ -192,7 +200,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         }
         fx, fy = front.sheet_center
         for v in cd.views:
-            if v.orientation not in expect or v.detail_of or v.auxiliary_of:  # details / aux views float
+            if v.orientation not in expect or v.detail_of or v.auxiliary_of or v.flat_lines is not None:  # floating
                 continue
             axis, sign = expect[v.orientation]
             dx, dy = v.sheet_center[0] - fx, v.sheet_center[1] - fy
@@ -282,7 +290,9 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
     R.check("QA-DIM-004")
     from drawing_planner.baseline import remove_redundant  # same rule the planner used
 
-    _, redundant = remove_redundant([cands[d.id] for d in cd.dimensions if d.id in cands])
+    # (flat-pattern dimensions measure the developed blank, not the part: kept out of the chain check)
+    _, redundant = remove_redundant([cands[d.id] for d in cd.dimensions if d.id in cands
+                                     and not d.id.startswith("DIM-FLAT-")])
     for c in redundant:
         R.add("QA-DIM-004", QaSeverity.MAJOR, f"{c.id} ({c.text}) closes a dimension chain (redundant)", [c.id])
     R.check("QA-DIM-005")
@@ -302,7 +312,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         marked = {fid for a in cd.annotations if a.kind == AnnotationKind.CENTER_MARK for fid in a.feature_ids}
         centres = [(a.view_id, a.center) for a in cd.annotations if a.kind == AnnotationKind.CENTER_MARK]
         for h in [f for f in ir.features if f.type == FeatureType.HOLE]:
-            seen = [v for v in cd.views if not v.pictorial and not v.detail_of
+            seen = [v for v in cd.views if not v.pictorial and not v.detail_of and v.flat_lines is None
                     and abs(sum(a * b for a, b in zip(v.eye, h.axis.direction))) > 1 - 1e-6]
             if not seen or h.id in marked:
                 continue

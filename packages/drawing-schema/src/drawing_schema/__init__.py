@@ -39,6 +39,7 @@ __all__ = [
     "DetailView",
     "AuxiliaryView",
     "ConventionalBreak",
+    "FlatPatternView",
     "DimensionPreferences",
     "DimensionSelection",
     "AnnotationPreferences",
@@ -266,6 +267,36 @@ class ConventionalBreak(StrictModel):
     gap: float = Field(gt=0)
 
 
+class FlatBendLine(StrictModel):
+    x: float = Field(description="bend centre line on the flat, mm from its start")
+    angle_deg: float
+    inner_radius: float
+    up: bool
+    k: float = Field(description="DIN 6935 neutral-fibre factor used")
+    allowance: float
+    bend_id: str
+
+
+class FlatHole(StrictModel):
+    x: float
+    y: float
+    diameter: float
+    feature_id: str
+
+
+class FlatPatternView(StrictModel):
+    """EX 5: the developed (unfolded) blank, computed from GeometryIR (segments + DIN 6935 bend allowances),
+    drawn in free space as its own 2-D view (flat coordinates: x along the unrolled profile, y along the
+    bend axes)."""
+
+    id: str = "V-FLAT"
+    length: float
+    width: float
+    thickness: float
+    bends: list[FlatBendLine]
+    holes: list[FlatHole] = Field(default_factory=list)
+
+
 class DimensionPreferences(StrictModel):
     overall: bool = True
     feature: bool = True
@@ -390,6 +421,7 @@ class DrawingPlan(StrictModel):
     detail_views: list[DetailView] = Field(default_factory=list)
     auxiliary_views: list[AuxiliaryView] = Field(default_factory=list)
     breaks: list[ConventionalBreak] = Field(default_factory=list)
+    flat_pattern: FlatPatternView | None = None
     dimensions: DimensionPreferences = DimensionPreferences()
     dimension_selections: list[DimensionSelection] = Field(
         default_factory=list,
@@ -432,7 +464,8 @@ class DrawingPlan(StrictModel):
                 )
         view_ids = {self.primary_view.id} | {s.id for s in self.sections} | {
             d.id for d in self.detail_views
-        } | {a.id for a in self.auxiliary_views} | {f"V-{o.value}" for o in self.projected_views}
+        } | {a.id for a in self.auxiliary_views} | {f"V-{o.value}" for o in self.projected_views} | (
+            {self.flat_pattern.id} if self.flat_pattern else set())
         for ref in [s.parent_view_id for s in self.sections] + [
             d.parent_view_id for d in self.detail_views
         ] + [d.view_id for d in self.dimension_selections]:

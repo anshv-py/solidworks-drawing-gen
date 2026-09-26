@@ -88,6 +88,105 @@
       "title": "Axis",
       "type": "object"
     },
+    "BendFeature": {
+      "additionalProperties": false,
+      "description": "Sheet-metal bend: coaxial inner (concave, radius r) and outer (convex, r + t) cylinder faces.",
+      "properties": {
+        "angle_deg": {
+          "description": "bend angle = angular extent of the bend faces (90 = square)",
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "axis": {
+          "$ref": "#/$defs/Axis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "edge_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Edge Ids",
+          "type": "array"
+        },
+        "face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Face Ids",
+          "type": "array"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "inner_face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Inner Face Ids",
+          "type": "array"
+        },
+        "inner_radius": {
+          "title": "Inner Radius",
+          "type": "number"
+        },
+        "length": {
+          "description": "extent along the bend axis",
+          "title": "Length",
+          "type": "number"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "outer_face_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Outer Face Ids",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "type": {
+          "const": "BEND",
+          "default": "BEND",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "confidence",
+        "face_ids",
+        "edge_ids",
+        "provenance",
+        "notes",
+        "type",
+        "axis",
+        "inner_radius",
+        "thickness",
+        "angle_deg",
+        "length",
+        "inner_face_ids",
+        "outer_face_ids"
+      ],
+      "title": "BendFeature",
+      "type": "object"
+    },
     "Body": {
       "additionalProperties": false,
       "properties": {
@@ -935,7 +1034,8 @@
         "FILLET",
         "CHAMFER",
         "PATTERN",
-        "GROOVE"
+        "GROOVE",
+        "BEND"
       ],
       "title": "FeatureType",
       "type": "string"
@@ -1769,6 +1869,29 @@
       "title": "Severity",
       "type": "string"
     },
+    "SheetMetal": {
+      "additionalProperties": false,
+      "description": "The part is formed from constant-thickness sheet (every bend: outer radius = inner + t, and the\nflat faces pair up at distance t).",
+      "properties": {
+        "bend_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Bend Ids",
+          "type": "array"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        }
+      },
+      "required": [
+        "thickness",
+        "bend_ids"
+      ],
+      "title": "SheetMetal",
+      "type": "object"
+    },
     "SlotFeature": {
       "additionalProperties": false,
       "properties": {
@@ -2279,6 +2402,7 @@
       "items": {
         "discriminator": {
           "mapping": {
+            "BEND": "#/$defs/BendFeature",
             "BOSS": "#/$defs/BossFeature",
             "CHAMFER": "#/$defs/ChamferFeature",
             "FILLET": "#/$defs/FilletFeature",
@@ -2314,6 +2438,9 @@
           },
           {
             "$ref": "#/$defs/GrooveFeature"
+          },
+          {
+            "$ref": "#/$defs/BendFeature"
           }
         ]
       },
@@ -2338,6 +2465,17 @@
       "default": "0.1.0",
       "title": "Schema Version",
       "type": "string"
+    },
+    "sheet_metal": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SheetMetal"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "source": {
       "$ref": "#/$defs/SourceInfo"
@@ -2371,6 +2509,7 @@
     "schema_version",
     "source",
     "cad_metadata",
+    "sheet_metal",
     "representation",
     "units",
     "bounding_box",

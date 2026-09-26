@@ -315,6 +315,8 @@ class _ViewCtx:
     aux: tuple | None = None  # (letter, parent view id) of an auxiliary view
     arrows: list = field(default_factory=list)  # (letter, model point, direction of sight) - arrow method
     brk: tuple | None = None  # conventional break (start, end, gap) along the view's x, model mm about centre
+    center: tuple | None = None  # own projection centre (the flat pattern lives in flat coordinates)
+    flat: object | None = None  # FlatPatternView
 
 
 class Compiler:
@@ -498,6 +500,13 @@ class Compiler:
                             pict_style if pv.orientation in PICTORIAL else pv.display_style))
         for o in p.projected_views:
             out.append(_ViewCtx(f"V-{o.value}", o, view_frame(o, p.view_frame), False, p.orthographic_display_style))
+        fp = p.flat_pattern
+        if fp is not None:
+            ctx = _ViewCtx(fp.id, ViewOrientation.TOP, Frame(eye=(0.0, 0.0, 1.0), x=(1.0, 0.0, 0.0), y=(0.0, 1.0, 0.0)),
+                           False, DisplayStyle.HIDDEN_LINES_REMOVED, floating=True,
+                           center=(fp.length / 2, fp.width / 2, 0.0))
+            ctx.flat = fp
+            out.append(ctx)
         parents = {v.id: v for v in out}
         for av in p.auxiliary_views:
             parent, feat = parents.get(av.parent_view_id), self.features.get(av.feature_id)
@@ -509,6 +518,9 @@ class Compiler:
             out.append(ctx)
             parent.arrows.append((av.label, tuple(feat.axis.origin), tuple(ctx.frame.eye)))
         for v in out:
+            if v.flat is not None:
+                v.half = (-v.flat.length / 2, v.flat.length / 2, -v.flat.width / 2, v.flat.width / 2)
+                continue
             us = [dot(_sub(c, self.center), v.frame.x) for c in self.corners]
             vs = [dot(_sub(c, self.center), v.frame.y) for c in self.corners]
             v.half = (min(us), max(us), min(vs), max(vs))
@@ -703,7 +715,7 @@ class Compiler:
 
     # ------------------------------------------------------------------ per-scale envelopes
     def _uv(self, v: _ViewCtx, p) -> tuple[float, float]:
-        q = _sub(p, self.center)
+        q = _sub(p, v.center or self.center)
         u = dot(q, v.frame.x)
         return (_unbreak_map(v.brk, u) if v.brk else u), dot(q, v.frame.y)
 
@@ -798,8 +810,10 @@ class Compiler:
             v.trace_base = {sd: v.margins[sd] for sd in sides}
             for sd in sides:
                 v.margins[sd] += SECTION_END
-        if v.section or v.aux:
+        if v.section or v.aux or v.flat is not None:
             v.margins["bottom"] += SECTION_LABEL
+        if v.flat is not None:  # bend-line labels above the blank
+            v.margins["top"] = max(v.margins["top"], 9.0)
         # leader-note column on the right of the right-hand tiers
         if v.notes:
             v.notes_x = u1 + v.margins["right"] + 8.0
@@ -857,6 +871,17 @@ class Compiler:
         tail = (tip[0] + d[0] * VIEW_ARROW_LEN, tip[1] + d[1] * VIEW_ARROW_LEN)
         return AnnotationOp(id=f"AUX-{letter}", view_id=v.id, kind=AnnotationKind.VIEW_ARROW,
                             points=[_r(tail), _r(tip)], label=letter, direction=_r((-d[0], -d[1])))
+
+    @staticmethod
+    def _flat_lines(fp) -> list:
+        """The blank: its rectangle and the mapped holes (flat coordinates)."""
+        L, W = fp.length, fp.width
+        out = [[(0.0, 0.0), (L, 0.0), (L, W), (0.0, W), (0.0, 0.0)]]
+        for h in fp.holes:
+            r = h.diameter / 2
+            out.append([(round(h.x + r * math.cos(2 * math.pi * k / 64), 6), round(h.y + r * math.sin(2 * math.pi * k / 64), 6))
+                        for k in range(65)])
+        return out
 
     @staticmethod
     def _trace_horizontal(v: _ViewCtx) -> bool:
@@ -1205,6 +1230,9 @@ class Compiler:
             outline = Rect(x0=c[0] + u0, y0=c[1] + w0, x1=c[0] + u1, y1=c[1] + w1)
             own = v.pictorial and self.pict_scale is not None
             label, label_at = (f"SCALE {self.pict_scale[0]}" if own else None), None
+            if v.flat is not None:
+                label = "FLAT PATTERN"
+                label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
             if v.aux:
                 label = v.aux[0]
                 label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
@@ -1213,11 +1241,13 @@ class Compiler:
                 label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
             views.append(CompiledView(
                 id=v.id, orientation=v.orientation, pictorial=v.pictorial, eye=v.frame.eye, x_axis=v.frame.x,
-                y_axis=v.frame.y, scale=self.pict_scale[0] if own else sc, scale_factor=vs, model_center=self.center,
+                y_axis=v.frame.y, scale=self.pict_scale[0] if own else sc, scale_factor=vs,
+                model_center=v.center or self.center,
                 sheet_center=c, outline=outline, display_style=v.style, label=label, label_at=label_at,
                 cut_point=v.section[1] if v.section else None, cut_normal=v.section[2] if v.section else None,
                 auxiliary_of=v.aux[1] if v.aux else None,
                 break_at=tuple(round(x, 6) for x in v.brk) if v.brk else None,
+                flat_lines=self._flat_lines(v.flat) if v.flat is not None else None,
             ))
             for letter, point, eye in ([] if v.pictorial else v.arrows):
                 anns.append(self._view_arrow(v, s, c, letter, point, eye))
@@ -1229,7 +1259,14 @@ class Compiler:
             dims.extend(vdims)
             taken = [d.text_bbox for d in vdims] + [d.extra_bbox for d in vdims if d.extra_bbox]
             pmi.extend(self._emit_groups(v, s, c, outline, taken))
-            if self.plan.annotations.center_marks or self.plan.annotations.centerlines:
+            if v.flat is not None:
+                for k, b in enumerate(v.flat.bends, 1):
+                    p0, p1 = self._sheet(v, s, c, (b.x, -2.0, 0.0)), self._sheet(v, s, c, (b.x, v.flat.width + 2.0, 0.0))
+                    anns.append(AnnotationOp(id=f"BEND-{k}", view_id=v.id, kind=AnnotationKind.BEND_LINE,
+                                             points=[p0, p1], feature_ids=[b.bend_id],
+                                             label=f"{'UP' if b.up else 'DOWN'} {fmt(b.angle_deg, 0, False)}° "
+                                                   f"R{self.f(b.inner_radius)}"))
+            elif self.plan.annotations.center_marks or self.plan.annotations.centerlines:
                 anns.extend(self._emit_annotations(v, s, c))
         self._emit_details(s, pos, views, dims, anns, pmi)
         return CompiledDrawing(

@@ -166,6 +166,12 @@ class Roles(_M):
     treatments: dict[FeatureRole, Treatment]
 
 
+class SheetMetalRules(_M):
+    flat_pattern: bool
+    bend_allowance: Literal["DIN_6935"]
+    bend_angle_tolerance_deg: float
+
+
 class Gate(_M):
     hard_blockers: list[int]
     warnings: list[int]
@@ -177,6 +183,7 @@ class RuleSet(_M):
     defaults: Defaults
     views: Views
     roles: Roles
+    sheet_metal: SheetMetalRules
     gate: Gate
 
     @property

@@ -606,6 +606,128 @@
       "title": "FeatureRole",
       "type": "string"
     },
+    "FlatBendLine": {
+      "additionalProperties": false,
+      "properties": {
+        "allowance": {
+          "title": "Allowance",
+          "type": "number"
+        },
+        "angle_deg": {
+          "title": "Angle Deg",
+          "type": "number"
+        },
+        "bend_id": {
+          "title": "Bend Id",
+          "type": "string"
+        },
+        "inner_radius": {
+          "title": "Inner Radius",
+          "type": "number"
+        },
+        "k": {
+          "description": "DIN 6935 neutral-fibre factor used",
+          "title": "K",
+          "type": "number"
+        },
+        "up": {
+          "title": "Up",
+          "type": "boolean"
+        },
+        "x": {
+          "description": "bend centre line on the flat, mm from its start",
+          "title": "X",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "angle_deg",
+        "inner_radius",
+        "up",
+        "k",
+        "allowance",
+        "bend_id"
+      ],
+      "title": "FlatBendLine",
+      "type": "object"
+    },
+    "FlatHole": {
+      "additionalProperties": false,
+      "properties": {
+        "diameter": {
+          "title": "Diameter",
+          "type": "number"
+        },
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "x": {
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "diameter",
+        "feature_id"
+      ],
+      "title": "FlatHole",
+      "type": "object"
+    },
+    "FlatPatternView": {
+      "additionalProperties": false,
+      "description": "EX 5: the developed (unfolded) blank, computed from GeometryIR (segments + DIN 6935 bend allowances),\ndrawn in free space as its own 2-D view (flat coordinates: x along the unrolled profile, y along the\nbend axes).",
+      "properties": {
+        "bends": {
+          "items": {
+            "$ref": "#/$defs/FlatBendLine"
+          },
+          "title": "Bends",
+          "type": "array"
+        },
+        "holes": {
+          "items": {
+            "$ref": "#/$defs/FlatHole"
+          },
+          "title": "Holes",
+          "type": "array"
+        },
+        "id": {
+          "default": "V-FLAT",
+          "title": "Id",
+          "type": "string"
+        },
+        "length": {
+          "title": "Length",
+          "type": "number"
+        },
+        "thickness": {
+          "title": "Thickness",
+          "type": "number"
+        },
+        "width": {
+          "title": "Width",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "length",
+        "width",
+        "thickness",
+        "bends",
+        "holes"
+      ],
+      "title": "FlatPatternView",
+      "type": "object"
+    },
     "GdtCharacteristic": {
       "enum": [
         "STRAIGHTNESS",
@@ -1665,7 +1787,8 @@
         "DETAIL",
         "AUXILIARY",
         "BREAK",
-        "THICKNESS_NOTE"
+        "THICKNESS_NOTE",
+        "FLAT_PATTERN"
       ],
       "title": "ViewTriggerKind",
       "type": "string"
@@ -1806,6 +1929,17 @@
       },
       "title": "Feature Roles",
       "type": "array"
+    },
+    "flat_pattern": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/FlatPatternView"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "general_notes": {
       "$ref": "#/$defs/GeneralNotes",
@@ -1993,6 +2127,7 @@
     "detail_views",
     "auxiliary_views",
     "breaks",
+    "flat_pattern",
     "dimensions",
     "dimension_selections",
     "annotations",

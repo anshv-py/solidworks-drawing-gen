@@ -27,6 +27,9 @@ from dataclasses import dataclass, field
 from itertools import combinations
 
 from drawing_schema import (
+    FlatBendLine,
+    FlatHole,
+    FlatPatternView,
     AuxiliaryView,
     ViewFrame,
     DimensionSelection,
@@ -46,12 +49,13 @@ from drawing_schema.settings import DrawingSettings, ViewSelection
 from geometry_schema import FeatureType, GeometryIR
 from shared_types import InfoSource
 
-from drawing_planner.candidates import generate_candidates
+from drawing_planner.candidates import fmt as fmt_value, generate_candidates
 from drawing_planner.gdt_defaults import default_gdt
 from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
 from drawing_planner.roles import PartFamily, infer_roles, main_turned_boss
 from drawing_planner.rule_set import load_rules
+from drawing_planner.flat_pattern import compute_flat_pattern
 from drawing_planner.sections import hidden_in_section, plan_auxiliary_views, plan_break, plan_sections
 from drawing_planner.threads import default_threads
 from drawing_planner.view_rules import auxiliary_triggers, break_triggers, isometric_triggers, section_triggers
@@ -384,6 +388,46 @@ def plan_baseline(
     if ir.representation != "EXACT_BREP":
         uncertainties.append(PlanUncertainty(message="tessellated source: dimensions are approximate"))
 
+    # EX 5: sheet metal gets its flat pattern (developed blank) as a view of its own
+    flat = None
+    flat_notes: list[str] = []
+    flat_triggers: list[ViewTrigger] = []
+    if rules_mode and ir.sheet_metal is not None and rules.sheet_metal.flat_pattern:
+        fp, why = compute_flat_pattern(ir)
+        if fp is not None:
+            flat = FlatPatternView(
+                length=fp.length, width=fp.width, thickness=fp.thickness,
+                bends=[FlatBendLine(x=b.x, angle_deg=b.angle_deg, inner_radius=b.inner_radius, up=b.up, k=b.k,
+                                    allowance=b.allowance, bend_id=b.bend_id) for b in fp.bends],
+                holes=[FlatHole(x=x, y=y, diameter=d, feature_id=fid) for x, y, d, fid in fp.holes])
+            for cid, value, p2, text in [("DIM-FLAT-L", fp.length, (fp.length, 0.0, 0.0), "developed length"),
+                                         ("DIM-FLAT-W", fp.width, (0.0, fp.width, 0.0), "width")]:
+                candidates.append(DimensionCandidate(
+                    id=cid, kind=CandidateKind.LINEAR, role=CandidateRole.SIZE, value=value,
+                    text=fmt_value(value, dp, settings.dimensions.trailing_zeros),
+                    source=f"flat pattern {text}: segments + DIN 6935 bend allowances",
+                    view_rule=ViewRule.IN_PLANE, priority=0, p1=(0.0, 0.0, 0.0), p2=p2,
+                    direction=(1.0, 0.0, 0.0) if cid.endswith("L") else (0.0, 1.0, 0.0), feature_ids=[]))
+                selections.append(DimensionSelection(candidate_id=cid, view_id=flat.id))
+            for k, b in enumerate(fp.bends, 1):
+                cid = f"DIM-FLAT-B{k}"
+                candidates.append(DimensionCandidate(
+                    id=cid, kind=CandidateKind.LINEAR, role=CandidateRole.LOCATION, value=b.x,
+                    text=fmt_value(b.x, dp, settings.dimensions.trailing_zeros),
+                    source=f"flat pattern: bend {k} centre line", view_rule=ViewRule.IN_PLANE, priority=0,
+                    p1=(0.0, fp.width, 0.0), p2=(b.x, fp.width, 0.0), direction=(1.0, 0.0, 0.0),
+                    feature_ids=[b.bend_id]))
+                selections.append(DimensionSelection(candidate_id=cid, view_id=flat.id))
+            ks = sorted({b.k for b in fp.bends})
+            flat_notes = [f"FLAT PATTERN DEVELOPED PER DIN 6935 (k = {', '.join(f'{k:g}' for k in ks)}) - "
+                          "CONFIRM BEND ALLOWANCES WITH THE FABRICATOR.",
+                          f"BEND ANGLES ±{rules.sheet_metal.bend_angle_tolerance_deg:g}°. SHEET THICKNESS "
+                          f"{fmt_value(fp.thickness, dp, settings.dimensions.trailing_zeros)}."]
+        flat_triggers = [ViewTrigger(kind=ViewTriggerKind.FLAT_PATTERN, rule="EX 5 (sheet metal)",
+                                     message="flat pattern with developed size and bend lines"
+                                     + ("" if fp is not None else f" - not drawn: {why}"),
+                                     satisfied=fp is not None)]
+
     triggers: list[ViewTrigger] = []
     breaks: list = []
     rule_notes: list[str] = []
@@ -395,7 +439,8 @@ def plan_baseline(
         brk_triggers = break_triggers(ir, rules)
         if roles.family == PartFamily.SHAFT:
             breaks, brk_triggers = plan_break(ir, brk_triggers, sections)
-        triggers += sec_triggers + aux_triggers + brk_triggers
+        triggers += sec_triggers + aux_triggers + brk_triggers + flat_triggers
+        rule_notes += flat_notes
         if thickness is not None:
             rule_notes.append(f"THICKNESS {thickness.text}")
             triggers.append(ViewTrigger(kind=ViewTriggerKind.THICKNESS_NOTE, rule="RULES 1.1 (one view + note)",
@@ -482,6 +527,7 @@ def plan_baseline(
         sections=sections,
         auxiliary_views=aux_views,
         breaks=breaks,
+        flat_pattern=flat,
         feature_roles=roles.assignments if rules_mode else [],
         view_triggers=triggers,
         rule_notes=rule_notes,
