@@ -229,7 +229,7 @@ export type UseCadMetadata = boolean;
  * Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
  * Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
  */
-export type ViewFrame = "Z_UP" | "Y_UP";
+export type ViewFrame = "Z_UP" | "Y_UP" | "X_UP" | "Z_UP_Y_RIGHT";
 /**
  * RULES: projected_views is the pool the rule set picks the minimum from, and the pictorial primary view is added only when an isometric trigger fires; MANUAL: views exactly as chosen
  */
@@ -291,7 +291,7 @@ export type SheetSize1 = "A0" | "A1" | "A2" | "A3" | "A4";
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "ViewFrame".
  */
-export type ViewFrame1 = "Z_UP" | "Y_UP";
+export type ViewFrame1 = "Z_UP" | "Y_UP" | "X_UP" | "Z_UP_Y_RIGHT";
 /**
  * This interface was referenced by `DrawingSettings`'s JSON-Schema
  * via the `definition` "ViewSelection".

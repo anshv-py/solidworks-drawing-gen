@@ -1182,7 +1182,9 @@
       "description": "Which model axis points up in the drawing views.\n\nZ_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).\nY_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).",
       "enum": [
         "Z_UP",
-        "Y_UP"
+        "Y_UP",
+        "X_UP",
+        "Z_UP_Y_RIGHT"
       ],
       "title": "ViewFrame",
       "type": "string"

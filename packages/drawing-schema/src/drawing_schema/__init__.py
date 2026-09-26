@@ -37,6 +37,7 @@ __all__ = [
     "SectionView",
     "SectionPlane",
     "DetailView",
+    "AuxiliaryView",
     "DimensionPreferences",
     "DimensionSelection",
     "AnnotationPreferences",
@@ -167,6 +168,12 @@ class ViewFrame(StrEnum):
 
     Z_UP = "Z_UP"
     Y_UP = "Y_UP"
+    # chosen by the rule set (EX 3: a shaft is drawn horizontal) - not offered as a user choice
+    X_UP = "X_UP"  # X up, Z to the right in the front view
+    Z_UP_Y_RIGHT = "Z_UP_Y_RIGHT"  # Z up, Y to the right in the front view
+
+
+USER_VIEW_FRAMES = (ViewFrame.Z_UP, ViewFrame.Y_UP)
 
 
 class DisplayStyle(StrEnum):
@@ -233,6 +240,18 @@ class DetailView(StrictModel):
         default=None, description="region centre, derived from GeometryIR: the feature's outermost edge point "
                                   "in the parent view")
     covers: list[str] = Field(default_factory=list, description="features shown enlarged by this detail")
+
+
+class AuxiliaryView(StrictModel):
+    """RULES 1.5: the feature seen along its own axis (true size), drawn anywhere on the sheet and
+    identified by the arrow method (ISO 128-30): a lettered arrow in ``parent_view_id`` shows the
+    direction of sight, the view carries the same letter."""
+
+    id: str
+    label: str = Field(pattern=r"^[A-Z]{1,2}$")
+    parent_view_id: str
+    feature_id: str = Field(description="the view looks along this feature's axis / normal")
+    covers: list[str] = Field(default_factory=list, description="features shown true size in the view")
 
 
 class DimensionPreferences(StrictModel):
@@ -357,6 +376,7 @@ class DrawingPlan(StrictModel):
     )
     sections: list[SectionView] = Field(default_factory=list)
     detail_views: list[DetailView] = Field(default_factory=list)
+    auxiliary_views: list[AuxiliaryView] = Field(default_factory=list)
     dimensions: DimensionPreferences = DimensionPreferences()
     dimension_selections: list[DimensionSelection] = Field(
         default_factory=list,
@@ -399,7 +419,7 @@ class DrawingPlan(StrictModel):
                 )
         view_ids = {self.primary_view.id} | {s.id for s in self.sections} | {
             d.id for d in self.detail_views
-        } | {f"V-{o.value}" for o in self.projected_views}
+        } | {a.id for a in self.auxiliary_views} | {f"V-{o.value}" for o in self.projected_views}
         for ref in [s.parent_view_id for s in self.sections] + [
             d.parent_view_id for d in self.detail_views
         ] + [d.view_id for d in self.dimension_selections]:

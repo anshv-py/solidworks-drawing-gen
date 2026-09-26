@@ -12,7 +12,7 @@
 | 3 / R2 | **Section views** (RULES 1.3 triggers): full section in place of a view, OCCT cut + HLR, ISO 128-50 hatching, ISO 128-44 cutting plane + A-A, QA-SEC-001 | ✅ done, tested (half / multiple / offset sections: later) |
 | R3 | **Detail views** (RULES 1.4 triggers at the final scale): enlarged circled regions placed in free space, QA-DET-001 | ✅ done, tested (dimensions inside details: later) |
 | R4 | Tapped holes from tap-drill sizes (default callouts, blind depth = drill − 3P), keyways (N9), face O-ring grooves (recognizer + EX 6 treatment), sections never carry hidden features' dimensions | ✅ done, tested (radial grooves, modelled threads: later) |
-| R5 | Auxiliary views (angled faces) + conventional breaks (long parts); shafts drawn horizontal (EX 3) | ⏭ next |
+| R5 | Auxiliary views (arrow method) + shafts drawn horizontal ✅ done, tested; conventional breaks (long parts) | ⏭ in progress |
 | R6 | Sheet metal recognition + flat pattern view (EX 5) | planned |
 | R7 | Auto-regenerate on CAD change: feature diff, per-feature rule re-evaluation, role overrides persisted per model, revision log (EX 2) | planned |
 | 4 | Better annotation layout (leader routing around geometry, ordinate dims option) | planned |

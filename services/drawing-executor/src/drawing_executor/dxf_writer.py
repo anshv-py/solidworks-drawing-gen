@@ -704,7 +704,7 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
         if view.label:  # a view at another scale ("SCALE 2:1") or a section ("A-A")
             o = view.outline
             at = view.label_at or ((o.x0 + o.x1) / 2, o.y0 - 5.0)
-            big = view.cut_point is not None or view.detail_of is not None
+            big = view.cut_point is not None or view.detail_of is not None or view.auxiliary_of is not None
             _text(msp, view.label, at, 5.0 if big else 2.5, "NOTES", "MC")
         for layer in ("hidden", "visible"):
             for pl in lines[layer]:
@@ -715,6 +715,13 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
     for a in cd.annotations:
         if a.kind == AnnotationKind.SECTION_LINE:
             _section_line(msp, a)
+        elif a.kind == AnnotationKind.VIEW_ARROW:
+            tail, tip = a.points[0], a.points[1]
+            _line(msp, tail, tip, "DIM")
+            _arrow(msp, tip, tail)
+            d = a.direction or (0.0, -1.0)
+            _text(msp, a.label or "", (tail[0] - d[0] * 3.5 - d[1] * 3.5, tail[1] - d[1] * 3.5 + d[0] * 3.5), 5.0,
+                  "NOTES", "MC")
         elif a.kind == AnnotationKind.DETAIL_CIRCLE:
             msp.add_circle(a.center, a.radius, dxfattribs={"layer": "DIM"})
             k = math.sqrt(0.5)

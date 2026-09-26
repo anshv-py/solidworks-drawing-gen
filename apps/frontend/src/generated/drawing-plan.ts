@@ -5,6 +5,18 @@ export type CenterMarks = boolean;
 export type Centerlines = boolean;
 export type HoleCallouts = boolean;
 /**
+ * features shown true size in the view
+ */
+export type Covers = string[];
+/**
+ * the view looks along this feature's axis / normal
+ */
+export type FeatureId = string;
+export type Id = string;
+export type Label = string;
+export type ParentViewId = string;
+export type AuxiliaryViews = AuxiliaryView[];
+/**
  * title-block fields taken from the CAD file, with their origin
  */
 export type CadMetadataApplied = string[];
@@ -15,14 +27,14 @@ export type Center = [number, number, number] | null;
 /**
  * features shown enlarged by this detail
  */
-export type Covers = string[];
+export type Covers1 = string[];
 /**
  * region is centred on this GeometryIR feature
  */
-export type FeatureId = string;
-export type Id = string;
-export type Label = string;
-export type ParentViewId = string;
+export type FeatureId1 = string;
+export type Id1 = string;
+export type Label1 = string;
+export type ParentViewId1 = string;
 /**
  * region radius in model mm
  */
@@ -94,7 +106,7 @@ export type Rule = string;
  */
 export type RoleSource = "INFERRED" | "USER";
 export type FaceId = string | null;
-export type FeatureId1 = string | null;
+export type FeatureId2 = string | null;
 export type FeatureRoles = RoleAssignment[];
 /**
  * sharp-edge break value, e.g. as specified
@@ -192,7 +204,7 @@ export type Depth = number | null;
  * e.g. M8x1.25-6H (as specified by the user)
  */
 export type Designation = string;
-export type FeatureId2 = string;
+export type FeatureId3 = string;
 /**
  * Where a piece of engineering information came from.
  */
@@ -221,7 +233,7 @@ export type DisplayStyle = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SH
 export type DisplayStyle1 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
 export type Dimensioned = boolean;
 export type DisplayStyle2 = "HIDDEN_LINES_REMOVED" | "HIDDEN_LINES_VISIBLE" | "SHADED_WITH_EDGES";
-export type Id1 = string;
+export type Id2 = string;
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ViewOrientation".
@@ -246,9 +258,9 @@ export type RuleNotes = string[];
  */
 export type RuleSet = string | null;
 export type SchemaVersion = "0.1.0";
-export type Id2 = string;
-export type Label1 = string;
-export type ParentViewId1 = string;
+export type Id3 = string;
+export type Label2 = string;
+export type ParentViewId2 = string;
 /**
  * model principal plane through the bounding-box centre
  */
@@ -303,7 +315,7 @@ export type Units = "mm";
  * Z_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).
  * Y_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).
  */
-export type ViewFrame = "Z_UP" | "Y_UP";
+export type ViewFrame = "Z_UP" | "Y_UP" | "X_UP" | "Z_UP_Y_RIGHT";
 export type FeatureIds = string[];
 /**
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
@@ -374,10 +386,11 @@ export type SheetSize1 = "A0" | "A1" | "A2" | "A3" | "A4";
  * This interface was referenced by `DrawingPlan`'s JSON-Schema
  * via the `definition` "ViewFrame".
  */
-export type ViewFrame1 = "Z_UP" | "Y_UP";
+export type ViewFrame1 = "Z_UP" | "Y_UP" | "X_UP" | "Z_UP_Y_RIGHT";
 
 export interface DrawingPlan {
   annotations: AnnotationPreferences;
+  auxiliary_views: AuxiliaryViews;
   cad_metadata_applied: CadMetadataApplied;
   detail_views: DetailViews;
   dimension_selections: DimensionSelections;
@@ -412,6 +425,21 @@ export interface AnnotationPreferences {
   hole_callouts: HoleCallouts;
 }
 /**
+ * RULES 1.5: the feature seen along its own axis (true size), drawn anywhere on the sheet and
+ * identified by the arrow method (ISO 128-30): a lettered arrow in ``parent_view_id`` shows the
+ * direction of sight, the view carries the same letter.
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "AuxiliaryView".
+ */
+export interface AuxiliaryView {
+  covers: Covers;
+  feature_id: FeatureId;
+  id: Id;
+  label: Label;
+  parent_view_id: ParentViewId;
+}
+/**
  * An enlarged circular region of ``parent_view_id`` (RULES 1.4), drawn in free space on the sheet
  * and labelled "B (5:1)"; the region is circled and lettered in the parent view.
  *
@@ -420,11 +448,11 @@ export interface AnnotationPreferences {
  */
 export interface DetailView {
   center: Center;
-  covers: Covers;
-  feature_id: FeatureId;
-  id: Id;
-  label: Label;
-  parent_view_id: ParentViewId;
+  covers: Covers1;
+  feature_id: FeatureId1;
+  id: Id1;
+  label: Label1;
+  parent_view_id: ParentViewId1;
   radius: Radius;
   scale: Scale;
 }
@@ -494,7 +522,7 @@ export interface RoleAssignment {
  */
 export interface Target {
   face_id: FaceId;
-  feature_id: FeatureId1;
+  feature_id: FeatureId2;
 }
 /**
  * The default numbered drawing notes (on by default).
@@ -598,7 +626,7 @@ export interface SurfaceFinishMark {
 export interface ThreadCallout {
   depth: Depth;
   designation: Designation;
-  feature_id: FeatureId2;
+  feature_id: FeatureId3;
   source: InfoSource1;
 }
 /**
@@ -615,7 +643,7 @@ export interface DimensionTolerance {
 export interface ViewSpec {
   dimensioned: Dimensioned;
   display_style: DisplayStyle2;
-  id: Id1;
+  id: Id2;
   orientation: ViewOrientation;
   scale: Scale1;
 }
@@ -628,9 +656,9 @@ export interface ViewSpec {
  * via the `definition` "SectionView".
  */
 export interface SectionView {
-  id: Id2;
-  label: Label1;
-  parent_view_id: ParentViewId1;
+  id: Id3;
+  label: Label2;
+  parent_view_id: ParentViewId2;
   plane: SectionPlane;
   replaces: ViewOrientation | null;
   scale: Scale2;
@@ -819,7 +847,7 @@ export interface TitleBlock1 {
 export interface ViewSpec1 {
   dimensioned: Dimensioned;
   display_style: DisplayStyle2;
-  id: Id1;
+  id: Id2;
   orientation: ViewOrientation;
   scale: Scale1;
 }

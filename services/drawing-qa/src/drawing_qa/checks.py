@@ -128,7 +128,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
     R.check("QA-VIEW-002")
     for v in cd.views:
         bb = geo_bbox.get(v.id)
-        if v.pictorial or bb is None or v.detail_of:  # (a detail shows a region only)
+        if v.pictorial or bb is None or v.detail_of or v.auxiliary_of:  # (region only / oblique projection)
             continue
         # HLR extents (OCCT) must equal the GeometryIR bounding box projected by the compiler
         tol = 0.05 * v.scale_factor + 0.01
@@ -166,8 +166,16 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         drawn = rendered.lines.get(v.id, {})
         if not (drawn.get("visible") or drawn.get("hidden")):
             R.add("QA-DET-001", QaSeverity.CRITICAL, f"detail {letter} shows no geometry", [v.id])
+    R.check("QA-AUX-001")
+    # every auxiliary view is identified by an arrow with its letter in the view it was projected from
+    for v in cd.views:
+        if v.auxiliary_of and not any(a.kind == AnnotationKind.VIEW_ARROW and a.label == v.label
+                                      and a.view_id == v.auxiliary_of for a in cd.annotations):
+            R.add("QA-AUX-001", QaSeverity.CRITICAL, f"auxiliary view {v.label} has no arrow in {v.auxiliary_of}",
+                  [v.id])
     R.check("QA-VIEW-003")
-    front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT and not v.detail_of), None)
+    front = next((v for v in cd.views if v.orientation == ViewOrientation.FRONT and not v.detail_of
+                  and not v.auxiliary_of), None)
     if front is not None:
         first = cd.projection_method == ProjectionMethod.FIRST_ANGLE
         expect = {  # orientation -> (axis, sign) of offset from FRONT
@@ -176,7 +184,7 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
         }
         fx, fy = front.sheet_center
         for v in cd.views:
-            if v.orientation not in expect or v.detail_of:  # details float freely
+            if v.orientation not in expect or v.detail_of or v.auxiliary_of:  # details / aux views float
                 continue
             axis, sign = expect[v.orientation]
             dx, dy = v.sheet_center[0] - fx, v.sheet_center[1] - fy

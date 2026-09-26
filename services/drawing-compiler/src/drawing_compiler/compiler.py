@@ -57,7 +57,7 @@ from drawing_schema.compiled import (
     TitleBlockField,
     ToleranceText,
 )
-from drawing_schema.frames import Frame, dot, view_frame
+from drawing_schema.frames import auxiliary_frame, Frame, dot, view_frame
 from drawing_compiler.notes import build_notes
 from drawing_schema.pmi import FeatureControlFrame, ToleranceKind
 from geometry_schema import FeatureType, GeometryIR, SurfaceType
@@ -85,6 +85,8 @@ SECTION_STROKE = 6.0  # thick end of the cutting plane (ISO 128-44)
 SECTION_END = 16.0  # room beyond the dimensions for the stroke, arrow and letter
 SECTION_LABEL = 8.0  # room below a section view for its A-A designation
 DETAIL_LABEL = 9.0  # room below a detail view for its "B (5:1)" label
+VIEW_ARROW_GAP = 3.0  # arrow tip clear of the surface it points at
+VIEW_ARROW_LEN = 12.0
 FINISH_TIP_X = 3.0  # symbol point from the left of its box (the short leg reaches 2.9 mm left)
 
 
@@ -298,6 +300,9 @@ class _ViewCtx:
     section: tuple | None = None  # (letter, plane point, normal toward the removed half): drawn as a section
     trace: tuple | None = None  # (letter, plane point, normal): this view shows the cutting plane
     trace_base: dict = field(default_factory=dict)  # side -> margin before the cutting-plane ends
+    floating: bool = False  # auxiliary view: placed in free space, not in the projection grid
+    aux: tuple | None = None  # (letter, parent view id) of an auxiliary view
+    arrows: list = field(default_factory=list)  # (letter, model point, direction of sight) - arrow method
 
 
 class Compiler:
@@ -481,6 +486,16 @@ class Compiler:
                             pict_style if pv.orientation in PICTORIAL else pv.display_style))
         for o in p.projected_views:
             out.append(_ViewCtx(f"V-{o.value}", o, view_frame(o, p.view_frame), False, p.orthographic_display_style))
+        parents = {v.id: v for v in out}
+        for av in p.auxiliary_views:
+            parent, feat = parents.get(av.parent_view_id), self.features.get(av.feature_id)
+            if parent is None or parent.pictorial or feat is None or not hasattr(feat, "axis"):
+                self.opt.notes.append(f"UNPLACED: auxiliary view {av.label}")
+                continue
+            ctx = _ViewCtx(av.id, parent.orientation, auxiliary_frame(feat.axis.direction, parent.frame), False,
+                           p.orthographic_display_style, floating=True, aux=(av.label, parent.id))
+            out.append(ctx)
+            parent.arrows.append((av.label, tuple(feat.axis.origin), tuple(ctx.frame.eye)))
         for v in out:
             us = [dot(_sub(c, self.center), v.frame.x) for c in self.corners]
             vs = [dot(_sub(c, self.center), v.frame.y) for c in self.corners]
@@ -757,7 +772,7 @@ class Compiler:
             v.trace_base = {sd: v.margins[sd] for sd in sides}
             for sd in sides:
                 v.margins[sd] += SECTION_END
-        if v.section:
+        if v.section or v.aux:
             v.margins["bottom"] += SECTION_LABEL
         # leader-note column on the right of the right-hand tiers
         if v.notes:
@@ -805,6 +820,18 @@ class Compiler:
                                      feature_ids=list(dv.covers or [dv.feature_id])))
             placed.append(env)
 
+    def _view_arrow(self, v: _ViewCtx, s, c, letter: str, point, eye) -> AnnotationOp:
+        """ISO 128-30 arrow method: an arrow pointing at the feature in the direction of sight of the
+        auxiliary view, starting outside the part, with the view's letter at its tail."""
+        ex, ey = dot(eye, v.frame.x), dot(eye, v.frame.y)
+        ln = math.hypot(ex, ey) or 1.0
+        d = (ex / ln, ey / ln)  # toward the viewer of the auxiliary view
+        px, py = self._sheet(v, s, c, point)
+        tip = (px + d[0] * VIEW_ARROW_GAP, py + d[1] * VIEW_ARROW_GAP)
+        tail = (tip[0] + d[0] * VIEW_ARROW_LEN, tip[1] + d[1] * VIEW_ARROW_LEN)
+        return AnnotationOp(id=f"AUX-{letter}", view_id=v.id, kind=AnnotationKind.VIEW_ARROW,
+                            points=[_r(tail), _r(tip)], label=letter, direction=_r((-d[0], -d[1])))
+
     @staticmethod
     def _trace_horizontal(v: _ViewCtx) -> bool:
         n = v.trace[2]
@@ -846,12 +873,14 @@ class Compiler:
         False, fallbacks: the pictorial view beside the grid / in any free area, then a free grid cell."""
         for v in self.views:
             self._plan_view(v, s)
+        grid = [v for v in self.views if not v.floating]
         pict = [v for v in self.views if v.pictorial]
         if not pict:
-            for pos, _ in self._grid_positions(s, self.views, limit=1):
-                return pos
+            for pos, envs in self._grid_positions(s, grid, limit=12):
+                if self._place_floating(s, pos, list(envs)):
+                    return pos
             return None
-        ortho = [v for v in self.views if not v.pictorial]
+        ortho = [v for v in grid if not v.pictorial]
         corner = self._corner_spot(self._extent(pict[0], s)) if len(pict) == 1 else None
         if corner is not None:
             (cx, cy), env = corner
@@ -859,9 +888,10 @@ class Compiler:
             self.obstacles = saved + [Rect(x0=env.x0 - VIEW_GAP, y0=env.y0 - VIEW_GAP, x1=env.x1 + VIEW_GAP,
                                            y1=env.y1 + VIEW_GAP)]
             try:
-                for pos, _ in self._grid_positions(s, ortho, limit=12, left_first=True):
+                for pos, envs in self._grid_positions(s, ortho, limit=12, left_first=True):
                     pos[pict[0].id] = (cx, cy)
-                    return pos
+                    if self._place_floating(s, pos, [*envs, env]):
+                        return pos
             finally:
                 self.obstacles = saved
         if corner_only:
@@ -877,11 +907,24 @@ class Compiler:
                     break
                 pos[v.id], env = spot
                 placed.append(env)
-            if ok:
+            if ok and self._place_floating(s, pos, placed):
                 return pos
-        for pos, _ in self._grid_positions(s, self.views, limit=1):
-            return pos
+        for pos, envs in self._grid_positions(s, grid, limit=1):
+            if self._place_floating(s, pos, list(envs)):
+                return pos
         return None
+
+    def _place_floating(self, s: float, pos: dict, placed: list) -> bool:
+        """Auxiliary views (arrow method: no projection alignment) in the clearest free space."""
+        for v in self.views:
+            if not v.floating:
+                continue
+            spot = self._free_spot(self._extent(v, s), placed)
+            if spot is None:
+                return False
+            pos[v.id], env = spot
+            placed.append(env)
+        return True
 
     def _corner_spot(self, ext):
         """Envelope in the sheet's top-right corner (below a revision table, if any)."""
@@ -1136,6 +1179,9 @@ class Compiler:
             outline = Rect(x0=c[0] + u0, y0=c[1] + w0, x1=c[0] + u1, y1=c[1] + w1)
             own = v.pictorial and self.pict_scale is not None
             label, label_at = (f"SCALE {self.pict_scale[0]}" if own else None), None
+            if v.aux:
+                label = v.aux[0]
+                label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
             if v.section:
                 label = f"{v.section[0]}-{v.section[0]}"
                 label_at = _r(((outline.x0 + outline.x1) / 2, outline.y0 - v.margins["bottom"] + SECTION_LABEL / 2))
@@ -1144,7 +1190,10 @@ class Compiler:
                 y_axis=v.frame.y, scale=self.pict_scale[0] if own else sc, scale_factor=vs, model_center=self.center,
                 sheet_center=c, outline=outline, display_style=v.style, label=label, label_at=label_at,
                 cut_point=v.section[1] if v.section else None, cut_normal=v.section[2] if v.section else None,
+                auxiliary_of=v.aux[1] if v.aux else None,
             ))
+            for letter, point, eye in ([] if v.pictorial else v.arrows):
+                anns.append(self._view_arrow(v, s, c, letter, point, eye))
             if v.trace and not v.pictorial:
                 anns.append(self._section_line(v, s, c, outline))
             if v.pictorial:

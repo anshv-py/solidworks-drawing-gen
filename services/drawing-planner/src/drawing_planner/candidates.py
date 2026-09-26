@@ -167,11 +167,12 @@ class _Builder:
                 target: str | None = None) -> None:
         """Baseline location from the part's min faces. ``target`` = anchor kind of the located point."""
         ax = _axis_name(axis_dir)
+        names = [n for n in AXES if n != ax]
         if ax is None:
-            return
-        for name in AXES:
-            if name == ax:
-                continue
+            # an axis on an angled face: its entry point lies on that face (2 degrees of freedom) - locate it
+            # along the two principal axes most square to the axis; the third follows from the face
+            names = sorted(AXES, key=lambda n: (round(abs(sum(a * b for a, b in zip(AXES[n], axis_dir))), 9), n))[:2]
+        for name in names:
             i = AXIS_INDEX[name]
             value = h_center[i] - self.bmin[i]
             if value < TOL:

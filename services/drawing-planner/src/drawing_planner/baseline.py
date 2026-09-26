@@ -27,6 +27,8 @@ from dataclasses import dataclass, field
 from itertools import combinations
 
 from drawing_schema import (
+    AuxiliaryView,
+    ViewFrame,
     DimensionSelection,
     EngineeringField,
     DrawingPlan,
@@ -48,9 +50,9 @@ from drawing_planner.candidates import generate_candidates
 from drawing_planner.gdt_defaults import default_gdt
 from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
-from drawing_planner.roles import infer_roles
+from drawing_planner.roles import PartFamily, infer_roles, main_turned_boss
 from drawing_planner.rule_set import load_rules
-from drawing_planner.sections import hidden_in_section, plan_sections
+from drawing_planner.sections import hidden_in_section, plan_auxiliary_views, plan_sections
 from drawing_planner.threads import default_threads
 from drawing_planner.view_rules import auxiliary_triggers, break_triggers, isometric_triggers, section_triggers
 
@@ -237,7 +239,13 @@ def plan_baseline(
     primary_ortho = settings.primary_view not in PICTORIAL
     if primary_ortho and settings.primary_view not in pool:
         pool.insert(0, settings.primary_view)
-    frames = {o: view_frame(o, settings.view_frame) for o in pool}
+    frame_kind = settings.view_frame
+    if rules_mode and roles.family == PartFamily.SHAFT:
+        # EX 3: a shaft is drawn with its axis horizontal in the front view (keep the user's frame if it does)
+        boss, _ = main_turned_boss(ir)
+        frame_kind = next(f for f in [settings.view_frame, *ViewFrame]
+                          if abs(abs(dot(view_frame(ViewOrientation.FRONT, f).x, boss.axis.direction)) - 1) < 1e-6)
+    frames = {o: view_frame(o, frame_kind) for o in pool}
 
     def assign(views: list[ViewOrientation], skip: set[str], forbid: dict | None = None):
         """``forbid``: candidate id -> views that must not carry it (a section hiding its feature)."""
@@ -349,6 +357,25 @@ def plan_baseline(
                 thickness = None  # the added view shows the thickness
             selections, uncertainties = assign(views, {thickness.id} if thickness else set(), forbid)
 
+    # RULES 1.5: features on angled faces get an auxiliary view along their axis; the dimensions no
+    # principal view shows true size go there
+    aux_views: list[AuxiliaryView] = []
+    aux_triggers = auxiliary_triggers(ir, rules) if rules_mode else []
+    if aux_triggers:
+        aux_views, aux_frames = plan_auxiliary_views(ir, views, frames, aux_triggers)
+        placed_ids = {x.candidate_id for x in selections}
+        for c in kept:
+            if c.id in placed_ids or (thickness is not None and c.id == thickness.id):
+                continue
+            for av in aux_views:
+                if set(c.feature_ids) & set(av.covers) and _compatible(c, aux_frames[av.id]):
+                    selections.append(DimensionSelection(candidate_id=c.id, view_id=av.id))
+                    uncertainties = [u for u in uncertainties if not u.message.startswith(f"{c.id} ")]
+                    break
+        covered = {fid for av in aux_views for fid in av.covers}
+        aux_triggers = [t.model_copy(update={"satisfied": True}) if set(t.feature_ids) <= covered else t
+                        for t in aux_triggers]
+
     for c in dropped:
         uncertainties.append(
             PlanUncertainty(message=f"{c.id} ({c.text}) omitted: redundant with a higher-priority dimension",
@@ -364,7 +391,7 @@ def plan_baseline(
         iso = isometric_triggers(ir, rules, settings.general_notes.process)
         show_pictorial = bool(iso)
         triggers += [t.model_copy(update={"satisfied": True}) for t in iso]
-        triggers += sec_triggers + auxiliary_triggers(ir, rules) + break_triggers(ir, rules)
+        triggers += sec_triggers + aux_triggers + break_triggers(ir, rules)
         if thickness is not None:
             rule_notes.append(f"THICKNESS {thickness.text}")
             triggers.append(ViewTrigger(kind=ViewTriggerKind.THICKNESS_NOTE, rule="RULES 1.1 (one view + note)",
@@ -416,6 +443,11 @@ def plan_baseline(
         # view designations never reuse a datum letter on the same sheet
         free = [c for c in "ABCDEFGHJKLMNPRSTUVWXYZ" if c not in {d.letter for d in manufacturing.datums}]
         sections = [s.model_copy(update={"label": free[k]}) for k, s in enumerate(sections)]
+    if aux_views:
+        free = [c for c in "ABCDEFGHJKLMNPRSTUVWXYZ"
+                if c not in {d.letter for d in manufacturing.datums} | {s.label for s in sections}]
+        relabel = {a.id: free[k] for k, a in enumerate(aux_views)}
+        aux_views = [a.model_copy(update={"label": relabel[a.id]}) for a in aux_views]
     tb = settings.title_block
     cad_applied: list[str] = []
     if settings.use_cad_metadata:
@@ -428,7 +460,7 @@ def plan_baseline(
         drawing_standard=settings.drawing_standard,
         projection_method=settings.projection_method,
         sheet=settings.sheet,
-        view_frame=settings.view_frame,
+        view_frame=frame_kind,
         orthographic_display_style=settings.orthographic_display_style,
         primary_view=primary,
         projected_views=projected,
@@ -444,6 +476,7 @@ def plan_baseline(
         rationale=rationale[:2000],
         rule_set=rules.label if rules_mode else None,
         sections=sections,
+        auxiliary_views=aux_views,
         feature_roles=roles.assignments if rules_mode else [],
         view_triggers=triggers,
         rule_notes=rule_notes,

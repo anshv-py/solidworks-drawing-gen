@@ -75,6 +75,7 @@ class CompiledView(StrictModel):
     cut_point: Vec3 | None = Field(default=None, description="section view: a point of the cutting plane (model)")
     cut_normal: Vec3 | None = Field(default=None, description="section view: plane normal toward the removed half")
     detail_of: str | None = Field(default=None, description="detail view: the view it enlarges")
+    auxiliary_of: str | None = Field(default=None, description="auxiliary view: the view its arrow is in")
     clip_radius: float | None = Field(default=None, description="detail view: region radius (model mm) around model_center")
 
 
@@ -179,6 +180,7 @@ class AnnotationKind(StrEnum):
     PITCH_CIRCLE = "PITCH_CIRCLE"
     SECTION_LINE = "SECTION_LINE"  # ISO 128-44 cutting plane: thick ends, arrows (direction of sight), letters
     DETAIL_CIRCLE = "DETAIL_CIRCLE"  # region of a detail view, with its letter (ISO 128-44)
+    VIEW_ARROW = "VIEW_ARROW"  # arrow method (ISO 128-30): direction of sight of an auxiliary view + letter
 
 
 class AnnotationOp(StrictModel):

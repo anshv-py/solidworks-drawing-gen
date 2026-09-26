@@ -27,6 +27,47 @@
       "title": "AnnotationPreferences",
       "type": "object"
     },
+    "AuxiliaryView": {
+      "additionalProperties": false,
+      "description": "RULES 1.5: the feature seen along its own axis (true size), drawn anywhere on the sheet and\nidentified by the arrow method (ISO 128-30): a lettered arrow in ``parent_view_id`` shows the\ndirection of sight, the view carries the same letter.",
+      "properties": {
+        "covers": {
+          "description": "features shown true size in the view",
+          "items": {
+            "type": "string"
+          },
+          "title": "Covers",
+          "type": "array"
+        },
+        "feature_id": {
+          "description": "the view looks along this feature's axis / normal",
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "pattern": "^[A-Z]{1,2}$",
+          "title": "Label",
+          "type": "string"
+        },
+        "parent_view_id": {
+          "title": "Parent View Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "parent_view_id",
+        "feature_id",
+        "covers"
+      ],
+      "title": "AuxiliaryView",
+      "type": "object"
+    },
     "Datum": {
       "additionalProperties": false,
       "properties": {
@@ -1463,7 +1504,9 @@
       "description": "Which model axis points up in the drawing views.\n\nZ_UP: front view looks along +Y (common for Creo/NX/Inventor/Fusion exports).\nY_UP: front view looks along -Z (SolidWorks' native frame: Front = XY plane).",
       "enum": [
         "Z_UP",
-        "Y_UP"
+        "Y_UP",
+        "X_UP",
+        "Z_UP_Y_RIGHT"
       ],
       "title": "ViewFrame",
       "type": "string"
@@ -1578,6 +1621,13 @@
         "centerlines": true,
         "hole_callouts": true
       }
+    },
+    "auxiliary_views": {
+      "items": {
+        "$ref": "#/$defs/AuxiliaryView"
+      },
+      "title": "Auxiliary Views",
+      "type": "array"
     },
     "cad_metadata_applied": {
       "description": "title-block fields taken from the CAD file, with their origin",
@@ -1875,6 +1925,7 @@
     "projected_views",
     "sections",
     "detail_views",
+    "auxiliary_views",
     "dimensions",
     "dimension_selections",
     "annotations",

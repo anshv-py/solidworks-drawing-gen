@@ -37,6 +37,7 @@ from drawing_schema import (
     DrawingKind,
     DrawingStandard,
     ProjectionMethod,
+    USER_VIEW_FRAMES,
     ScaleSystem,
     SheetOrientation,
     SheetSize,
@@ -72,7 +73,7 @@ def drawing_defaults() -> DrawingDefaults:
             "view_orientation": [v.value for v in ViewOrientation],
             "orthographic_view": [v.value for v in ViewOrientation
                                   if v not in (ViewOrientation.ISOMETRIC, ViewOrientation.DIMETRIC, ViewOrientation.TRIMETRIC)],
-            "view_frame": [f.value for f in ViewFrame],
+            "view_frame": [f.value for f in USER_VIEW_FRAMES],
             "display_style": [d.value for d in DisplayStyle],
             "units": ["mm"],
         },

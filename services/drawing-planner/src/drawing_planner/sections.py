@@ -9,8 +9,8 @@ feature axis lies in that plane are satisfied by it, the others stay reported.
 
 from __future__ import annotations
 
-from drawing_schema import SectionPlane, SectionView, ViewOrientation
-from drawing_schema.frames import Frame, dot
+from drawing_schema import AuxiliaryView, SectionPlane, SectionView, ViewOrientation
+from drawing_schema.frames import Frame, auxiliary_frame, dot
 from drawing_schema.roles import ViewTrigger, ViewTriggerKind
 from geometry_schema import GeometryIR
 
@@ -95,10 +95,42 @@ def hidden_in_section(ir: GeometryIR, section: SectionView, frame: Frame) -> set
     return out
 
 
+def plan_auxiliary_views(ir: GeometryIR, views: list[ViewOrientation], frames: dict[ViewOrientation, Frame],
+                         triggers: list[ViewTrigger]):
+    """-> (auxiliary views, their frames): one per distinct angled direction, looking along it; the
+    parent is a selected view that sees the direction true length (where the arrow goes)."""
+    features = {f.id: f for f in ir.features}
+    out: list[AuxiliaryView] = []
+    out_frames: dict[str, Frame] = {}
+    dirs: list[tuple[tuple, list[str]]] = []
+    for t in triggers:
+        for fid in t.feature_ids:
+            f = features.get(fid)
+            d = f.axis.direction if f is not None and hasattr(f, "axis") else None
+            if d is None:
+                continue
+            for known, members in dirs:
+                if abs(dot(known, d) - 1) < 1e-6:
+                    members.append(fid)
+                    break
+            else:
+                dirs.append((tuple(d), [fid]))
+    for d, members in dirs:
+        parent = next((o for o in PREFERENCE if o in views and abs(dot(frames[o].eye, d)) < 1e-6), None)
+        if parent is None:
+            continue
+        k = len(out)
+        av = AuxiliaryView(id=f"V-AUX-{k + 1}", label="D", parent_view_id=f"V-{parent.value}",
+                           feature_id=members[0], covers=sorted(members))
+        out.append(av)
+        out_frames[av.id] = auxiliary_frame(d, frames[parent])
+    return out, out_frames
+
+
 def section_frame(ir: GeometryIR, section: SectionView, frame: Frame) -> tuple[tuple, tuple]:
     """(point on the cutting plane, normal toward the removed half = the section view's eye)."""
     feat = next(f for f in ir.features if f.id == section.plane.through_feature_id)
     return tuple(feat.axis.origin), tuple(frame.eye)
 
 
-__all__ = ["hidden_in_section", "plan_sections", "section_frame"]
+__all__ = ["hidden_in_section", "plan_auxiliary_views", "plan_sections", "section_frame"]

@@ -306,6 +306,29 @@ def seal_cover():
     return s, exp
 
 
+def angled_block():
+    """Block with a 45 deg bevel along the top back edge and a d8 x 10 blind hole square to the bevel."""
+    L, W, H, b = 80.0, 50.0, 40.0, 20.0
+    s = box(0, 0, 0, L, W, H)
+    # the bevel: remove everything beyond the plane through (y = W - b, z = H) and (y = W, z = H - b)
+    n = (0.0, math.sqrt(0.5), math.sqrt(0.5))  # outward normal of the bevel
+    # box whose z axis is the bevel normal, starting on the bevel plane, centred on the bevel's mid-line
+    # (gp_Ax2 y direction = n x X = (0, sqrt(.5), -sqrt(.5)))
+    k = math.sqrt(0.5)
+    origin = (-10.0, W - b / 2 - 40.0 * k, H - b / 2 + 40.0 * k)
+    cutter = BRepPrimAPI_MakeBox(gp_Ax2(gp_Pnt(*origin), gp_Dir(*n), gp_Dir(1, 0, 0)), L + 20, 80.0, 60.0).Shape()
+    s = cut(s, cutter)
+    centre = (L / 2, W - b / 2, H - b / 2)  # middle of the bevel face
+    start = tuple(centre[i] + 2.0 * n[i] for i in range(3))
+    s = clean(cut(s, cyl(start, tuple(-x for x in n), 4.0, 12.0)))  # depth 10 below the face
+    exp = {
+        "bbox_size": [L, W, H],
+        "holes": [{"diameter": 8.0, "through": False, "depth": 10.0, "count": 1}],
+        "angled_hole_axis": [0.0, -math.sqrt(0.5), -math.sqrt(0.5)],
+    }
+    return s, exp
+
+
 MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "plate_with_holes": plate_with_holes,
     "mounting_plate": mounting_plate,
@@ -318,6 +341,7 @@ MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "chamfered_block": chamfered_block,
     "keyed_shaft": keyed_shaft,
     "seal_cover": seal_cover,
+    "angled_block": angled_block,
 }
 
 STL_MODELS = ("plate_with_holes", "flange", "bracket")

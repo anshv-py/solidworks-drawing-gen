@@ -49,6 +49,7 @@ GeometryIR, and OCCT's hidden-line output of the real B-Rep.
 | QA-PMI-003 | MAJOR | frames, datum symbols and finish symbols don't overlap dimension text, each other or other views |
 | QA-PMI-004 | CRITICAL | every feature control frame prints its planned tolerance exactly (no rounding to the drawing's decimals) |
 | QA-SEC-001 | CRITICAL | every section view has hatched cut faces and its cutting plane (same letter) is shown in another view |
+| QA-AUX-001 | CRITICAL | every auxiliary view has its lettered arrow in the view it was projected from (auxiliary views are exempt from the extent / alignment checks) |
 | QA-DET-001 | CRITICAL | every detail view shows geometry and its region is circled with the same letter in the view it enlarges (details are exempt from the extent / projection-alignment / centre-mark checks) |
 | QA-REF-001 | CRITICAL | every dimension references a known candidate |
 

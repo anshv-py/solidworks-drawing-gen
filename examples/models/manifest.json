@@ -1,6 +1,29 @@
 {
   "generator": "scripts/generate_fixtures.py",
   "models": {
+    "angled_block": {
+      "expected": {
+        "angled_hole_axis": [
+          0.0,
+          -0.7071067811865476,
+          -0.7071067811865476
+        ],
+        "bbox_size": [
+          80.0,
+          50.0,
+          40.0
+        ],
+        "holes": [
+          {
+            "count": 1,
+            "depth": 10.0,
+            "diameter": 8.0,
+            "through": false
+          }
+        ]
+      },
+      "step": "angled_block.step"
+    },
     "bracket": {
       "expected": {
         "bbox_size": [
