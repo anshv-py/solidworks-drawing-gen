@@ -9,7 +9,7 @@ feature axis lies in that plane are satisfied by it, the others stay reported.
 
 from __future__ import annotations
 
-from drawing_schema import AuxiliaryView, SectionPlane, SectionView, ViewOrientation
+from drawing_schema import AuxiliaryView, ConventionalBreak, SectionPlane, SectionView, ViewOrientation
 from drawing_schema.frames import Frame, auxiliary_frame, dot
 from drawing_schema.roles import ViewTrigger, ViewTriggerKind
 from geometry_schema import GeometryIR
@@ -127,10 +127,51 @@ def plan_auxiliary_views(ir: GeometryIR, views: list[ViewOrientation], frames: d
     return out, out_frames
 
 
+def plan_break(ir: GeometryIR, triggers: list[ViewTrigger], sections: list[SectionView]):
+    """RULES 1.6 for turned parts: the middle of the longest constant diameter, keeping max(Ø, 15 %) of it at
+    each end and clear of every other feature, when the removal shortens the part by at least 20 %.
+    -> (breaks, triggers with ``satisfied`` updated)."""
+    if not any(t.kind == ViewTriggerKind.BREAK for t in triggers) or sections:
+        return [], triggers
+    bosses = [f for f in ir.features if f.type.value == "BOSS"]
+    if not bosses:
+        return [], triggers
+    boss = max(bosses, key=lambda b: (b.height, b.diameter, b.id))
+    a, o = boss.axis.direction, boss.axis.origin
+    margin = max(boss.diameter, 0.15 * boss.height)
+    lo, hi = margin, boss.height - margin
+    total = max(ir.bounding_box.size)
+    if hi - lo < 0.2 * total:
+        return [], triggers
+    faces = {f.id: f for f in ir.faces}
+    edges = {e.id: e for e in ir.edges}
+
+    def along(p) -> float:
+        return sum((p[i] - o[i]) * a[i] for i in range(3))
+
+    for f in ir.features:
+        if f.id == boss.id or f.type.value == "PATTERN":
+            continue
+        pts = [p for fid in f.face_ids if fid in faces for eid in faces[fid].edge_ids if eid in edges
+               for p in (edges[eid].start, edges[eid].end)]
+        if not pts:
+            continue
+        s0, s1 = min(along(p) for p in pts), max(along(p) for p in pts)
+        if s1 > lo + 1e-6 and s0 < hi - 1e-6:
+            if f.type.value == "BOSS" and abs(abs(dot(f.axis.direction, a)) - 1) < 1e-6:
+                continue  # a coaxial diameter elsewhere on the shaft only touches the break via shared edges
+            return [], triggers
+    gap = min(0.2 * (hi - lo), 0.6 * boss.diameter)
+    brk = ConventionalBreak(feature_id=boss.id, start=tuple(o[i] + a[i] * lo for i in range(3)),
+                            end=tuple(o[i] + a[i] * hi for i in range(3)), gap=round(gap, 3))
+    return [brk], [t.model_copy(update={"satisfied": True}) if t.kind == ViewTriggerKind.BREAK else t
+                   for t in triggers]
+
+
 def section_frame(ir: GeometryIR, section: SectionView, frame: Frame) -> tuple[tuple, tuple]:
     """(point on the cutting plane, normal toward the removed half = the section view's eye)."""
     feat = next(f for f in ir.features if f.id == section.plane.through_feature_id)
     return tuple(feat.axis.origin), tuple(frame.eye)
 
 
-__all__ = ["hidden_in_section", "plan_auxiliary_views", "plan_sections", "section_frame"]
+__all__ = ["hidden_in_section", "plan_auxiliary_views", "plan_break", "plan_sections", "section_frame"]

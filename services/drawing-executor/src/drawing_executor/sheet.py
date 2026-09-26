@@ -91,3 +91,37 @@ def clip_to_circle(lines: list[Polyline], r: float) -> list[Polyline]:
         if len(cur) >= 2:
             out.append(cur)
     return [pl for pl in out if len(pl) >= 2]
+
+
+def apply_break(lines: list[Polyline], ua: float, ub: float, gap: float) -> list[Polyline]:
+    """Conventional break: drop what lies between ua and ub (projector x) and move the far part back so the
+    two cut ends are ``gap`` apart."""
+    out: list[Polyline] = []
+    for pl in lines:
+        for keep_left in (True, False):
+            cur: Polyline = []
+            for a, b in zip(pl, pl[1:]):
+                lim = ua if keep_left else ub
+                ins_a = a[0] <= lim if keep_left else a[0] >= lim
+                ins_b = b[0] <= lim if keep_left else b[0] >= lim
+                if ins_a and ins_b:
+                    cur = cur or [a]
+                    cur.append(b)
+                    continue
+                if ins_a or ins_b:
+                    t = (lim - a[0]) / (b[0] - a[0])
+                    m = (lim, a[1] + t * (b[1] - a[1]))
+                    if ins_a:
+                        cur = cur or [a]
+                        cur.append(m)
+                        out.append(cur)
+                        cur = []
+                    else:
+                        cur = [m, b]
+                elif cur:
+                    out.append(cur)
+                    cur = []
+            if len(cur) >= 2:
+                out.append(cur)
+    shift = (ub - ua) - gap
+    return [[(x - shift, y) if x >= ub - 1e-9 else (x, y) for x, y in pl] for pl in out if len(pl) >= 2]

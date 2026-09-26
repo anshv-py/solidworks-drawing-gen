@@ -72,3 +72,28 @@ def test_shafts_are_drawn_horizontal(analyzed, name):
     assert abs(abs(sum(a * b for a, b in zip(front.x, boss.axis.direction))) - 1) < 1e-6
     # manual views keep the user's frame
     assert plan_baseline(ir, DrawingSettings(view_selection="MANUAL")).plan.view_frame.value == "Z_UP"
+
+
+def test_long_shaft_gets_a_conventional_break(analyzed):
+    ir, _ = analyzed["long_shaft"]
+    p = plan_baseline(ir, DrawingSettings()).plan
+    [b] = p.breaks
+    # inside the 250 mm journal, keeping max(D, 15 %) at each end
+    assert (b.start[2], b.end[2]) == pytest.approx((50 + 37.5, 300 - 37.5))
+    assert all(t.satisfied for t in p.view_triggers if t.kind.value == "BREAK")
+    # a short shaft is not broken
+    assert plan_baseline(analyzed["shaft"][0], DrawingSettings()).plan.breaks == []
+
+
+def test_break_shortens_the_view_and_dimensions_keep_true_values(geometry_files, models_dir, tmp_path):
+    res = generate(geometry_files["long_shaft"], models_dir / "long_shaft.step", DrawingSettings(), tmp_path)
+    assert res.passed  # QA measured every dimension back across the break
+    cd = CompiledDrawing.model_validate_json((tmp_path / "compiled.json").read_text())
+    front = next(v for v in cd.views if v.break_at)
+    ua, ub, gap = front.break_at
+    assert front.outline.w / front.scale_factor == pytest.approx(300 - (ub - ua) + gap)
+    overall = next(d for d in cd.dimensions if d.text == "300.00")
+    assert abs(overall.p2[0] - overall.p1[0]) / front.scale_factor < 300  # drawn short, printed true
+    lines = json.loads((tmp_path / "rendered.json").read_text())["lines"][front.id]["visible"]
+    cx, s = front.sheet_center[0], front.scale_factor
+    assert not [p for pl in lines for p in pl if ua * s + 1e-3 < p[0] - cx < (ua + gap) * s - 1e-3]

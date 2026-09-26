@@ -68,6 +68,65 @@
       "title": "AuxiliaryView",
       "type": "object"
     },
+    "ConventionalBreak": {
+      "additionalProperties": false,
+      "description": "RULES 1.6: the uniform middle of ``feature_id`` (a long constant diameter) is left out of every view\nthat shows its axis horizontally; the two cut ends are drawn ``gap`` mm apart (model scale) with break\nlines, and dimensions across the break keep their true values. Derived from GeometryIR.",
+      "properties": {
+        "end": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "End",
+          "type": "array"
+        },
+        "feature_id": {
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "gap": {
+          "exclusiveMinimum": 0,
+          "title": "Gap",
+          "type": "number"
+        },
+        "start": {
+          "additionalItems": false,
+          "items": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Start",
+          "type": "array"
+        }
+      },
+      "required": [
+        "feature_id",
+        "start",
+        "end",
+        "gap"
+      ],
+      "title": "ConventionalBreak",
+      "type": "object"
+    },
     "Datum": {
       "additionalProperties": false,
       "properties": {
@@ -1629,6 +1688,13 @@
       "title": "Auxiliary Views",
       "type": "array"
     },
+    "breaks": {
+      "items": {
+        "$ref": "#/$defs/ConventionalBreak"
+      },
+      "title": "Breaks",
+      "type": "array"
+    },
     "cad_metadata_applied": {
       "description": "title-block fields taken from the CAD file, with their origin",
       "items": {
@@ -1926,6 +1992,7 @@
     "sections",
     "detail_views",
     "auxiliary_views",
+    "breaks",
     "dimensions",
     "dimension_selections",
     "annotations",

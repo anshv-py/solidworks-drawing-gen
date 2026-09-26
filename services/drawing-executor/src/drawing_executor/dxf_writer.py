@@ -699,6 +699,13 @@ def write_dxf(cd: CompiledDrawing, sheet_lines: dict[str, dict], snapped: dict[s
                           dxfattribs={"layer": "SHADE", "true_color": ezdxf.colors.rgb2int((g - 8, g - 4, g))})
         lines = sheet_lines[view.id]
         _hatch(msp, (hatches or {}).get(view.id, []))
+        if view.break_at is not None:  # break lines (ISO 128-20: narrow line with zigzag) at both cut ends
+            ua, _, gap = view.break_at
+            o, cx, s = view.outline, view.sheet_center[0], view.scale_factor
+            ym = (o.y0 + o.y1) / 2
+            for x in (cx + ua * s, cx + (ua + gap) * s):
+                msp.add_lwpolyline([(x, o.y0 - 2.0), (x, ym - 2.0), (x - 1.8, ym - 0.8), (x + 1.8, ym + 0.8),
+                                    (x, ym + 2.0), (x, o.y1 + 2.0)], dxfattribs={"layer": "DIM"})
         if view.clip_radius is not None:  # boundary of a detail view (thin)
             msp.add_circle(view.sheet_center, view.clip_radius * view.scale_factor, dxfattribs={"layer": "DIM"})
         if view.label:  # a view at another scale ("SCALE 2:1") or a section ("A-A")

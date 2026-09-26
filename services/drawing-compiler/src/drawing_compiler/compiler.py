@@ -190,6 +190,17 @@ def decimals_needed(v: float, limit: int = 4) -> int:
     return limit
 
 
+def _unbreak_map(brk: tuple, u: float) -> float:
+    """Model x along a broken view -> drawn x: the part beyond the break moves back by the removed length
+    less the gap left between the two ends."""
+    ua, ub, gap = brk
+    if u <= ua:
+        return u
+    if u >= ub:
+        return u - (ub - ua) + gap
+    return ua + (u - ua) / (ub - ua) * gap
+
+
 def _sub(a, b):
     return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
 
@@ -303,6 +314,7 @@ class _ViewCtx:
     floating: bool = False  # auxiliary view: placed in free space, not in the projection grid
     aux: tuple | None = None  # (letter, parent view id) of an auxiliary view
     arrows: list = field(default_factory=list)  # (letter, model point, direction of sight) - arrow method
+    brk: tuple | None = None  # conventional break (start, end, gap) along the view's x, model mm about centre
 
 
 class Compiler:
@@ -500,6 +512,19 @@ class Compiler:
             us = [dot(_sub(c, self.center), v.frame.x) for c in self.corners]
             vs = [dot(_sub(c, self.center), v.frame.y) for c in self.corners]
             v.half = (min(us), max(us), min(vs), max(vs))
+        # RULES 1.6: a conventional break shortens every view showing the broken axis horizontally
+        for b in p.breaks:
+            d = _sub(b.end, b.start)
+            ln = math.sqrt(dot(d, d))
+            along = [v for v in out if not v.pictorial and abs(abs(dot(d, v.frame.x)) - ln) < 1e-6 * max(1.0, ln)]
+            if not along or any(v.section for v in out if v in along):
+                self.opt.notes.append("conventional break not drawn (no view shows it / sectioned view)")
+                continue
+            for v in along:
+                ua, ub = sorted((dot(_sub(b.start, self.center), v.frame.x), dot(_sub(b.end, self.center), v.frame.x)))
+                v.brk = (ua, ub, b.gap)
+                u0, u1, w0, w1 = v.half
+                v.half = (_unbreak_map(v.brk, u0), _unbreak_map(v.brk, u1), w0, w1)
         by_id = {v.id: v for v in out}
         # RULES 1.3 / ISO 128-44: a full section drawn in place of its view, the plane shown in the parent
         for sec in p.sections:
@@ -679,7 +704,8 @@ class Compiler:
     # ------------------------------------------------------------------ per-scale envelopes
     def _uv(self, v: _ViewCtx, p) -> tuple[float, float]:
         q = _sub(p, self.center)
-        return dot(q, v.frame.x), dot(q, v.frame.y)
+        u = dot(q, v.frame.x)
+        return (_unbreak_map(v.brk, u) if v.brk else u), dot(q, v.frame.y)
 
     def _attach_extent(self, cid: str, horizontal: bool) -> float:
         """Extra outward space a dimension needs for its frames / datum."""
@@ -1191,6 +1217,7 @@ class Compiler:
                 sheet_center=c, outline=outline, display_style=v.style, label=label, label_at=label_at,
                 cut_point=v.section[1] if v.section else None, cut_normal=v.section[2] if v.section else None,
                 auxiliary_of=v.aux[1] if v.aux else None,
+                break_at=tuple(round(x, 6) for x in v.brk) if v.brk else None,
             ))
             for letter, point, eye in ([] if v.pictorial else v.arrows):
                 anns.append(self._view_arrow(v, s, c, letter, point, eye))
@@ -1422,7 +1449,8 @@ class Compiler:
         taken = list(taken)
 
         def free(r: Rect) -> bool:
-            return r.inside(self.area) and not any(r.intersects(t, 0.8) for t in taken)
+            return (r.inside(self.area) and not any(r.intersects(t, 0.8) for t in taken)
+                    and not any(r.intersects(o) for o in self.obstacles))  # title block, notes, stamp
 
         for g in v.groups:
             side = v.group_side[g.face_id]
@@ -1456,9 +1484,12 @@ class Compiler:
                 on_face = [lo + f * length for f in TIP_FRACTIONS]
                 sideways = [x for k in range(1, 17) for x in (lo - 6.0 * k, hi + 6.0 * k)]
                 step, _n = v.group_levels.get(side, (0.0, 1))
-                for lv in range(5):
+                # cheapest first: a sideways slide costs its distance, one level further out ~ 12 mm
+                tries = sorted(((0.0 if a in on_face else min(abs(a - lo), abs(a - hi))) + 12.0 * lv, lv, k, a)
+                               for lv in range(5) for k, a in enumerate(on_face + sideways))
+                for _cost, lv, _k, a in tries:
                     near = near0 + (d[0] + d[1]) * lv * step
-                    for a in on_face + sideways:
+                    if True:
                         t = min(max(a, lo + 0.1 * length), hi - 0.1 * length)
                         for al0, al1 in spans:
                             tip, land, box = geometry(a, t, al0, al1, near, bw, bh)

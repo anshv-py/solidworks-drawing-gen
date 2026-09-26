@@ -76,6 +76,8 @@ class CompiledView(StrictModel):
     cut_normal: Vec3 | None = Field(default=None, description="section view: plane normal toward the removed half")
     detail_of: str | None = Field(default=None, description="detail view: the view it enlarges")
     auxiliary_of: str | None = Field(default=None, description="auxiliary view: the view its arrow is in")
+    break_at: tuple[float, float, float] | None = Field(
+        default=None, description="conventional break: (start, end, gap) along x, model mm about model_center")
     clip_radius: float | None = Field(default=None, description="detail view: region radius (model mm) around model_center")
 
 

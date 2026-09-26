@@ -17,6 +17,19 @@ export type Label = string;
 export type ParentViewId = string;
 export type AuxiliaryViews = AuxiliaryView[];
 /**
+ * @minItems 3
+ * @maxItems 3
+ */
+export type End = [number, number, number];
+export type FeatureId1 = string;
+export type Gap = number;
+/**
+ * @minItems 3
+ * @maxItems 3
+ */
+export type Start = [number, number, number];
+export type Breaks = ConventionalBreak[];
+/**
  * title-block fields taken from the CAD file, with their origin
  */
 export type CadMetadataApplied = string[];
@@ -31,7 +44,7 @@ export type Covers1 = string[];
 /**
  * region is centred on this GeometryIR feature
  */
-export type FeatureId1 = string;
+export type FeatureId2 = string;
 export type Id1 = string;
 export type Label1 = string;
 export type ParentViewId1 = string;
@@ -106,7 +119,7 @@ export type Rule = string;
  */
 export type RoleSource = "INFERRED" | "USER";
 export type FaceId = string | null;
-export type FeatureId2 = string | null;
+export type FeatureId3 = string | null;
 export type FeatureRoles = RoleAssignment[];
 /**
  * sharp-edge break value, e.g. as specified
@@ -204,7 +217,7 @@ export type Depth = number | null;
  * e.g. M8x1.25-6H (as specified by the user)
  */
 export type Designation = string;
-export type FeatureId3 = string;
+export type FeatureId4 = string;
 /**
  * Where a piece of engineering information came from.
  */
@@ -391,6 +404,7 @@ export type ViewFrame1 = "Z_UP" | "Y_UP" | "X_UP" | "Z_UP_Y_RIGHT";
 export interface DrawingPlan {
   annotations: AnnotationPreferences;
   auxiliary_views: AuxiliaryViews;
+  breaks: Breaks;
   cad_metadata_applied: CadMetadataApplied;
   detail_views: DetailViews;
   dimension_selections: DimensionSelections;
@@ -440,6 +454,20 @@ export interface AuxiliaryView {
   parent_view_id: ParentViewId;
 }
 /**
+ * RULES 1.6: the uniform middle of ``feature_id`` (a long constant diameter) is left out of every view
+ * that shows its axis horizontally; the two cut ends are drawn ``gap`` mm apart (model scale) with break
+ * lines, and dimensions across the break keep their true values. Derived from GeometryIR.
+ *
+ * This interface was referenced by `DrawingPlan`'s JSON-Schema
+ * via the `definition` "ConventionalBreak".
+ */
+export interface ConventionalBreak {
+  end: End;
+  feature_id: FeatureId1;
+  gap: Gap;
+  start: Start;
+}
+/**
  * An enlarged circular region of ``parent_view_id`` (RULES 1.4), drawn in free space on the sheet
  * and labelled "B (5:1)"; the region is circled and lettered in the parent view.
  *
@@ -449,7 +477,7 @@ export interface AuxiliaryView {
 export interface DetailView {
   center: Center;
   covers: Covers1;
-  feature_id: FeatureId1;
+  feature_id: FeatureId2;
   id: Id1;
   label: Label1;
   parent_view_id: ParentViewId1;
@@ -522,7 +550,7 @@ export interface RoleAssignment {
  */
 export interface Target {
   face_id: FaceId;
-  feature_id: FeatureId2;
+  feature_id: FeatureId3;
 }
 /**
  * The default numbered drawing notes (on by default).
@@ -626,7 +654,7 @@ export interface SurfaceFinishMark {
 export interface ThreadCallout {
   depth: Depth;
   designation: Designation;
-  feature_id: FeatureId3;
+  feature_id: FeatureId4;
   source: InfoSource1;
 }
 /**

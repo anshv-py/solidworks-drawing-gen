@@ -53,6 +53,14 @@ def _dist_to_polys(p, polys: list[Polyline]) -> float:
     return best
 
 
+def _unbreak_x(v, x: float) -> float:
+    """Sheet x in a broken view -> sheet x the point would have without the break."""
+    ua, ub, gap = v.break_at
+    s, cx = v.scale_factor, v.sheet_center[0]
+    u = (x - cx) / s
+    return cx + s * (u + (ub - ua) - gap if u >= ua + gap - 1e-9 else u)
+
+
 def _circle_polys(center, r, n=128) -> Polyline:
     return [(center[0] + r * math.cos(2 * math.pi * k / n), center[1] + r * math.sin(2 * math.pi * k / n))
             for k in range(n + 1)]
@@ -224,6 +232,8 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
             R.add("QA-DIM-001", QaSeverity.CRITICAL, f"{d.id}: printed value differs from GeometryIR", [d.id])
         if d.kind == DimensionOpKind.LINEAR:
             measured = abs(d.p2[0] - d.p1[0]) if d.horizontal else abs(d.p2[1] - d.p1[1])
+            if d.horizontal and v.break_at is not None:  # measure back across a conventional break
+                measured = abs(_unbreak_x(v, d.p2[0]) - _unbreak_x(v, d.p1[0]))
             if abs(measured / v.scale_factor - c.value) > 1e-3:
                 R.add("QA-DIM-001", QaSeverity.CRITICAL,
                       f"{d.id}: sheet geometry measures {measured / v.scale_factor:.4f} mm but label says {c.text}",
@@ -231,6 +241,8 @@ def validate(plan: DrawingPlan, candidates: list[DimensionCandidate], ir: Geomet
             if c.role == CandidateRole.OVERALL:
                 bb = geo_bbox.get(d.view_id)
                 drawn = (bb.w if d.horizontal else bb.h) / v.scale_factor if bb else None
+                if drawn is not None and d.horizontal and v.break_at is not None:
+                    drawn += v.break_at[1] - v.break_at[0] - v.break_at[2]
                 if drawn is None or abs(drawn - c.value) > 0.05:
                     R.add("QA-DIM-001", QaSeverity.CRITICAL,
                           f"{d.id}: OCCT-drawn extent {drawn} mm disagrees with overall dimension {c.text}", [d.id])

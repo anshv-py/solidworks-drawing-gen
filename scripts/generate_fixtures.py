@@ -329,6 +329,17 @@ def angled_block():
     return s, exp
 
 
+def long_shaft():
+    """d20 x 300 shaft with a d30 x 20 collar near one end - long enough for a conventional break."""
+    s = clean(fuse(cyl((0, 0, 0), (0, 0, 1), 10.0, 300.0), cyl((0, 0, 30.0), (0, 0, 1), 15.0, 20.0)))
+    exp = {
+        "bbox_size": [30.0, 30.0, 300.0],
+        "bosses": [{"diameter": 20.0, "count": 2}, {"diameter": 30.0, "count": 1}],
+        "holes": [],
+    }
+    return s, exp
+
+
 MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "plate_with_holes": plate_with_holes,
     "mounting_plate": mounting_plate,
@@ -342,6 +353,7 @@ MODELS: dict[str, Callable[[], tuple[Shape, dict]]] = {
     "keyed_shaft": keyed_shaft,
     "seal_cover": seal_cover,
     "angled_block": angled_block,
+    "long_shaft": long_shaft,
 }
 
 STL_MODELS = ("plate_with_holes", "flange", "bracket")

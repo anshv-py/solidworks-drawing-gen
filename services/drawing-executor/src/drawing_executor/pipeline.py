@@ -34,7 +34,7 @@ from geometry_service.step_analysis import read_step
 from drawing_executor.dxf_writer import FONT, text_font_available, write_dxf
 from drawing_executor.hlr import hidden_line_removal, section_cut, section_loops, shaded_facets
 from drawing_executor.render import render
-from drawing_executor.sheet import clip_to_circle, snap_extension, to_sheet
+from drawing_executor.sheet import apply_break, clip_to_circle, snap_extension, to_sheet
 
 Progress = Callable[[str, str, float], None]  # (state, message, percent)
 
@@ -137,6 +137,8 @@ def generate(
             vis, hid, loops = hlr_cache[key]
             if v.clip_radius is not None:  # detail: the circular region around its centre
                 vis, hid = clip_to_circle(vis, v.clip_radius), clip_to_circle(hid, v.clip_radius)
+            if v.break_at is not None:  # conventional break: the uniform middle left out
+                vis, hid = apply_break(vis, *v.break_at), apply_break(hid, *v.break_at)
             lines[v.id] = {"visible": to_sheet(vis, v), "hidden": to_sheet(hid, v)}
             if loops:
                 hatches[v.id] = [to_sheet(face, v) for face in loops]

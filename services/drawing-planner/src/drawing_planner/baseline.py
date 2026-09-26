@@ -52,7 +52,7 @@ from drawing_planner.materials import density, format_mass
 from drawing_planner.pmi_validation import validate_pmi
 from drawing_planner.roles import PartFamily, infer_roles, main_turned_boss
 from drawing_planner.rule_set import load_rules
-from drawing_planner.sections import hidden_in_section, plan_auxiliary_views, plan_sections
+from drawing_planner.sections import hidden_in_section, plan_auxiliary_views, plan_break, plan_sections
 from drawing_planner.threads import default_threads
 from drawing_planner.view_rules import auxiliary_triggers, break_triggers, isometric_triggers, section_triggers
 
@@ -385,13 +385,17 @@ def plan_baseline(
         uncertainties.append(PlanUncertainty(message="tessellated source: dimensions are approximate"))
 
     triggers: list[ViewTrigger] = []
+    breaks: list = []
     rule_notes: list[str] = []
     pictorial = settings.primary_view if settings.primary_view in PICTORIAL else ViewOrientation.ISOMETRIC
     if rules_mode:
         iso = isometric_triggers(ir, rules, settings.general_notes.process)
         show_pictorial = bool(iso)
         triggers += [t.model_copy(update={"satisfied": True}) for t in iso]
-        triggers += sec_triggers + aux_triggers + break_triggers(ir, rules)
+        brk_triggers = break_triggers(ir, rules)
+        if roles.family == PartFamily.SHAFT:
+            breaks, brk_triggers = plan_break(ir, brk_triggers, sections)
+        triggers += sec_triggers + aux_triggers + brk_triggers
         if thickness is not None:
             rule_notes.append(f"THICKNESS {thickness.text}")
             triggers.append(ViewTrigger(kind=ViewTriggerKind.THICKNESS_NOTE, rule="RULES 1.1 (one view + note)",
@@ -477,6 +481,7 @@ def plan_baseline(
         rule_set=rules.label if rules_mode else None,
         sections=sections,
         auxiliary_views=aux_views,
+        breaks=breaks,
         feature_roles=roles.assignments if rules_mode else [],
         view_triggers=triggers,
         rule_notes=rule_notes,

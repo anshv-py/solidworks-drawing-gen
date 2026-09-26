@@ -212,6 +212,27 @@
       },
       "step": "keyed_shaft.step"
     },
+    "long_shaft": {
+      "expected": {
+        "bbox_size": [
+          30.0,
+          30.0,
+          300.0
+        ],
+        "bosses": [
+          {
+            "count": 2,
+            "diameter": 20.0
+          },
+          {
+            "count": 1,
+            "diameter": 30.0
+          }
+        ],
+        "holes": []
+      },
+      "step": "long_shaft.step"
+    },
     "mounting_plate": {
       "expected": {
         "bbox_size": [

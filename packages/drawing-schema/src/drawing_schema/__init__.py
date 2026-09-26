@@ -38,6 +38,7 @@ __all__ = [
     "SectionPlane",
     "DetailView",
     "AuxiliaryView",
+    "ConventionalBreak",
     "DimensionPreferences",
     "DimensionSelection",
     "AnnotationPreferences",
@@ -254,6 +255,17 @@ class AuxiliaryView(StrictModel):
     covers: list[str] = Field(default_factory=list, description="features shown true size in the view")
 
 
+class ConventionalBreak(StrictModel):
+    """RULES 1.6: the uniform middle of ``feature_id`` (a long constant diameter) is left out of every view
+    that shows its axis horizontally; the two cut ends are drawn ``gap`` mm apart (model scale) with break
+    lines, and dimensions across the break keep their true values. Derived from GeometryIR."""
+
+    feature_id: str
+    start: tuple[float, float, float]
+    end: tuple[float, float, float]
+    gap: float = Field(gt=0)
+
+
 class DimensionPreferences(StrictModel):
     overall: bool = True
     feature: bool = True
@@ -377,6 +389,7 @@ class DrawingPlan(StrictModel):
     sections: list[SectionView] = Field(default_factory=list)
     detail_views: list[DetailView] = Field(default_factory=list)
     auxiliary_views: list[AuxiliaryView] = Field(default_factory=list)
+    breaks: list[ConventionalBreak] = Field(default_factory=list)
     dimensions: DimensionPreferences = DimensionPreferences()
     dimension_selections: list[DimensionSelection] = Field(
         default_factory=list,
